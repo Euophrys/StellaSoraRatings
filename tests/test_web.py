@@ -184,3 +184,13 @@ def test_job_runner_busy_and_cancel():
         time.sleep(0.01)
     assert runner.status(jid)["state"] == "cancelled"
     assert runner.status(runner.start("t", lambda p: 42))["id"]
+
+
+def test_page_and_static_files(client):
+    status, headers, raw = client.call("GET", "/")
+    assert status == 200 and "text/html" in headers["Content-Type"] and b"app.js" in raw
+    status, headers, raw = client.call("GET", "/static/app.js")
+    assert status == 200 and "javascript" in headers["Content-Type"] and b"runJob" in raw
+    status, headers, _raw = client.call("GET", "/static/app.css")
+    assert status == 200 and "text/css" in headers["Content-Type"]
+    assert client.call("GET", "/static/..%2Fserver.py")[0] == 404
