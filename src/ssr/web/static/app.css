@@ -63,7 +63,7 @@ label { display: inline-flex; align-items: center; gap: 4px; }
 details > summary { cursor: pointer; color: var(--muted); margin: 10px 0 4px; }
 
 /* tier colours */
-.tier { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 4px; color: #fff; font-size: 11px; font-weight: 600; text-align: center; }
+.tier { display: inline-block; min-width: 1.6em; padding: 1px 5px; border-radius: 4px; color: #fff; font-size: 11px; font-weight: 600; text-align: center; }
 .tier.green { background: var(--t-green); } .tier.blue { background: var(--t-blue); }
 .tier.yellow { background: var(--t-yellow); color: #222; } .tier.purple { background: var(--t-purple); }
 option.green { color: var(--t-green); } option.blue { color: var(--t-blue); } option.yellow { color: var(--t-yellow); } option.purple { color: var(--t-purple); }
@@ -101,7 +101,9 @@ option.green { color: var(--t-green); } option.blue { color: var(--t-blue); } op
 .emtables { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 @media (max-width: 1000px) { .emtables { grid-template-columns: 1fr; } }
 table.em { border-collapse: collapse; font-size: 12.5px; width: 100%; }
-table.em td, table.em th { padding: 3px 5px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+table.em td, table.em th { padding: 3px 3px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
 table.em td:first-child, table.em th:first-child { text-align: left; white-space: normal; }
 table.em tr.irrelevant td { color: var(--muted); opacity: .6; }
 .scroll { overflow-x: auto; }
+table.em .tier { min-width: 4.2em; }
+.legend { display: inline-flex; gap: 4px; margin-left: 8px; }

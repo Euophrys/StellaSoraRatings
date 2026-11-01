@@ -407,3 +407,183 @@ async function init() {
 
 window.addEventListener("beforeunload", (e) => { if (state && savedKey !== JSON.stringify(state)) e.preventDefault(); });
 document.addEventListener("DOMContentLoaded", init);
+
+// ================================================================ potentials (preset grid)
+const MAX_TARGET = 6;
+const budgetOf = (i) => ((state.budget && state.budget[i] !== undefined) ? state.budget[i] : [30, 15, 15][i]);
+const used = (m) => Object.values(m.targets || {}).reduce((a, b) => a + (Number(b) || 0), 0);
+
+function setTarget(i, name, lv) {
+  lv = Math.max(0, Math.min(MAX_TARGET, lv));
+  setState((s) => {
+    const t = { ...s.members[i].targets };
+    if (lv > 0) t[name] = lv; else delete t[name];
+    s.members[i].targets = t;
+  });
+}
+
+function emblemPlus(m, potName) {
+  // owned Lv90 "+N" line on this potential (sum if several)
+  return slotLines(m, 3).filter((l) => l.line === potName && /^\+\d$/.test(l.tier))
+    .reduce((a, l) => a + Number(l.tier.slice(1)), 0);
+}
+
+function cell(v) {
+  if (v === undefined || v === null) return h("span", { class: "muted" }, "·");
+  return h("span", { class: v > 0 ? "pos" : v < 0 ? "neg" : "" }, pct(v));
+}
+
+function potentialCard(i, m, p) {
+  const lv = Number(m.targets[p.name] || 0);
+  const plus = emblemPlus(m, p.name);
+  const vals = results && results.grid ? results.grid[`${i}:${p.id}`] : null;
+  return h("div", { class: "pcard" }, h("h4", {}, p.name),
+    h("div", { class: "ctl" },
+      h("button", { onclick: () => setTarget(i, p.name, lv - 1), disabled: lv <= 0 }, "−"),
+      h("span", {}, `Lv ${lv}`),
+      plus ? h("span", { class: "plus", title: "owned emblem line; doesn't count toward the budget" },
+        `(+${plus} → ${Math.min(9, lv + plus)})`) : null,
+      h("button", { onclick: () => setTarget(i, p.name, lv + 1), disabled: lv >= MAX_TARGET }, "+")),
+    h("div", { class: "lv numbers" }, [1, 2, 3, 4, 5, 6].map((n) => h("div", {
+      class: [n === lv ? "cur" : "", n <= lv ? "have" : ""].join(" ").trim() || null,
+      title: `set target to ${n}${plus ? ` (fights at ${Math.min(9, n + plus)})` : ""}`,
+      onclick: () => setTarget(i, p.name, n) }, h("small", {}, n), cell(vals ? vals[n - 1] : null)))));
+}
+
+function pinkCard(m, p) {
+  const on = m.pinks.includes(p.name);
+  return h("div", { class: `pcard pink${on ? "" : " off"}` }, h("h4", {}, p.name),
+    h("div", { class: "ctl small" }, on ? "pink ✓" : "pink"));
+}
+
+function potentialsBlock(i) {
+  const m = state.members[i];
+  const t = trekker(m.trekker);
+  if (!t) return null;
+  const r = t.roles[roleOf(i)];
+  const n = used(m), b = budgetOf(i);
+  return h("div", { class: "panel", style: "margin-bottom:12px" },
+    h("h3", {}, `${t.name} `, h("span", { class: `budget${n > b ? " over" : ""}` }, `${n} / ${b}`),
+      h("span", { class: "small muted" }, i === 0 ? " · main" : " · support")),
+    [1, 2, 3].map((row) => {
+      const pinks = r.pinks.filter((p) => p.row === row);
+      const pots = r.potentials.filter((p) => p.row === row);
+      if (!pinks.length && !pots.length) return null;
+      return [h("div", { class: "rowlabel" }, ROWS[row]),
+        h("div", { class: "cards" }, pinks.map((p) => pinkCard(m, p)), pots.map((p) => potentialCard(i, m, p)))];
+    }));
+}
+
+function potentialsSection() {
+  const ready = state.members.every((m) => trekker(m.trekker));
+  const head = h("div", { class: "field" },
+    h("button", { class: "primary", onclick: recalc, disabled: !!ui.job || !ready }, results ? "Recalculate" : "Calculate"),
+    results ? h("span", { class: "small muted" },
+      `Team total ${(results.total / 1e6).toFixed(1)}M · calculated ${new Date(results.at).toLocaleString()}`)
+      : h("span", { class: "small muted" }, "Each cell: total change in team damage if this potential's target were that level (current = 0). ~1 min."));
+  return h("section", {}, h("h2", {}, "Potentials"), head, [0, 1, 2].map(potentialsBlock));
+}
+
+// ================================================================ optimize
+async function runOptimize() {
+  const split = [0, 1, 2].map(budgetOf);
+  const maxLevel = state.max_level || MAX_TARGET;
+  try {
+    const r = await runJob("optimize", { split, max_level: maxLevel });
+    setState((s) => { s.members.forEach((m, i) => { m.targets = { ...r.targets[i] }; }); });
+    ui.optimizeNote = `method: ${r.method}, total ×${(r.total / r.base_total).toFixed(2)} vs pinks only (split ${split.join(" / ")}, max Lv${maxLevel})`;
+    await recalc();
+  } catch (e) { /* shown */ }
+}
+
+function optimizeSection() {
+  const num = (label, value, set, min, max) => h("label", {}, label, h("input", { type: "number", min, max, step: 1, value,
+    onchange: (e) => { const v = Math.round(Number(e.target.value)); if (Number.isFinite(v) && v >= min && v <= max) setState((s) => set(s, v)); else render(); } }));
+  const names = state.members.map((m, i) => (m.trekker || (i === 0 ? "Main" : `Support ${i}`)));
+  const setBudget = (i) => (s, v) => { s.budget = [0, 1, 2].map(budgetOf); s.budget[i] = v; };
+  return h("section", {}, h("h2", {}, "Optimize"),
+    h("div", { class: "panel" },
+      h("div", { class: "field" },
+        num(names[0], budgetOf(0), setBudget(0), 0, 200), num(names[1], budgetOf(1), setBudget(1), 0, 200),
+        num(names[2], budgetOf(2), setBudget(2), 0, 200),
+        num("Max level", state.max_level || MAX_TARGET, (s, v) => { s.max_level = v; }, 1, MAX_TARGET),
+        h("button", { class: "primary", onclick: runOptimize, disabled: !!ui.job || !state.members.every((m) => trekker(m.trekker)) }, "Optimize")),
+      h("div", { class: "small muted" }, "Fills target levels with the best found for this split (greedy +1 steps, then swaps between a trekker's potentials), then recalculates. Emblem +N levels are free. Takes minutes."),
+      ui.optimizeNote ? h("div", { class: "small" }, ui.optimizeNote) : null));
+}
+
+// ================================================================ emblem tables
+function emblemTables(i) {
+  const m = state.members[i];
+  const t = trekker(m.trekker);
+  const rows = results && results.emblems ? results.emblems[String(i)] : null;
+  if (!t || !rows) return null;
+  const tables = [1, 2, 3].map((slot) => {
+    const rs = rows.filter((r) => r.slots.includes(slot));
+    const ordered = rs.filter((r) => r.relevant).concat(rs.filter((r) => !r.relevant));
+    return h("div", {}, h("div", { class: "small muted" }, SLOT_NAMES[slot]),
+      h("div", { class: "scroll" }, h("table", { class: "em numbers" },
+        h("tr", {}, h("th", {}, "Line"), h("th", { colspan: 4 }, "team damage per roll")),
+        ordered.map((r) => {
+          let sub = null;
+          if (r.kind === "potential") {
+            const lv = Number(m.targets[r.name] || 0);
+            const top = Number(r.tiers[r.tiers.length - 1][0].slice(1));
+            sub = h("div", { class: "small muted" }, `Lv ${lv}→${Math.min(9, lv + emblemPlus(m, r.name) + top)} at +${top}`);
+          }
+          const pad = Array.from({ length: 4 - r.tiers.length }, () => h("td", {}));
+          return h("tr", { class: r.relevant ? null : "irrelevant" }, h("td", {}, r.name, sub), pad,
+            r.tiers.map(([label, colour, g]) => h("td", { title: `${colour}${label !== colour ? ` ${label}` : ""}` },
+              h("span", { class: `tier ${colour}` }, label !== colour ? `${label} ` : "", r.relevant ? pct(g) : "—"))));
+        }))));
+  });
+  return h("div", { class: "panel", style: "margin-bottom:12px" }, h("h3", {}, t.name), h("div", { class: "emtables" }, tables));
+}
+
+function emblemSection() {
+  return h("section", {}, h("h2", {}, "Emblem lines"),
+    results ? h("div", { class: "small muted" }, "Each line's team damage on top of the current build and owned emblems, per roll tier. Sorted by the best tier.",
+      h("span", { class: "legend" }, ["green", "blue", "yellow", "purple"].map((c) => h("span", { class: `tier ${c}` }, c))))
+      : h("div", { class: "small muted" }, "Calculate to see emblem lines."),
+    [0, 1, 2].map(emblemTables));
+}
+
+SECTIONS.push(potentialsSection, optimizeSection, emblemSection);
+
+// ================================================================ export
+async function exportHtml() {
+  const css = await fetch("/static/app.css").then((r) => r.text()).catch(() => "");
+  const clone = document.getElementById("app").cloneNode(true);
+  const live = document.getElementById("app").querySelectorAll("select");
+  clone.querySelectorAll("select").forEach((s, k) => {
+    const v = live[k].value;
+    const text = live[k].selectedOptions[0] ? live[k].selectedOptions[0].textContent : "";
+    if (!v && s.closest(".emblem-slot")) { s.remove(); return; }
+    const span = document.createElement("span");
+    span.className = `${s.className} picked`;
+    span.textContent = v ? text : "—";
+    s.replaceWith(span);
+  });
+  clone.querySelectorAll("input").forEach((x) => { const s = document.createElement("span"); s.textContent = x.value; x.replaceWith(s); });
+  clone.querySelectorAll("button").forEach((b) => b.remove());
+  clone.querySelectorAll("details").forEach((d) => d.setAttribute("open", ""));
+  clone.querySelectorAll(".emblem-slot .lines").forEach((l) => { if (!l.children.length) l.append("none"); });
+  [...clone.querySelectorAll("section")].filter((s) => s.querySelector("h2")?.textContent === "Optimize").forEach((s) => {
+    s.querySelectorAll(".muted").forEach((x) => x.remove());
+  });
+  const name = state.name || ui.stem || "build";
+  const when = results ? new Date(results.at).toLocaleString() : "never";
+  const note = !results ? "<p class=\"msg warn\">No numbers: this build wasn't calculated.</p>"
+    : results.stale ? "<p class=\"msg warn\">Numbers are stale: levels changed after the last calculation.</p>" : "";
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(name)} — build</title><style>${css}
+.picked{font-weight:600} .lv div, .pink-toggle, .pink-results td{cursor:default} body{padding-bottom:20px}</style></head>
+<body><main class="${results && results.stale ? "stale" : ""}"><h1 style="font-size:20px;margin:16px 0 0">${esc(name)}</h1>
+<p class="small muted">Stella Sora build guide · calculated ${esc(when)} · all numbers from the ssr simulator (% team damage)</p>${note}
+${clone.innerHTML}</main></body></html>`;
+  const a = h("a", { href: URL.createObjectURL(new Blob([html], { type: "text/html" })), download: `${name}.html` });
+  document.body.append(a); a.click(); a.remove();
+}
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+headerExtras.push(() => h("button", { onclick: exportHtml }, "Export"));
