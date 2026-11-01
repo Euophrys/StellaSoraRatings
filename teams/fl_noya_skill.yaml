@@ -1,0 +1,41 @@
+# Firstlight Noya skill build (Maygi chart, left half of example.jpeg)
+name: fl_noya_skill
+fight_length: 120
+tick: 0.05
+mark_icd: 1.0
+enemy:
+  res: 250        # CALIBRATE (Task 9): elemental RES in internal units (weak 250, raid 570, neutral 750)
+  defense: 0      # CALIBRATE: enemy DEF unknown
+  broken: 1.0     # resilience-break multiplier (1.5 while broken); not modelled
+
+members:
+  - trekker: Firstlight Noya
+    role: main
+    pinks: [Lucent Blitz, Dawnflare]
+    skill_levels: {auto: 10, skill: 10, ult: 10}
+    emblems: []   # chosen lines added to the baseline after emblem rating, e.g. ["HP%", "Crit Rate", "Skill +3"]
+  - trekker: Firefly
+    role: support
+    pinks: ["Radiance Blade: Twin Shadow", "Radiance Blade: Firefly"]
+    skill_levels: {skill: 10, ult: 10}
+    emblems: []
+  - trekker: Tilia
+    role: support
+    pinks: [Perfect Spiral, Renewed Spectrum]
+    skill_levels: {skill: 10, ult: 10}
+    emblems: []
+
+# Plan's call: the top 3 of Maygi's skill-build disc table. Disc ratings are always computed
+# against an all-filler lineup; this lineup is the baseline for emblem and potential rating.
+discs:
+  main:
+    - {name: My Guiding Star, copies: 1}
+    - {name: Ripples of Nostalgia, copies: 1}
+    - {name: "A Moment in the Aft", prefix: true, copies: 1}
+  support: [filler, filler, filler]
+
+reference: {steps: 2, main_picks: 2, support_picks: 1, level: 6}
+
+assumptions:
+  unknown_trigger_uptime: 1.0   # modifiers whose trigger isn't known: constant uptime, full stacks
+  disc_stats_target: team       # disc base stats and melody/harmony effects apply to the whole squad
