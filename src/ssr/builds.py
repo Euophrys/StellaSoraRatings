@@ -57,11 +57,12 @@ def best_main_discs(gd: GameData, team: TeamConfig, n: int = 3, copies: int = 1,
 
 
 def score_pinks(gd: GameData, team: TeamConfig, member: int, pinks: tuple[int, ...],
-                disc_ids: list[int] | None = None) -> PinkBuildRow:
+                disc_ids: list[int] | None = None, own_discs: bool = True) -> PinkBuildRow:
+    """own_discs=False: score with the team file's discs only (never re-pick main discs)."""
     t = with_pinks(team, member, list(pinks))
     ref_team = build_reference(gd, t, Build())
     total_team = simulate(gd, t, ref_team).total
-    if team.members[member].role == "main":
+    if own_discs and team.members[member].role == "main":
         own = best_main_discs(gd, t, n=len(team.discs_main) or 3, disc_ids=disc_ids)
         t_own = replace(t, discs_main=own)
         ref_own = build_reference(gd, t_own, Build())
