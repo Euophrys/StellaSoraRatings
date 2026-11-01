@@ -13,7 +13,8 @@ ROWS = {1: "Main Build 1", 2: "Main Build 2", 3: "Generic"}
 
 def _potential(gd: GameData, pid: int, kind: str | None = None) -> dict:
     p = gd.table("Potential").get(str(pid), {})
-    out = {"id": pid, "name": gd.item_name(pid), "row": p.get("Build", 3)}
+    rarity = gd.table("Item").get(str(pid), {}).get("Rarity", 2)
+    out = {"id": pid, "name": gd.item_name(pid), "row": p.get("Build", 3), "rarity": rarity}
     if kind:
         out["kind"] = kind
     return out
@@ -33,8 +34,11 @@ def catalog(gd: GameData) -> dict:
             pools = potential_pools(gd, cid, role)
             roles[role] = {
                 "pinks": [_potential(gd, p) for p in pools["pink"]],
-                "potentials": [_potential(gd, p, "normal") for p in pools["normal"]]
-                + [_potential(gd, p, "common") for p in pools["common"]],
+                # in-game preset order within a row: rarity (purple first), then id; the game also floats
+                # higher target levels first, which the page doesn't do (cards would jump on every click)
+                "potentials": sorted([_potential(gd, p, "normal") for p in pools["normal"]]
+                                     + [_potential(gd, p, "common") for p in pools["common"]],
+                                     key=lambda x: (x["row"], x["rarity"], x["id"])),
             }
         el = gd.table("Character")[str(cid)].get("EET", 0)
         trekkers.append({"id": cid, "name": gd.char_name(cid), "element": ELEMENTS.get(el, "?"),

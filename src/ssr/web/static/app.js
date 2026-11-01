@@ -177,6 +177,7 @@ function saveAs() {
 function renderBanner() {
   const b = document.getElementById("banner");
   const kids = ui.messages.map((m, k) => h("div", { class: `msg ${m.kind}` }, m.text,
+    m.value ? h("input", { value: m.value, readonly: true, size: 44, onfocus: (e) => e.target.select() }) : null,
     h("button", { class: "x", onclick: () => { ui.messages.splice(k, 1); renderBanner(); } }, "×")));
   if (results && results.stale) {
     kids.unshift(h("div", { class: "msg warn" }, "Levels changed — numbers are from the previous build.",
@@ -587,3 +588,39 @@ ${clone.innerHTML}</main></body></html>`;
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 headerExtras.push(() => h("button", { onclick: exportHtml }, "Export"));
+
+// ================================================================ game share codes
+async function importCode() {
+  const code = prompt("Paste a preset share code from the game:");
+  if (!code) return;
+  let d;
+  try { d = await api("POST", "/api/sharecode/decode", { code: code.trim() }); } catch (e) { message("err", e.message); return; }
+  const missing = d.members.filter((m) => !trekker(m.trekker)).map((m) => m.trekker);
+  if (missing.length) { message("err", `No kit spec for ${missing.join(", ")}; those trekkers can't be simulated yet.`); return; }
+  const same = d.members.every((m, i) => state.members[i].trekker === m.trekker);
+  setState((s) => {
+    d.members.forEach((dm, i) => {
+      const keep = s.members[i].trekker === dm.trekker;
+      const m = keep ? s.members[i] : blankMember(i);
+      m.trekker = dm.trekker; m.pinks = dm.pinks.slice(); m.targets = { ...dm.targets };
+      s.members[i] = m;
+    });
+    if (!same) s.discs = { main: ["filler", "filler", "filler"], support: ["filler", "filler", "filler"] };
+  });
+  if (!same) { results = null; ui.pinkRows = {}; ui.optimizeNote = null; render(); }
+  message("info", same ? "Imported pinks and target levels (discs and emblems kept)."
+    : "Imported trekkers, pinks and target levels. Set discs and emblems for the new team.");
+}
+
+async function copyCode() {
+  let code;
+  try { code = (await api("POST", "/api/sharecode/encode", { state })).code; } catch (e) { message("err", e.message); return; }
+  let copied = false;
+  try { await navigator.clipboard.writeText(code); copied = true; } catch (e) { /* fallback below */ }
+  ui.messages = ui.messages.filter((m) => !m.value);
+  ui.messages.push({ kind: "info", value: code, text: copied ? "Copied preset code:" : "Preset code (copy it):" });
+  renderBanner();
+}
+
+headerExtras.push(() => h("button", { onclick: importCode }, "Import code"),
+  () => h("button", { onclick: copyCode, disabled: !state.members.every((m) => trekker(m.trekker)) }, "Copy code"));

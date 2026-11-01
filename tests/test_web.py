@@ -194,3 +194,22 @@ def test_page_and_static_files(client):
     status, headers, _raw = client.call("GET", "/static/app.css")
     assert status == 200 and "text/css" in headers["Content-Type"]
     assert client.call("GET", "/static/..%2Fserver.py")[0] == 404
+
+
+def test_sharecode_routes(client):
+    code = "AAAAZwAAAH4AAACNobDDAY6gNhhhiKGGw2wA"
+    d = client.json("POST", "/api/sharecode/decode", {"code": code})
+    assert [m["trekker"] for m in d["members"]] == ["Amber", "Flora", "Chixia"]
+    assert d["members"][0]["targets"]["Overloaded Spark"] == 1
+    assert set(d["members"][0]["pinks"]) == {"Dominant Firepower", "Precise Temperature Control"}
+    doc = state()
+    for m, dm in zip(doc["members"], d["members"]):
+        m["pinks"], m["targets"] = dm["pinks"], dm["targets"]
+    assert client.json("POST", "/api/sharecode/encode", {"state": doc}) == {"code": code}
+    assert client.call("POST", "/api/sharecode/decode", {"code": "hello"})[0] == 400
+
+
+def test_catalog_potentials_in_game_row_order(client):
+    amber = next(t for t in client.get("/api/catalog")["trekkers"] if t["name"] == "Amber")
+    row1 = [p["name"] for p in amber["roles"]["main"]["potentials"] if p["row"] == 1]
+    assert row1 == ["Confident Mode", "Greed Gunfire", "Ardent Trigger"]

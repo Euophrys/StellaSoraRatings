@@ -13,6 +13,7 @@ from urllib.parse import unquote, urlparse
 import yaml
 
 from ..data import GameData
+from ..sharecode import SharePreset, decode_share, encode_share
 from ..guide import emblem_table, optimize, potential_grid, rank_pinks
 from ..sim import simulate
 from ..team import TEAMS, TeamConfig, TeamDocError, save_team, team_build, team_from_doc
@@ -221,7 +222,25 @@ class Handler(BaseHTTPRequestHandler):
         raise ApiError(404, f"no route {method} {path}")
 
     def _sharecode(self, action: str, body: dict):
-        raise ApiError(404, "share codes not available")
+        gd = self.app.gd
+        if action == "decode":
+            code = body.get("code")
+            if not isinstance(code, str):
+                raise ApiError(400, "code must be a string")
+            try:
+                p = decode_share(gd, code)
+            except ValueError as e:
+                raise ApiError(400, str(e)) from e
+            return self._json(200, {"members": [
+                {"trekker": gd.char_name(cid), "pinks": [gd.item_name(x) for x in pinks],
+                 "targets": {gd.item_name(pid): lv for pid, lv in levels.items()}}
+                for cid, pinks, levels in zip(p.char_ids, p.pinks, p.levels)]})
+        if action == "encode":
+            team = _team(gd, body.get("state"), need_pinks=False)
+            preset = SharePreset([m.char_id for m in team.members], [list(m.pinks) for m in team.members],
+                                 [dict(m.targets) for m in team.members])
+            return self._json(200, {"code": encode_share(gd, preset)})
+        raise ApiError(404, f"no route sharecode/{action}")
 
     def _static(self, name: str):
         f = (STATIC / name).resolve()
