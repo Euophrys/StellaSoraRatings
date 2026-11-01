@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import yaml
@@ -15,6 +15,7 @@ from .refs import level_row, resolve
 SPECS = REPO_ROOT / "specs" / "trekkers"
 
 DEFAULT_LOCKS = {"auto": 0.0, "skill": 3.0, "ult": 5.0}
+DEFAULT_ON_FIELD = {"skill": 4.0, "ult": 4.0}   # GUESS: a support appears to cast, then leaves
 
 
 @dataclass(frozen=True)
@@ -72,12 +73,17 @@ class PotentialSpec:
 
 @dataclass
 class BuffSpec:
-    effect: int
-    level: str            # which skill's level picks the effect row
+    effect: int | None    # Effect id, leveled by `level` (or None when `attribute` is used)
+    level: str            # which skill's level picks the effect/attribute row
     event: str
-    duration: object      # number or {ref: ...}
+    duration: object = "inf"   # number, "inf" or {ref: ...}
     target: str = "self"
-    max_stacks: int = 1
+    max_stacks: object = 1     # number or {ref: ...}
+    attribute: int | None = None   # OnceAdditionalAttribute id instead of an effect
+    as_stat: int | None = None
+    hit_tags: tuple = ()
+    per_stack: bool = False
+    name: str = ""
 
 
 @dataclass
@@ -91,6 +97,7 @@ class Kit:
     potentials: dict[int, PotentialSpec] = field(default_factory=dict)
     buffs: list[BuffSpec] = field(default_factory=list)
     reset_cd: dict[str, str] = field(default_factory=dict)
+    on_field: dict[str, float] = field(default_factory=dict)   # support: seconds on the battlefield per cast
 
 
 @dataclass
@@ -158,8 +165,11 @@ def load_kit(gd: GameData, path: Path, role: str) -> Kit:
         if role == "support" and name == "auto":
             continue
         actions[name] = _action(name, a, ids.get(name))
-    buffs = [BuffSpec(effect=int(b["effect"]), level=b["level"], event=b["event"], duration=b["duration"],
-                      target=b.get("target", "self"), max_stacks=int(b.get("max_stacks", 1)))
+    buffs = [BuffSpec(effect=int(b["effect"]) if "effect" in b else None, level=b["level"], event=b["event"],
+                      duration=b.get("duration", "inf"), target=b.get("target", "self"),
+                      max_stacks=b.get("max_stacks", 1), attribute=b.get("attribute"), as_stat=b.get("as_stat"),
+                      hit_tags=tuple(b.get("hit_tags", ())), per_stack=bool(b.get("per_stack", False)),
+                      name=b.get("name", ""))
              for b in sec.get("buffs", [])]
     mark = sec.get("mark")
     return Kit(
@@ -170,6 +180,7 @@ def load_kit(gd: GameData, path: Path, role: str) -> Kit:
         potentials={int(k): _potential(v) for k, v in (sec.get("potentials") or {}).items()},
         buffs=buffs,
         reset_cd=dict((sec.get("base_rules") or {}).get("reset_cd", {})),
+        on_field={k: float(v) for k, v in (sec.get("on_field") or DEFAULT_ON_FIELD).items()} if role == "support" else {},
     )
 
 
@@ -215,7 +226,7 @@ def _apply_override(gd, m: Modifier, s: dict, level: int, pot: dict) -> Modifier
         kw["value"] = m.value * n
     if "value" in s:
         kw["value"] = value(gd, s["value"], level, pot)
-    trig_keys = {"event", "duration", "max_stacks", "uptime", "icd"}
+    trig_keys = {"event", "duration", "max_stacks", "uptime", "icd", "per_stack", "stacks_from"}
     if trig_keys & set(s):
         base = m.trigger or Trigger(event="unknown", duration=math.inf)
         dur = s.get("duration", base.duration)
@@ -225,6 +236,9 @@ def _apply_override(gd, m: Modifier, s: dict, level: int, pot: dict) -> Modifier
             max_stacks=int(s.get("max_stacks", base.max_stacks)),
             uptime=s.get("uptime", base.uptime),
             icd=float(s.get("icd", base.icd)),
+            every=base.every,
+            per_stack=bool(s.get("per_stack", base.per_stack)),
+            stacks_from=s.get("stacks_from", base.stacks_from),
         )
         trig = Trigger(**tkw)
         if trig.event == "always":
@@ -233,7 +247,7 @@ def _apply_override(gd, m: Modifier, s: dict, level: int, pot: dict) -> Modifier
         kw["assumed"] = trig is not None and trig.event == "unknown" and trig.uptime is None
     if "stacks" in s and "max_stacks" not in s and kw.get("trigger", m.trigger) is not None:
         t = kw.get("trigger", m.trigger)
-        kw["trigger"] = Trigger(t.event, t.duration, 1, t.uptime, t.icd)
+        kw["trigger"] = replace(t, max_stacks=1)
     return m.with_(**kw)
 
 
@@ -267,15 +281,26 @@ def resolve_potential(gd: GameData, kit: Kit, potential_id: int, level: int) -> 
 
 
 def resolve_buffs(gd: GameData, kit: Kit, skill_levels: dict[str, int]) -> list[Modifier]:
-    """Modifiers granted by base skills (e.g. Noya's Starender), leveled by skill level."""
+    """Modifiers granted by base skills (e.g. Noya's Starender, Glimmer), leveled by skill level."""
+    from .effects import _oaa_row_modifiers
     out = []
     for b in kit.buffs:
         lv = skill_levels.get(b.level, 10)
-        vrow = level_row(gd, "EffectValue", b.effect, lv)
         dur = math.inf if b.duration == "inf" else value(gd, b.duration, lv)
-        trig = Trigger(event=b.event, duration=dur, max_stacks=b.max_stacks)
-        notes: list[str] = []
-        src = f"{gd.char_name(kit.char_id)} {b.level} buff ({b.effect})"
-        for m in _interpret(gd, gd.table("Effect").get(str(b.effect)), vrow, src, notes, trig, None):
-            out.append(m.with_(target=b.target if m.target != "enemy" else "enemy", assumed=False))
+        trig = Trigger(event=b.event, duration=dur, max_stacks=int(value(gd, b.max_stacks, lv)), per_stack=b.per_stack)
+        src = f"{gd.char_name(kit.char_id)} {b.level} {'status ' + b.name if b.name else 'buff'} ({b.effect or b.attribute})"
+        if b.attribute is not None:
+            mods = _oaa_row_modifiers(level_row(gd, "OnceAdditionalAttributeValue", b.attribute, lv), src)
+        else:
+            notes: list[str] = []
+            vrow = level_row(gd, "EffectValue", b.effect, lv)
+            mods = _interpret(gd, gd.table("Effect").get(str(b.effect)), vrow, src, notes, trig, None)
+        for m in mods:
+            kw = dict(trigger=trig, assumed=False, needs_scope=False, name=b.name,
+                      target=b.target if m.target != "enemy" or b.target == "enemy" else "enemy")
+            if b.as_stat is not None:
+                kw["stat"] = int(b.as_stat)
+            if b.hit_tags:
+                kw["hit_tags"] = b.hit_tags
+            out.append(m.with_(**kw))
     return out

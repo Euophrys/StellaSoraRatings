@@ -90,3 +90,11 @@ def test_disc_spec_overrides_data_part(gd):  # Ripples melody debuff needs Ultim
     mods, _ = disc_modifiers(gd, 214038, copies=1)
     m = [m for m in mods if m.stat == elem_stat(ELEM_TAKEN_BASE, 5)][0]
     assert m.trigger.event == "hit:main:ult_dmg" and not m.assumed and m.trigger.max_stacks == 9
+
+
+def test_effect_type_45_is_conditional_stat(gd):  # Good Night: per-hit Skill DMG increase under a condition
+    mods, notes = disc_modifiers(gd, 213006, copies=1)
+    sk = [m for m in mods if m.stat == SKILL_DMG]
+    assert len(sk) == 3
+    assert sk[2].trigger.event == "while:on_field:support"   # harmony 1, from the disc spec
+    assert not any("EffectType 45" in n for n in notes)

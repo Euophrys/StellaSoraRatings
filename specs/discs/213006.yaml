@@ -1,0 +1,4 @@
+# Good Night — melody part 2 and harmony 1 are EffectType 45 (conditional per-hit Skill DMG increase).
+overrides:
+  - {part: melody, index: 1, uptime: 1.0}                         # main's HP above 80%: no damage taken in the sim
+  - {part: harmony1, index: 0, event: "while:on_field:support", target: main}   # "when a support Lux Trekker is on the battlefield"

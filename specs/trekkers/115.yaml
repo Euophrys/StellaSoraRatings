@@ -13,6 +13,7 @@ main:
 
 support:
   energy_per_second: 2.0          # GUESS passive ult energy regen
+  on_field: {skill: 4.0, ult: 4.0}  # GUESS: seconds on the battlefield per cast (tune in game)
   actions:
     skill:                          # Starflare Pursuit: 16 s Sword Form (text), CD from data
       hits:
@@ -70,8 +71,8 @@ support:
       procs:
         - {event: "hit:main:skill_dmg", hit: 115322601, icd: {ref: "ScriptParameterValue,NoLevel,11526011,CommonData,10K"}, tags: [stellar_blade], applies_mark: true}
       overrides:
-        - {index: 0, event: "hit:self:stellar_blade"}
-      note: "Debuff stacks scale with Light Curtain stacks in game; modelled as 1 stack per blade."
+        - {index: 0, event: "hit:self:stellar_blade", stacks_from: glimmer}   # adds one stack per Glimmer stack on the target
+      note: "Each blade adds as many debuff stacks as the target has Glimmer (Light Curtain) stacks."
 
     511527:   # Blade of Falling Petals: Sword Form end -> 4 Avalanches x2; Skill Crit DMG stacks
       add_hits:
@@ -106,8 +107,8 @@ support:
     511533:   # Domain of Purity: squad Lux DMG in all-Lux squad (+ more while Firefly is on field)
       overrides:
         - {index: 0, event: always, target: team}
-        - {index: 1, drop: true}   # support isn't on the field
-      note: "On-field bonus dropped (Firefly is a support)."
+        - {index: 1, event: "while:on_field:self", target: team}   # only while Firefly is on the battlefield
+      note: "On-field bonus only during Firefly's casts (on_field seconds per cast)."
 
     511541:   # Persistent Warmth: after ult, next skill cast -> Lux DMG
       overrides:

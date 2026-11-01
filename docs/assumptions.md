@@ -60,3 +60,11 @@ Maygi: 8.65% / 0.05%. **Chosen: RES 145**, i.e. a "weak" enemy (250) with ~105 P
 46 of 104 discs have a melody or harmony with no `EffectId` (the effect lives in a script, only text + Params in data). These are modelled by `specs/discs/<id>.yaml` where written (My Guiding Star, Ripples of Nostalgia, Summer Sanctuary, Sparkling Moment, Stellar Destination, Seed Alike, Eternal Brilliance) and otherwise **listed as "scripted, not modelled"** in the Discs sheet's Notes. Their ratings understate them.
 
 - "Lux Versatile Trekkers" = `Character.Class` 2 (Firefly here; FL Noya is class 1 Vanguard, Tilia class 3 Support).
+
+## Glimmer, on-field time, conditional effects (second pass)
+
+- **Glimmer** (Word 4029 → Effect/BuffValue 3012): Lux DMG Taken +0.5% per stack, 6 s, max 3 stacks. Noya adds one stack per Lucent (Mark trigger). It's tracked as a named status (`name: glimmer` in `specs/trekkers/162.yaml`).
+- **EAT 85** = DMG dealt to targets with Glimmer, applied in the general DMG bucket. Noya's auto attacks get it once per Glimmer stack (`OnceAdditionalAttribute` 16290001 at auto level). Resolve: Blitz and Searing Sun get it while any Glimmer is up.
+- **EffectType 45** = a stat add under a condition (e.g. "if the main's HP is above 80%"). It's treated as a stat add with an assumed trigger unless a spec pins it down.
+- **On the battlefield:** a support is on the field for `on_field` seconds after each skill or ult cast (default 4 s, GUESS). `while:on_field:<who>` effects are active only then.
+- **Stellar Crash:** each blade adds as many Lux DMG Taken stacks as the target has Glimmer stacks.

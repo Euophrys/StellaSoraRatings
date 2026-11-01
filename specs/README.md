@@ -44,6 +44,17 @@ main:
 Cooldown and ult energy cost come from `Skill.json`. Energy gained per hit is
 `HitDamage.EnergyCharge`, capped per cast by `Skill.GetEnergyLimit`.
 
+## On the battlefield (supports)
+
+```yaml
+support:
+  on_field: {skill: 4.0, ult: 4.0}   # seconds a support stays on the battlefield after casting
+```
+
+Supports appear to cast and then leave. Effects that only work while a support
+is on the battlefield use `event: "while:on_field:<who>"` (`support`, `self`,
+`any`, or a member index); they're active only during those windows. Default 4 s.
+
 ## Marks
 
 ```yaml

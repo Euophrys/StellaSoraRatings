@@ -25,6 +25,8 @@ class SimResult:
     casts: dict[tuple[int, str], int]
     first_cast: dict[tuple[int, str], float]
     unknown_modifiers: list[str]
+    on_field_time: dict[int, float] = field(default_factory=dict)
+    status_time: dict[str, float] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------- caches
@@ -62,9 +64,7 @@ def _disc_mods(gd, disc_id, copies) -> list[Modifier]:
 
 def _norm_event(ev: str, owner: int) -> str:
     parts = ev.split(":")
-    if len(parts) >= 2:
-        parts[1] = {"self": str(owner), "main": "0"}.get(parts[1], parts[1])
-    return ":".join(parts)
+    return ":".join([parts[0]] + [{"self": str(owner), "main": "0"}.get(p, p) for p in parts[1:]])
 
 
 def _event_matches(pattern: str, ev: str) -> bool:
@@ -254,8 +254,31 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         if md.event == "" and md.mod.needs_scope and not md.mod.hit_tags:
             unknown.add(f"{md.mod.source}: {md.mod.label()} applied to all hits (scope unknown)")
 
-    by_event: list[_Mod] = [md for md in dynamic if md.event]
+    by_event: list[_Mod] = [md for md in dynamic if md.event and not md.event.startswith("while:")]
+    while_mods: list[_Mod] = [md for md in dynamic if md.event.startswith("while:")]
     scoped_const: list[_Mod] = [md for md in dynamic if not md.event]
+    on_field_until = [0.0] * n
+    on_field_time = [0.0] * n
+    roles = [m.role for m in team.members]
+
+    named = {md.mod.name: md for md in by_event if md.mod.name}
+    status_time: dict = defaultdict(float)
+
+    def status_stacks(name: str, t: float) -> int:
+        md = named.get(name)
+        return sum(1 for x in md.stacks if x > t) if md else 0
+
+    def condition(ev: str, t: float) -> int:
+        """Multiplier for a "while:" modifier at time t (0 = inactive)."""
+        parts = ev.split(":")   # while:on_field:<who> | while:status:<name>
+        if parts[1] == "status":
+            return status_stacks(parts[2], t)
+        if parts[1] == "on_field":
+            who = parts[2]
+            idx = [i for i in range(n) if (who == "any" or (who == "support" and roles[i] == "support")
+                                            or who == str(i))]
+            return any(on_field_until[i] > t for i in idx)
+        return False
 
     # ---- timeline
     dt = team.tick
@@ -295,10 +318,15 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                         continue
                 if t - md.last_trigger < trig.icd:
                     continue
+                add = 1
+                if trig.stacks_from:
+                    add = status_stacks(trig.stacks_from, t)
+                    if not add:
+                        continue
                 md.last_trigger = t
                 dur = math.inf if (trig.duration == 0 or trig.duration == math.inf) else trig.duration
                 md.stacks = [x for x in md.stacks if x > t]
-                md.stacks.append(t + dur)
+                md.stacks += [t + dur] * add
                 if len(md.stacks) > trig.max_stacks:
                     md.stacks.sort()
                     md.stacks = md.stacks[-trig.max_stacks:]
@@ -327,6 +355,8 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                     m.cd_ready[name] -= cr["seconds"] * cr["times"]
         if name == "ult":
             m.energy = 0.0
+        if name in m.kit.on_field:
+            on_field_until[m.idx] = max(on_field_until[m.idx], t + m.kit.on_field[name])
         tgt = m.reset_cd.get(name)
         if tgt:
             m.cd_ready[tgt] = t
@@ -352,6 +382,12 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             if md.stacks and receiver in md.receivers and (not md.mod.hit_tags or tags & set(md.mod.hit_tags)):
                 k = sum(1 for x in md.stacks if x > t)
                 if k:
+                    s.add_stat(md.mod.stat, md.mod.value * k, md.mod.is_pct)
+        for md in while_mods:
+            if receiver in md.receivers and (not md.mod.hit_tags or tags & set(md.mod.hit_tags)):
+                c = condition(md.event, t)
+                if c:
+                    k = c if md.mod.trigger.per_stack else md.mod.trigger.max_stacks
                     s.add_stat(md.mod.stat, md.mod.value * k, md.mod.is_pct)
         return s
 
@@ -406,6 +442,11 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         t = step * dt
         for m in members:
             m.energy += m.kit.energy_per_second * dt
+            if on_field_until[m.idx] > t:
+                on_field_time[m.idx] += dt
+        for name in named:
+            if status_stacks(name, t) > 0:
+                status_time[name] += dt
         # supports first, then main
         for m in members[1:] + [main]:
             is_main = m.idx == 0
@@ -447,4 +488,5 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         for a in m.actions:
             casts.setdefault((m.idx, a), 0)
     return SimResult(total=sum(by_member.values()), by_member=dict(by_member), by_slot=dict(by_slot),
-                     casts=casts, first_cast=first_cast, unknown_modifiers=sorted(unknown))
+                     casts=casts, first_cast=first_cast, unknown_modifiers=sorted(unknown),
+                     on_field_time=dict(enumerate(on_field_time)), status_time=dict(status_time))

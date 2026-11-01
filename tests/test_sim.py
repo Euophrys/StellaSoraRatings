@@ -75,3 +75,41 @@ def test_class_target_reaches_versatile_only(gd, team):  # Firefly is class 2 (V
     base = simulate(gd, team, Build(), discs=FILLERS)
     r = simulate(gd, team, Build(), discs=FILLERS, extra=[(0, Modifier(stat=ATK, value=0.5, is_pct=True, target="class:2", source="t"))])
     assert r.by_member[1] > base.by_member[1] and r.by_member[2] == pytest.approx(base.by_member[2])
+
+
+def test_while_support_on_field(gd, team):
+    from ssr.effects import Trigger
+    base = simulate(gd, team, Build(), discs=FILLERS)
+    on = simulate(gd, team, Build(), discs=FILLERS, extra=[(0, Modifier(
+        stat=SKILL_DMG, value=0.5, trigger=Trigger("while:on_field:support", 0.0), source="t"))])
+    always = simulate(gd, team, Build(), discs=FILLERS, extra=[(0, Modifier(stat=SKILL_DMG, value=0.5, source="t"))])
+    assert base.total < on.total < always.total
+    assert on.on_field_time[1] > 0 and on.on_field_time[0] == 0
+
+
+def test_on_field_time_from_kit(gd, team):
+    k = team.members[2].kit
+    assert k.on_field == {"skill": 4.0, "ult": 4.0}
+
+
+def test_norm_event_resolves_self_anywhere():
+    from ssr.sim import _norm_event
+    assert _norm_event("while:on_field:self", 2) == "while:on_field:2"
+    assert _norm_event("cast:self:skill", 1) == "cast:1:skill"
+    assert _norm_event("hit:main:skill_dmg", 1) == "hit:0:skill_dmg"
+
+
+def test_glimmer_status_tracked(gd, team):
+    r = simulate(gd, team, Build())
+    assert r.status_time.get("glimmer", 0) > 10
+
+
+def test_stacks_from_status(gd, team):
+    from ssr.effects import Trigger
+    from ssr.stats import elem_stat, ELEM_TAKEN_BASE
+    base = simulate(gd, team, Build())
+    one = simulate(gd, team, Build(), extra=[(0, Modifier(stat=elem_stat(ELEM_TAKEN_BASE, 5), value=0.02, target="enemy",
+                                                          trigger=Trigger("mark:0", 10.0, max_stacks=20), source="t"))])
+    per = simulate(gd, team, Build(), extra=[(0, Modifier(stat=elem_stat(ELEM_TAKEN_BASE, 5), value=0.02, target="enemy",
+                                                          trigger=Trigger("mark:0", 10.0, max_stacks=20, stacks_from="glimmer"), source="t"))])
+    assert base.total < one.total < per.total

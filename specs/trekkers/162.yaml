@@ -10,10 +10,10 @@ main:
     auto:
       duration: 3.0               # GUESS: one 4-strike string in ~3 s, standing in melee (no sprint attacks)
       hits:
-        - {hit: 162100001, count: 2, offset: 0.0, interval: 0.2, tags: [greatsword]}   # Strike 1 x2 (text)
-        - {hit: 162100002, count: 3, offset: 0.7, interval: 0.15, tags: [greatsword]}  # Strike 2 x3 (text)
-        - {hit: 162100003, count: 2, offset: 1.5, interval: 0.2, tags: [greatsword]}   # Strike 3 x2 (text)
-        - {hit: 162100004, count: 2, offset: 2.3, interval: 0.1, tags: [glow]}         # Strike 4: 2 Glows (text)
+        - {hit: 162100001, count: 2, offset: 0.0, interval: 0.2, tags: [greatsword, auto]}   # Strike 1 x2 (text)
+        - {hit: 162100002, count: 3, offset: 0.7, interval: 0.15, tags: [greatsword, auto]}  # Strike 2 x3 (text)
+        - {hit: 162100003, count: 2, offset: 1.5, interval: 0.2, tags: [greatsword, auto]}   # Strike 3 x2 (text)
+        - {hit: 162100004, count: 2, offset: 2.3, interval: 0.1, tags: [glow, auto]}         # Strike 4: 2 Glows (text)
 
     skill:                         # Storm Flash: Radiance, CD from data
       lock: 5.0                    # user-timed in game: ~5 s before autos resume
@@ -32,6 +32,19 @@ main:
         - {hit: 162400004, count: 7, offset: 1.5, interval: 0.3, tags: [ult_ls], triggers_mark: true, requires: [516206]}
 
   buffs:
+    - effect: 3012                 # Glimmer (Word 4029): Lux DMG Taken per stack, applied by every Lucent (Mark trigger)
+      name: glimmer
+      level: skill
+      event: mark:self
+      duration: {ref: "Buff,LevelUp,3012,Time,10K"}
+      max_stacks: {ref: "BuffValue,NoLevel,3012,LaminatedNum,Fixed"}
+      target: enemy
+    - attribute: 16290001          # auto attacks: each Glimmer stack raises the hit's DMG (EAT 85, treated as DMG)
+      level: auto
+      event: "while:status:glimmer"
+      per_stack: true
+      as_stat: 50
+      hit_tags: [auto]
     - effect: 16290003             # Starender: Crit Rate (value from data at ult level)
       level: ult
       event: cast:self:ult
@@ -66,8 +79,8 @@ main:
 
     516206:   # Resolve: Blitz: flurry switches ult to longsword form (hits gated by `requires` above)
       overrides:
-        - {index: 0, as_stat: 50, hit_tags: [longsword, glow, glow_return, ult_ls, flurry], uptime: 1.0}  # EAT 85 (bonus vs Glimmer targets) treated as DMG; Glimmer always up GUESS
-      note: "Ult assumed always in longsword form once taken (flurry comes every 2 skills). EAT 85 treated as DMG vs Glimmer targets."
+        - {index: 0, as_stat: 50, hit_tags: [longsword, glow, glow_return, ult_ls, flurry], event: "while:status:glimmer"}  # EAT 85 = DMG vs targets with Glimmer
+      note: "Ult assumed always in longsword form once taken (flurry comes every 2 skills). Bonus applies while the target has Glimmer."
 
     516207:   # Lucent Tide: Glows trigger Marks; skill cast -> Skill Crit Rate / Crit DMG buff
       mark_tags: [glow]
@@ -94,7 +107,7 @@ main:
 
     516211:   # Searing Sun: DMG vs Glimmer targets + flat stat
       overrides:
-        - {index: 1, hit_tags: [], uptime: 1.0}   # GUESS: Glimmer always on the target (applied by every Mark trigger)
+        - {index: 1, hit_tags: [], event: "while:status:glimmer"}   # DMG vs targets with Glimmer
 
     516212:   # Astral Brilliance: Lux PEN per Lux Trekker in squad
       overrides:

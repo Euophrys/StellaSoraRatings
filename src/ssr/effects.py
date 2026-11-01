@@ -17,7 +17,8 @@ from .data import GameData
 from .refs import level_row
 from .stats import (BASE_STATS, ELEM_TAKEN_BASE, DMG_TAKEN, DMG_TAKEN2, SLOT_TAKEN, stat_name)
 
-STAT_EFFECT_TYPES = (12, 52)
+STAT_EFFECT_TYPES = (12, 52, 45)   # 45: stat add under a condition (e.g. Good Night)
+CONDITIONAL_STAT = 45
 APPLY_BUFF = 6
 TAKEN_STATS = set(range(ELEM_TAKEN_BASE, ELEM_TAKEN_BASE + 6)) | {DMG_TAKEN, DMG_TAKEN2} | set(SLOT_TAKEN.values())
 
@@ -30,6 +31,8 @@ class Trigger:
     uptime: float | None = None
     icd: float = 0.0
     every: int = 1          # activates on every Nth matching event
+    per_stack: bool = False # "while:status:X": value x X's current stacks
+    stacks_from: str = ""   # each activation adds as many stacks as status X currently has
 
 
 @dataclass(frozen=True)
@@ -43,6 +46,7 @@ class Modifier:
     assumed: bool = False
     needs_scope: bool = False       # attribute only applies to some hits; kit should set hit_tags
     source: str = ""
+    name: str = ""                  # names a status (e.g. "glimmer") other rules can refer to
 
     def label(self) -> str:
         return stat_name(self.stat, self.is_pct)
@@ -88,6 +92,8 @@ def _interpret(gd: GameData, effect_row: dict | None, value_row: dict, source: s
         except (TypeError, ValueError):
             notes.append(f"{source}: effect {value_row['Id']} has non-numeric value")
             return []
+        if et == CONDITIONAL_STAT and trigger is None:
+            trigger = Trigger(event="unknown", duration=0.0)
         m = Modifier(stat=stat, value=v, is_pct=_is_pct(stat, value_row.get("EffectTypeSecondSubtype")),
                      target=_target_for(stat, target1), trigger=trigger,
                      assumed=trigger is not None and trigger.uptime is None and trigger.event == "unknown",
@@ -254,9 +260,9 @@ def _spec_modifiers(entries: list[dict], row: dict, source: str) -> list[Modifie
 def _override_part(mods: list[Modifier], overrides: list[dict], row: dict) -> list[Modifier]:
     """Pin down semantics of data-derived disc effects (event, target, stacks...) from the spec."""
     out = []
-    for m in mods:
+    for i, m in enumerate(mods):
         for o in overrides:
-            if o.get("stat") not in (None, m.stat):
+            if o.get("stat") not in (None, m.stat) or o.get("index") not in (None, i):
                 continue
             if o.get("drop"):
                 m = None
