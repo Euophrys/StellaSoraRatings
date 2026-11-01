@@ -50,6 +50,8 @@ class Hit:
     source_type: int
     pct: tuple[float, ...]
     energy: float = 0.0
+    level_type: int | None = None
+    level_data: int | None = None
 
 
 def hit(gd: GameData, hit_id: int) -> Hit:
@@ -62,7 +64,25 @@ def hit(gd: GameData, hit_id: int) -> Hit:
         source_type=r.get("SourceType", 0),
         pct=tuple(x * 1e-6 for x in r.get("SkillPercentAmend", [0])),
         energy=r.get("EnergyCharge", 0) / 10000,
+        level_type=r.get("levelTypeData"),
+        level_data=r.get("LevelData"),
     )
+
+
+_LEVEL_SLOT = {5: "auto", 2: "skill", 1: "skill", 4: "ult"}
+
+
+def hit_level(h: Hit, skill_levels: dict[str, int], potential_levels: dict[int, int], fallback: str = "skill") -> int:
+    """Index into SkillPercentAmend, per HitDamage.levelTypeData (see docs/assumptions.md)."""
+    if h.level_type == 1:
+        return potential_levels.get(h.level_data, 1)
+    if h.level_type == 3:
+        return skill_levels.get(_LEVEL_SLOT.get(h.level_data, fallback), 10)
+    if h.level_type == 4:
+        return 9
+    if h.level_type is None:
+        return skill_levels.get(fallback, 10)
+    return 1
 
 
 def hit_pct(h: Hit, skill_level: int) -> float:

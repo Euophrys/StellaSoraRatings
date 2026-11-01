@@ -3,11 +3,6 @@ from ssr.team import load_team, FILLER, Build, emblem_lines, TEAMS
 from ssr.stats import HP, CRIT_RATE, elem_stat, ELEM_PEN_BASE
 
 
-@pytest.fixture(scope="module")
-def team(gd):
-    return load_team(gd, TEAMS / "fl_noya_skill.yaml")
-
-
 def test_team_members(gd, team):
     assert [m.char_id for m in team.members] == [162, 115, 107]
     assert team.members[0].role == "main" and team.members[1].role == "support"

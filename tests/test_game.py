@@ -43,3 +43,15 @@ def test_disc_substat_elem_dmg(gd):
     s = disc_base_stats(gd, 214066, copies=1)  # My Guiding Star: LEE 1500
     assert s.get(elem_stat(ELEM_DMG_BASE, 5)) == pytest.approx(0.15)
     assert disc_base_stats(gd, 214005).get(SKILL_DMG) == pytest.approx(0.24)
+
+
+def test_hit_level_source(gd):
+    from ssr.game import hit_level
+    lv = {"auto": 7, "skill": 8, "ult": 9}
+    pots = {516205: 4}
+    assert hit_level(hit(gd, 162100001), lv, pots) == 7        # levelTypeData 3, slot 5 = auto
+    assert hit_level(hit(gd, 162310001), lv, pots) == 8        # slot 2 = skill
+    assert hit_level(hit(gd, 162400001), lv, pots) == 9        # slot 4 = ult
+    assert hit_level(hit(gd, 162310006), lv, pots) == 4        # levelTypeData 1 = Prism Warp's level
+    assert hit_level(hit(gd, 162310006), lv, {}) == 1
+    assert hit_level(hit(gd, 162000001), lv, pots) == 9        # levelTypeData 4 = ascension, max
