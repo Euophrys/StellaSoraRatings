@@ -1,3 +1,7 @@
 # Sparkling Moment — melody is scripted.
 melody:
   - {stat: 21, value: Param1, target: team, note: "Destiny Card bonus not modelled (0 cards)"}
+overrides:
+  - {part: harmony1, stat: 21, drop: true}                                  # vs targets with Lux VUL: no VUL source modelled
+  - {part: harmony2, stat: 56, index: 2, event: "cast:any:ult", duration: inf}   # +1 stack per ult cast (any Lux Trekker), up to 6
+  - {part: harmony2, stat: 57, index: 3, event: "cast:any:ult", duration: inf}

@@ -18,9 +18,27 @@ def test_cast_counts_cooldown_bound(gd, team):  # Noya skill CD 10 s, 120 s figh
     assert 11 <= r.casts[(0, "skill")] <= 12
 
 
-def test_followup_every_second_skill(gd, team):  # Dawnflare pink: flurry after every 2nd skill cast
+def test_followup_every_17_glows(gd, team):  # Dawnflare: flurry per 17 Glows; ~every 2 skills with Lucent Blitz
     r = simulate(gd, team, Build())
-    assert r.casts[(0, "flurry")] == r.casts[(0, "skill")] // 2
+    # sprint-attack Glows (3 per auto string, Dawnflare) make it more often than every 2 skills
+    assert r.casts[(0, "skill")] // 2 <= r.casts[(0, "flurry")] <= r.casts[(0, "skill")]
+
+
+def test_dawnflare_without_blitz_has_fewer_flurries(gd, team):  # Glows only from auto strings
+    from ssr.builds import with_pinks
+    r = simulate(gd, with_pinks(team, 0, [516202, 516203]), Build())
+    assert r.casts[(0, "flurry")] < simulate(gd, team, Build()).casts[(0, "flurry")] // 2
+
+
+def test_proc_every_nth_event(gd, team):  # Sinbreaker: Judgment Starfall per 11 Starfalls
+    from ssr.builds import with_pinks
+    from ssr.kit import HitSpec
+    t = with_pinks(team, 0, [516203, 516204])
+    base = simulate(gd, t, Build())
+    every = simulate(gd, t, Build(), extra=[(0, _rp(procs=[HitSpec(162100007, event="hit:0:starfall", every=1000)]))])
+    always = simulate(gd, t, Build(), extra=[(0, _rp(procs=[HitSpec(162100007, event="hit:0:starfall", every=1)]))])
+    assert every.total == pytest.approx(base.total)
+    assert always.total > base.total
 
 
 def test_opening_order(gd, team):
@@ -89,7 +107,7 @@ def test_while_support_on_field(gd, team):
 
 def test_on_field_time_from_kit(gd, team):
     k = team.members[2].kit
-    assert k.on_field == {"skill": 4.0, "ult": 4.0}
+    assert k.on_field == {"skill": 2.93, "ult": 4.1}   # user-timed
 
 
 def test_norm_event_resolves_self_anywhere():

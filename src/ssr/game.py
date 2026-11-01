@@ -127,3 +127,31 @@ def potential_pools(gd: GameData, char_id: int, role: str) -> dict[str, list[int
         "normal": list(c.get(f"{pre}NormalPotentialIds", [])),
         "common": list(c.get("CommonPotentialIds", [])),
     }
+
+
+def talent_groups(gd: GameData, char_id: int) -> list[dict]:
+    """A Trekker's talent groups in unlock order (each dupe unlocks the next; `PreGroup` chains them)."""
+    groups = {g["Id"]: g for g in gd.table("TalentGroup").values() if g.get("CharId") == char_id}
+    out, prev = [], None
+    while True:
+        nxt = [g for g in groups.values() if g.get("PreGroup") == prev]
+        if not nxt:
+            return out
+        out.append(nxt[0])
+        prev = nxt[0]["Id"]
+
+
+def talent_nodes(gd: GameData, char_id: int, n_groups: int) -> tuple[list[int], list[int]]:
+    """(stat effect ids, key talent ids) of the first `n_groups` talent groups.
+
+    Type 2 nodes are plain stat effects (read from data); Type 1 is the group's key talent, which is
+    scripted and needs a `talents:` entry in the kit spec."""
+    effects, keys = [], []
+    for g in talent_groups(gd, char_id)[:n_groups]:
+        for r in sorted((r for r in gd.table("Talent").values() if r.get("GroupId") == g["Id"]),
+                        key=lambda r: r.get("Index", 0)):
+            if r.get("Type") == 2:
+                effects += list(r.get("EffectId") or [])
+            elif r.get("Type") == 1:
+                keys.append(r["Id"])
+    return effects, keys

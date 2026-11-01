@@ -71,6 +71,7 @@ class MemberConfig:
     skill_levels: dict[str, int]
     emblems: list
     kit: Kit
+    talents: int = 0   # talent groups unlocked (dupes): T0 = 0, T1 = 1, ...
 
 
 @dataclass
@@ -127,6 +128,7 @@ def load_team(gd: GameData, path: Path, specs: Path = SPECS) -> TeamConfig:
             skill_levels={"auto": 10, "skill": 10, "ult": 10, **(m.get("skill_levels") or {})},
             emblems=[_emblem(lines, n) for n in m.get("emblems", [])],
             kit=load_kit(gd, specs / f"{cid}.yaml", role),
+            talents=int(m.get("talents", 0)),
         ))
     e = doc.get("enemy", {})
     return TeamConfig(

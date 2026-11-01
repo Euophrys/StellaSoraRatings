@@ -1,0 +1,119 @@
+# Shia (155) — Lux, Vanguard. Hits scale with ATK (data). Support kit only.
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+#
+# User, frame-timed (2026-11-01, Bunny Torrent + Rabbit Flip; offsets below are seconds after the skill cast at 25,14):
+#   skill: visible 26,01 (+0.53); surf touches the boss at 26,24 (+1.33), 28,19 (+3.17), 31,15 (+6.03), 33,16 (+8.07)
+#          (4 touches = Bunny Torrent's doubled surfs; timings vary with screen edge / boss position).
+#          Ground circles from the last touch at 34,20 (+1.1 after it), electrified ground ends 35,17 (~1 s): Rabbit Flip.
+#          Leaves at 38,09: 12.83 s on the battlefield.
+#   ult:   37,22 -> 45,29: 8.23 s on the battlefield. ~28 laser hits (hard to count), over the 5 s in the text.
+#   Surf: one big hit per pass (23718 at 33,14), not x2 as the text says. The ride bullets/missiles and Rabbit Flip
+#   areas show as many small (767) numbers that can't be told apart.
+#
+# Unlike Tilia/Firefly (who *inflict* Lux Marks), Shia's skill and ult *trigger* Lux Marks (text): she consumes the
+# Mark herself and summons a Thunderbolt (her own Mark DMG), competing with the main for Marks.
+char_id: 155
+
+support:
+  energy_per_second: 2.0          # GUESS passive ult energy regen (same as the other kits)
+  on_field: {skill: 12.83, ult: 8.23}   # user-timed
+  mark: {hit: 155000001}          # Thunderbolt: Lux Mark DMG when Shia triggers a Mark
+
+  actions:
+    skill:                         # Surfing Rondo: 2 surfs (4 with Bunny Torrent); one hit per pass (user, text says x2)
+      hits:
+        - {hit: 155320001, count: 1, offset: 1.33, interval: 0.1, tags: [surf], triggers_mark: true}
+        - {hit: 155320002, count: 6, offset: 1.5, interval: 0.3, tags: [bullets, snow_rabbit], triggers_mark: true}  # Ride 1: bullets every 0.3 s (text); 6 = ride length / 0.3 GUESS
+        - {hit: 155320001, count: 1, offset: 3.17, interval: 0.1, tags: [surf], triggers_mark: true}
+        - {hit: 155320003, count: 4, offset: 3.4, interval: 0.5, tags: [missiles, night_rabbit], triggers_mark: true}  # Ride 2: missiles, count GUESS
+        # Bunny Torrent: surfs x2 -> rides 3 and 4
+        - {hit: 155320001, count: 1, offset: 6.03, interval: 0.1, tags: [surf], triggers_mark: true, requires: [515523]}
+        - {hit: 155320002, count: 6, offset: 6.2, interval: 0.3, tags: [bullets, snow_rabbit], triggers_mark: true, requires: [515523]}
+        - {hit: 155320001, count: 1, offset: 8.07, interval: 0.1, tags: [surf], triggers_mark: true, requires: [515523]}
+        - {hit: 155320003, count: 4, offset: 8.3, interval: 0.5, tags: [missiles, night_rabbit], triggers_mark: true, requires: [515523]}
+    ult:                           # Divine Deluge: laser "multiple times for 5 s" (text)
+      hits:
+        - {hit: 155400001, count: 28, offset: 1.0, interval: 0.18, tags: [ult], triggers_mark: true, excludes: [515543]}  # user counted ~28 in 5 s
+        - {hit: 155400001, count: 40, offset: 1.0, interval: 0.125, tags: [ult], triggers_mark: true, requires: [515543]}  # Wave to Oblivion: interval -30%
+
+  potentials:
+    515521:   # Kindred Bound (pink, not in build): 2 Snow Rabbits follow the main for 8 s after the skill ends
+      add_hits:
+        skill: [{hit: 155322101, count: 52, offset: 12.83, interval: 0.15, tags: [snow_rabbit, rabbit]}]  # GUESS: each rabbit fires every 0.3 s
+      note: "Rabbit fire rate is a guess (2 rabbits x one bullet per 0.3 s)."
+
+    515522:   # Twin Moons (pink, not in build): 2 Night Rabbits fire missiles for 4 s after the skill ends
+      add_hits:
+        skill: [{hit: 155322201, count: 8, offset: 12.83, interval: 0.5, tags: [night_rabbit, rabbit]}]  # GUESS: each rabbit 1 missile/s
+
+    515523:   # Bunny Torrent (pink): surfs x2 (hits above) and +Skill DMG per ride
+      overrides:
+        - {index: 0, hit_tags: [surf, bullets, missiles]}
+      note: "Ride DMG bonus applied to surf hits and the ride's bullets/missiles."
+
+    515524:   # Rabbit Flip (pink): charged area per surf, AoE every 0.3 s for 1 s (text)
+      add_hits:
+        skill:
+          - {hit: 155322401, count: 4, offset: 2.43, interval: 0.3, tags: [charged_area]}   # +1.1 s after each touch (user-timed)
+          - {hit: 155322401, count: 4, offset: 4.27, interval: 0.3, tags: [charged_area]}
+          - {hit: 155322401, count: 4, offset: 7.13, interval: 0.3, tags: [charged_area], requires: [515523]}
+          - {hit: 155322401, count: 4, offset: 9.17, interval: 0.3, tags: [charged_area], requires: [515523]}
+      note: "One charged area per surf (GUESS: the user saw one after the last touch)."
+
+    515525:   # Dance of the Riptide: drones' Lux DMG per drone on the battlefield
+      overrides:
+        - {index: 0, hit_tags: [bullets, missiles, rabbit], stacks: 2}   # GUESS: Snow + Night Rabbit = 2 drones
+      note: "2 drones assumed (Snow Rabbit + Night Rabbit)."
+
+    515526:   # Snowfall's Heartbeat: each Snow Rabbit hit -> Shia's Skill DMG, reset on skill cast
+      overrides:
+        - {index: 0, event: "hit:self:snow_rabbit", duration: inf, max_stacks: {param: Param3}, reset_on: ["cast:self:skill"]}
+        - {index: 1, drop: true}   # duplicate Lv1 row
+
+    515527:   # Eclipse Blast: Shia triggers a Mark -> Night Rabbit Skill DMG for 5 s
+      overrides:
+        - {index: 0, event: "mark:self", duration: {param: Param3}, hit_tags: [night_rabbit]}
+        - {index: 1, drop: true}   # duplicate Lv1 row
+
+    515528:   # Flow Reversal: stun (bosses immune, no damage) + Skill DMG of her rides
+      overrides:
+        - {index: 0, hit_tags: [surf, bullets, missiles]}
+        - {index: 1, drop: true}   # duplicate Lv1 row
+      note: "Ride = surf hits plus that ride's bullets/missiles (GUESS)."
+
+    515529:   # Kick the Wave: surf hits -> surfing Skill DMG taken, stacking
+      overrides:
+        - {index: 0, hit_tags: [surf], event: "hit:self:surf", duration: {ref: "BuffValue,NoLevel,15529011,Time,10K"},
+           max_stacks: {ref: "BuffValue,NoLevel,15529011,LaminatedNum,Fixed"}}
+
+    515530:   # Catch the Wave: ATK% per second while the skill is active, up to 12 stacks
+      overrides:
+        - {index: 0, event: "while:on_field:self", stacks: 6}   # GUESS: ramps 0 -> 12 over the ~12.8 s skill, ~6 on average
+
+    515531:   # Tidal Charge: on kill -> worth 0 against a single boss
+      overrides:
+        - {index: 0, drop: true}
+      note: "Kill-based: 0 vs a single boss."
+
+    515532:   # Counter Current: Shia triggers a Mark -> ATK% stacks
+      overrides:
+        - {index: 0, event: "mark:self"}
+
+    515533:   # Moonfall: Lux Trekkers' Crit DMG (always on)
+      overrides:
+        - {index: 0, event: always, target: team}
+      note: "All squad members are Lux."
+
+    515541:   # Howl to the Moon: ult crits -> ATK% stacks
+      overrides:
+        - {index: 0, event: "hit:self:ult"}
+      note: "Every ult hit counted as a crit (GUESS; overvalues it at low Crit Rate)."
+
+    515542:   # Silent Tide: ult DMG if the other ults are all on cooldown
+      overrides:
+        - {index: 0, hit_tags: [ult], event: unknown, uptime: 0.5}
+      note: "GUESS: other ults all unavailable half the time."
+
+    515543:   # Wave to Oblivion: interval -30% (hits above) + ult Lux DMG
+      overrides:
+        - {index: 0, hit_tags: [ult]}

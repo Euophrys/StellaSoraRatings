@@ -48,7 +48,7 @@ def test_pinks_resolved(gd):
 
 def test_noya_timings(gd):
     k = load_kit(gd, SPECS / "162.yaml", "main")
-    assert k.actions["skill"].lock == 5.0 and k.actions["ult"].lock == 4.0
+    assert k.actions["skill"].lock == 2.1 and k.actions["ult"].lock == 3.23 and k.actions["auto"].duration == 4.7   # user frame-timed
 
 
 def test_resolve_potential_scopes_override(gd):

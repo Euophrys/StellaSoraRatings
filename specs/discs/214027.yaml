@@ -1,0 +1,6 @@
+# Mystic Brushstrokes — all parts come from EffectIds; this pins down their triggers.
+overrides:
+  - {part: melody, index: 1, event: "mark:any", duration: 4}                     # Ignis squad Skill DMG on any Ignis Mark trigger
+  - {part: harmony1, index: 1, drop: true}                                       # vs Burn targets: nobody in the team inflicts Burn (GUESS)
+  - {part: harmony2, index: 0, event: "cast:1:skill|cast:2:skill", target: main}  # any Ignis support casting a Support Skill -> main ATK
+  - {part: harmony2, index: 1, drop: true}                                       # the same ATK for the main's minions

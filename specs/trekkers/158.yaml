@@ -1,0 +1,250 @@
+# Snowish Laru (158) — Ignis. Hits scale with ATK (data).
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+# Summon hits (Colonel Walnut, General Curly) are HitDamage DamageType 7 = Minion DMG.
+char_id: 158
+
+main:
+  actions:
+    skill:
+      hits:
+        - {hit: 158310001, count: 1, tags: [skill]}   # stub: main-role kit not authored
+    ult:
+      hits:
+        - {hit: 158400002, count: 1, tags: [ult]}
+
+support:
+  energy_per_second: 2.0          # GUESS
+  on_field: {skill: 15.3}         # user (YouTube, 23 fps): appears 2:11,10, leaves 2:26,17; CD keeps ticking
+  actions:
+    skill:                         # Courtesy Before Aggression: Gift Box Shells, each impact + explosion; CD 18 s (data)
+      # User (YouTube; build Fire Downpour, Special Ammo, Two-Gun Salute 6, Fairy Tale Rule 6, Uplifting Shot 6, Ammo Rain 2;
+      # levels 21/22/14 Amber/Laru/Flora): shells land at +0.7 s, then every 2 s (6 shells with Two-Gun Salute). Each spawns a
+      # Colonel Walnut; max 4 (the oldest dies when a 5th spawns, the next cast's included). Life ~13.5 s, fitted to the
+      # video: all 4 still out at the next cast, then dying just before replacements (Word 4023 says 10 s); x1.5 with
+      # Heart's Edict. Walnuts attack 1/s (user) and keep attacking after the next cast. A parting attack as she backflips off (~+12.6 s) isn't modelled.
+      # Walnut / Curly schedules are generated (scripts/gen_laru_walnuts.py) for every Two-Gun Salute / Heart's Edict / Promotion Time combination.
+      hits:
+        - {hit: 158320001, count: 1, offset: 0.7, tags: [shell], applies_mark: true}
+        - {hit: 158320002, count: 1, offset: 1, tags: [shell, explosion], applies_mark: true}
+        - {hit: 158320001, count: 1, offset: 2.7, tags: [shell], applies_mark: true}
+        - {hit: 158320002, count: 1, offset: 3, tags: [shell, explosion], applies_mark: true}
+        - {hit: 158320001, count: 1, offset: 4.7, tags: [shell], applies_mark: true}
+        - {hit: 158320002, count: 1, offset: 5, tags: [shell, explosion], applies_mark: true}
+        - {hit: 158320001, count: 1, offset: 6.7, tags: [shell], applies_mark: true}
+        - {hit: 158320002, count: 1, offset: 7, tags: [shell, explosion], applies_mark: true}
+        - {hit: 158320003, count: 13, offset: 1.5, interval: 1, tags: [walnut, minion], excludes: [515825, 515829, 515823]}
+        - {hit: 158320003, count: 13, offset: 3.5, interval: 1, tags: [walnut, minion], excludes: [515825, 515829, 515823]}
+        - {hit: 158320003, count: 13, offset: 5.5, interval: 1, tags: [walnut, minion], excludes: [515825, 515829, 515823]}
+        - {hit: 158320003, count: 13, offset: 7.5, interval: 1, tags: [walnut, minion], excludes: [515825, 515829, 515823]}
+        - {hit: 158320003, count: 6, offset: 1.5, interval: 1, tags: [walnut, minion], requires: [515823], excludes: [515825, 515829]}
+        - {hit: 158320003, count: 4, offset: 3.5, interval: 1, tags: [walnut, minion], requires: [515823], excludes: [515825, 515829]}
+        - {hit: 158320003, count: 2, offset: 5.5, interval: 1, tags: [walnut, minion], requires: [515823], excludes: [515825, 515829]}
+        - {hit: 158523001, count: 14, offset: 7.2, interval: 1, tags: [curly, minion], requires: [515823], excludes: [515825, 515829]}
+        - {hit: 158320003, count: 18, offset: 1.5, interval: 1, tags: [walnut, minion], requires: [515829], excludes: [515825, 515823]}
+        - {hit: 158320003, count: 18, offset: 3.5, interval: 1, tags: [walnut, minion], requires: [515829], excludes: [515825, 515823]}
+        - {hit: 158320003, count: 18, offset: 5.5, interval: 1, tags: [walnut, minion], requires: [515829], excludes: [515825, 515823]}
+        - {hit: 158320003, count: 18, offset: 7.5, interval: 1, tags: [walnut, minion], requires: [515829], excludes: [515825, 515823]}
+        - {hit: 158320003, count: 6, offset: 1.5, interval: 1, tags: [walnut, minion], requires_all: [515829, 515823], excludes: [515825]}
+        - {hit: 158320003, count: 4, offset: 3.5, interval: 1, tags: [walnut, minion], requires_all: [515829, 515823], excludes: [515825]}
+        - {hit: 158320003, count: 2, offset: 5.5, interval: 1, tags: [walnut, minion], requires_all: [515829, 515823], excludes: [515825]}
+        - {hit: 158523001, count: 21, offset: 7.2, interval: 1, tags: [curly, minion], requires_all: [515829, 515823], excludes: [515825]}
+        - {hit: 158320003, count: 8, offset: 1.5, interval: 1, tags: [walnut, minion], requires: [515825], excludes: [515829, 515823]}
+        - {hit: 158320003, count: 8, offset: 3.5, interval: 1, tags: [walnut, minion], requires: [515825], excludes: [515829, 515823]}
+        - {hit: 158320003, count: 13, offset: 5.5, interval: 1, tags: [walnut, minion], requires: [515825], excludes: [515829, 515823]}
+        - {hit: 158320003, count: 13, offset: 7.5, interval: 1, tags: [walnut, minion], requires: [515825], excludes: [515829, 515823]}
+        - {hit: 158320003, count: 13, offset: 9.5, interval: 1, tags: [walnut, minion], requires: [515825], excludes: [515829, 515823]}
+        - {hit: 158320003, count: 13, offset: 11.5, interval: 1, tags: [walnut, minion], requires: [515825], excludes: [515829, 515823]}
+        - {hit: 158320003, count: 6, offset: 1.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515823], excludes: [515829]}
+        - {hit: 158320003, count: 4, offset: 3.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515823], excludes: [515829]}
+        - {hit: 158320003, count: 2, offset: 5.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515823], excludes: [515829]}
+        - {hit: 158523001, count: 14, offset: 7.2, interval: 1, tags: [curly, minion], requires_all: [515825, 515823], excludes: [515829]}
+        - {hit: 158320003, count: 13, offset: 9.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515823], excludes: [515829]}
+        - {hit: 158320003, count: 13, offset: 11.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515823], excludes: [515829]}
+        - {hit: 158320003, count: 8, offset: 1.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829], excludes: [515823]}
+        - {hit: 158320003, count: 8, offset: 3.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829], excludes: [515823]}
+        - {hit: 158320003, count: 14, offset: 5.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829], excludes: [515823]}
+        - {hit: 158320003, count: 14, offset: 7.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829], excludes: [515823]}
+        - {hit: 158320003, count: 14, offset: 9.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829], excludes: [515823]}
+        - {hit: 158320003, count: 14, offset: 11.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829], excludes: [515823]}
+        - {hit: 158320003, count: 6, offset: 1.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
+        - {hit: 158320003, count: 4, offset: 3.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
+        - {hit: 158320003, count: 2, offset: 5.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
+        - {hit: 158523001, count: 21, offset: 7.2, interval: 1, tags: [curly, minion], requires_all: [515825, 515829, 515823]}
+        - {hit: 158320003, count: 20, offset: 9.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
+        - {hit: 158320003, count: 20, offset: 11.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
+    # No ult: the reference video never uses Sweet Dream Waltz (user).
+
+  potentials:
+    515821:   # Fire Downpour (pink): each explosion leaves a field, every 0.3 s for 2 s
+      add_hits:
+        skill:
+          - {hit: 158521001, count: 6, offset: 1.3, interval: 0.3, tags: [downpour]}
+          - {hit: 158521001, count: 6, offset: 3.3, interval: 0.3, tags: [downpour]}
+          - {hit: 158521001, count: 6, offset: 5.3, interval: 0.3, tags: [downpour]}
+          - {hit: 158521001, count: 6, offset: 7.3, interval: 0.3, tags: [downpour]}
+          - {hit: 158521001, count: 6, offset: 9.3, interval: 0.3, tags: [downpour], requires: [515825]}
+          - {hit: 158521001, count: 6, offset: 11.3, interval: 0.3, tags: [downpour], requires: [515825]}
+
+    515822:   # Special Ammo (pink): shell Skill DMG; all-Ignis squad -> Skill DMG Taken stacks per shell hit
+      overrides:
+        - {index: 0, event: "hit:self:shell"}
+        - {index: 1, hit_tags: [shell]}
+      note: "Range increase ignored (single target)."
+
+    515823:   # Promotion Time (pink): 4 Walnuts merge into General Curly; all-Ignis -> Curly Minion DMG every second
+      # Curly hits are in the skill's generated schedule: merge when the 4th Walnut spawns (+7.0 s), Curly attacks 1/s (GUESS)
+      overrides:
+        - {index: 0, event: "hit:self:curly", hit_tags: [curly], duration: 10.0}
+      note: "Merge when the 4th Walnut spawns; stacks counted per Curly attack."
+
+    515824:   # Investiture Ceremony (pink): Walnut/Curly skills on a 4 s cooldown; Curly skill -> Minion Crit Rate
+      add_hits:
+        skill:
+          - {hit: 158524001, count: 3, offset: 5, interval: 4, tags: [walnut_skill, minion], excludes: [515825, 515829, 515823]}
+          - {hit: 158524001, count: 3, offset: 7, interval: 4, tags: [walnut_skill, minion], excludes: [515825, 515829, 515823]}
+          - {hit: 158524001, count: 3, offset: 9, interval: 4, tags: [walnut_skill, minion], excludes: [515825, 515829, 515823]}
+          - {hit: 158524001, count: 3, offset: 11, interval: 4, tags: [walnut_skill, minion], excludes: [515825, 515829, 515823]}
+          - {hit: 158524001, count: 1, offset: 5, interval: 4, tags: [walnut_skill, minion], requires: [515823], excludes: [515825, 515829]}
+          - {hit: 158524002, count: 6, offset: 11, interval: 0.15, tags: [curly, curly_skill, minion], requires: [515823], excludes: [515825, 515829]}
+          - {hit: 158524002, count: 6, offset: 15, interval: 0.15, tags: [curly, curly_skill, minion], requires: [515823], excludes: [515825, 515829]}
+          - {hit: 158524002, count: 6, offset: 19, interval: 0.15, tags: [curly, curly_skill, minion], requires: [515823], excludes: [515825, 515829]}
+          - {hit: 158524001, count: 4, offset: 5, interval: 4, tags: [walnut_skill, minion], requires: [515829], excludes: [515825, 515823]}
+          - {hit: 158524001, count: 4, offset: 7, interval: 4, tags: [walnut_skill, minion], requires: [515829], excludes: [515825, 515823]}
+          - {hit: 158524001, count: 4, offset: 9, interval: 4, tags: [walnut_skill, minion], requires: [515829], excludes: [515825, 515823]}
+          - {hit: 158524001, count: 4, offset: 11, interval: 4, tags: [walnut_skill, minion], requires: [515829], excludes: [515825, 515823]}
+          - {hit: 158524001, count: 1, offset: 5, interval: 4, tags: [walnut_skill, minion], requires_all: [515829, 515823], excludes: [515825]}
+          - {hit: 158524002, count: 6, offset: 11, interval: 0.15, tags: [curly, curly_skill, minion], requires_all: [515829, 515823], excludes: [515825]}
+          - {hit: 158524002, count: 6, offset: 15, interval: 0.15, tags: [curly, curly_skill, minion], requires_all: [515829, 515823], excludes: [515825]}
+          - {hit: 158524002, count: 6, offset: 19, interval: 0.15, tags: [curly, curly_skill, minion], requires_all: [515829, 515823], excludes: [515825]}
+          - {hit: 158524002, count: 6, offset: 23, interval: 0.15, tags: [curly, curly_skill, minion], requires_all: [515829, 515823], excludes: [515825]}
+          - {hit: 158524002, count: 6, offset: 27, interval: 0.15, tags: [curly, curly_skill, minion], requires_all: [515829, 515823], excludes: [515825]}
+          - {hit: 158524001, count: 1, offset: 5, interval: 4, tags: [walnut_skill, minion], requires: [515825], excludes: [515829, 515823]}
+          - {hit: 158524001, count: 1, offset: 7, interval: 4, tags: [walnut_skill, minion], requires: [515825], excludes: [515829, 515823]}
+          - {hit: 158524001, count: 3, offset: 9, interval: 4, tags: [walnut_skill, minion], requires: [515825], excludes: [515829, 515823]}
+          - {hit: 158524001, count: 3, offset: 11, interval: 4, tags: [walnut_skill, minion], requires: [515825], excludes: [515829, 515823]}
+          - {hit: 158524001, count: 3, offset: 13, interval: 4, tags: [walnut_skill, minion], requires: [515825], excludes: [515829, 515823]}
+          - {hit: 158524001, count: 3, offset: 15, interval: 4, tags: [walnut_skill, minion], requires: [515825], excludes: [515829, 515823]}
+          - {hit: 158524001, count: 1, offset: 5, interval: 4, tags: [walnut_skill, minion], requires_all: [515825, 515823], excludes: [515829]}
+          - {hit: 158524002, count: 6, offset: 11, interval: 0.15, tags: [curly, curly_skill, minion], requires_all: [515825, 515823], excludes: [515829]}
+          - {hit: 158524002, count: 6, offset: 15, interval: 0.15, tags: [curly, curly_skill, minion], requires_all: [515825, 515823], excludes: [515829]}
+          - {hit: 158524002, count: 6, offset: 19, interval: 0.15, tags: [curly, curly_skill, minion], requires_all: [515825, 515823], excludes: [515829]}
+          - {hit: 158524001, count: 3, offset: 13, interval: 4, tags: [walnut_skill, minion], requires_all: [515825, 515823], excludes: [515829]}
+          - {hit: 158524001, count: 3, offset: 15, interval: 4, tags: [walnut_skill, minion], requires_all: [515825, 515823], excludes: [515829]}
+          - {hit: 158524001, count: 1, offset: 5, interval: 4, tags: [walnut_skill, minion], requires_all: [515825, 515829], excludes: [515823]}
+          - {hit: 158524001, count: 1, offset: 7, interval: 4, tags: [walnut_skill, minion], requires_all: [515825, 515829], excludes: [515823]}
+          - {hit: 158524001, count: 3, offset: 9, interval: 4, tags: [walnut_skill, minion], requires_all: [515825, 515829], excludes: [515823]}
+          - {hit: 158524001, count: 3, offset: 11, interval: 4, tags: [walnut_skill, minion], requires_all: [515825, 515829], excludes: [515823]}
+          - {hit: 158524001, count: 3, offset: 13, interval: 4, tags: [walnut_skill, minion], requires_all: [515825, 515829], excludes: [515823]}
+          - {hit: 158524001, count: 3, offset: 15, interval: 4, tags: [walnut_skill, minion], requires_all: [515825, 515829], excludes: [515823]}
+          - {hit: 158524001, count: 1, offset: 5, interval: 4, tags: [walnut_skill, minion], requires_all: [515825, 515829, 515823]}
+          - {hit: 158524002, count: 6, offset: 11, interval: 0.15, tags: [curly, curly_skill, minion], requires_all: [515825, 515829, 515823]}
+          - {hit: 158524002, count: 6, offset: 15, interval: 0.15, tags: [curly, curly_skill, minion], requires_all: [515825, 515829, 515823]}
+          - {hit: 158524002, count: 6, offset: 19, interval: 0.15, tags: [curly, curly_skill, minion], requires_all: [515825, 515829, 515823]}
+          - {hit: 158524002, count: 6, offset: 23, interval: 0.15, tags: [curly, curly_skill, minion], requires_all: [515825, 515829, 515823]}
+          - {hit: 158524002, count: 6, offset: 27, interval: 0.15, tags: [curly, curly_skill, minion], requires_all: [515825, 515829, 515823]}
+          - {hit: 158524001, count: 5, offset: 13, interval: 4, tags: [walnut_skill, minion], requires_all: [515825, 515829, 515823]}
+          - {hit: 158524001, count: 5, offset: 15, interval: 4, tags: [walnut_skill, minion], requires_all: [515825, 515829, 515823]}
+      overrides:
+        - {index: 0, event: "hit:self:curly_skill", hit_tags: [curly]}
+
+    515825:   # Two-Gun Salute: Skill DMG for the support skill; 2 more shells (their Walnuts are in the skill's schedule)
+      add_hits:
+        skill:
+          - {hit: 158320001, count: 1, offset: 8.7, tags: [shell], applies_mark: true}
+          - {hit: 158320002, count: 1, offset: 9.0, tags: [shell, explosion], applies_mark: true}
+          - {hit: 158320001, count: 1, offset: 10.7, tags: [shell], applies_mark: true}
+          - {hit: 158320002, count: 1, offset: 11.0, tags: [shell, explosion], applies_mark: true}
+      overrides:
+        - {index: 0, drop: true}            # Lv1 row (only names the stat), duplicate
+        - {index: 1, hit_tags: [shell, downpour]}
+
+    515826:   # Uplifting Shot: shell DMG -> Laru ATK (+ Minion DMG), stacking
+      overrides:
+        - {index: 0, event: "hit:self:shell"}
+        - {index: 1, event: "hit:self:shell", hit_tags: [minion]}
+
+    515827:   # First Taste of Sweetness: shells deal more vs Ignis-Marked targets
+      overrides:
+        - {index: 0, hit_tags: [shell]}
+        - {index: 1, drop: true}            # Lv1 row, duplicate
+      note: "Target assumed to have an Ignis Mark (the shells apply it)."
+
+    515828:   # Heart's Benediction: Walnut aura 1/s, Curly aura every 0.5 s, while each is out
+      add_hits:
+        skill:
+          - {hit: 158528001, count: 14, offset: 2, interval: 1, tags: [walnut, minion], excludes: [515825, 515829, 515823]}
+          - {hit: 158528001, count: 14, offset: 4, interval: 1, tags: [walnut, minion], excludes: [515825, 515829, 515823]}
+          - {hit: 158528001, count: 14, offset: 6, interval: 1, tags: [walnut, minion], excludes: [515825, 515829, 515823]}
+          - {hit: 158528001, count: 14, offset: 8, interval: 1, tags: [walnut, minion], excludes: [515825, 515829, 515823]}
+          - {hit: 158528001, count: 6, offset: 2, interval: 1, tags: [walnut, minion], requires: [515823], excludes: [515825, 515829]}
+          - {hit: 158528001, count: 4, offset: 4, interval: 1, tags: [walnut, minion], requires: [515823], excludes: [515825, 515829]}
+          - {hit: 158528001, count: 2, offset: 6, interval: 1, tags: [walnut, minion], requires: [515823], excludes: [515825, 515829]}
+          - {hit: 158528002, count: 27, offset: 7.5, interval: 0.5, tags: [curly, minion], requires: [515823], excludes: [515825, 515829]}
+          - {hit: 158528001, count: 18, offset: 2, interval: 1, tags: [walnut, minion], requires: [515829], excludes: [515825, 515823]}
+          - {hit: 158528001, count: 18, offset: 4, interval: 1, tags: [walnut, minion], requires: [515829], excludes: [515825, 515823]}
+          - {hit: 158528001, count: 18, offset: 6, interval: 1, tags: [walnut, minion], requires: [515829], excludes: [515825, 515823]}
+          - {hit: 158528001, count: 18, offset: 8, interval: 1, tags: [walnut, minion], requires: [515829], excludes: [515825, 515823]}
+          - {hit: 158528001, count: 6, offset: 2, interval: 1, tags: [walnut, minion], requires_all: [515829, 515823], excludes: [515825]}
+          - {hit: 158528001, count: 4, offset: 4, interval: 1, tags: [walnut, minion], requires_all: [515829, 515823], excludes: [515825]}
+          - {hit: 158528001, count: 2, offset: 6, interval: 1, tags: [walnut, minion], requires_all: [515829, 515823], excludes: [515825]}
+          - {hit: 158528002, count: 41, offset: 7.5, interval: 0.5, tags: [curly, minion], requires_all: [515829, 515823], excludes: [515825]}
+          - {hit: 158528001, count: 8, offset: 2, interval: 1, tags: [walnut, minion], requires: [515825], excludes: [515829, 515823]}
+          - {hit: 158528001, count: 8, offset: 4, interval: 1, tags: [walnut, minion], requires: [515825], excludes: [515829, 515823]}
+          - {hit: 158528001, count: 14, offset: 6, interval: 1, tags: [walnut, minion], requires: [515825], excludes: [515829, 515823]}
+          - {hit: 158528001, count: 14, offset: 8, interval: 1, tags: [walnut, minion], requires: [515825], excludes: [515829, 515823]}
+          - {hit: 158528001, count: 14, offset: 10, interval: 1, tags: [walnut, minion], requires: [515825], excludes: [515829, 515823]}
+          - {hit: 158528001, count: 14, offset: 12, interval: 1, tags: [walnut, minion], requires: [515825], excludes: [515829, 515823]}
+          - {hit: 158528001, count: 6, offset: 2, interval: 1, tags: [walnut, minion], requires_all: [515825, 515823], excludes: [515829]}
+          - {hit: 158528001, count: 4, offset: 4, interval: 1, tags: [walnut, minion], requires_all: [515825, 515823], excludes: [515829]}
+          - {hit: 158528001, count: 2, offset: 6, interval: 1, tags: [walnut, minion], requires_all: [515825, 515823], excludes: [515829]}
+          - {hit: 158528002, count: 27, offset: 7.5, interval: 0.5, tags: [curly, minion], requires_all: [515825, 515823], excludes: [515829]}
+          - {hit: 158528001, count: 14, offset: 10, interval: 1, tags: [walnut, minion], requires_all: [515825, 515823], excludes: [515829]}
+          - {hit: 158528001, count: 14, offset: 12, interval: 1, tags: [walnut, minion], requires_all: [515825, 515823], excludes: [515829]}
+          - {hit: 158528001, count: 8, offset: 2, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829], excludes: [515823]}
+          - {hit: 158528001, count: 8, offset: 4, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829], excludes: [515823]}
+          - {hit: 158528001, count: 14, offset: 6, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829], excludes: [515823]}
+          - {hit: 158528001, count: 14, offset: 8, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829], excludes: [515823]}
+          - {hit: 158528001, count: 14, offset: 10, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829], excludes: [515823]}
+          - {hit: 158528001, count: 14, offset: 12, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829], excludes: [515823]}
+          - {hit: 158528001, count: 6, offset: 2, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
+          - {hit: 158528001, count: 4, offset: 4, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
+          - {hit: 158528001, count: 2, offset: 6, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
+          - {hit: 158528002, count: 41, offset: 7.5, interval: 0.5, tags: [curly, minion], requires_all: [515825, 515829, 515823]}
+          - {hit: 158528001, count: 21, offset: 10, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
+          - {hit: 158528001, count: 21, offset: 12, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
+
+    515829:   # Heart's Edict: summons last 50% longer (15 s; in the skill's schedule); their Crit DMG
+      overrides:
+        - {index: 0, event: always, hit_tags: [minion], minions: true}   # "their Crit DMG" = Walnut's / Curly's
+
+    515830:   # Heart's Trumpet: summon ATK SPD; summon hits stack Minion DMG; summon crits -> Ignis squad ATK
+      overrides:
+        - {index: 0, drop: true}            # ATK SPD: not modelled
+        - {index: 1, event: "hit:self:minion", hit_tags: [minion]}
+        - {index: 2, event: "hit:self:minion", target: team}
+      note: "Summon ATK SPD not modelled; squad ATK stacks assume summon crits are frequent."
+
+    515831:   # Celebration Resumed: Laru enters combat -> main Ignis Trekker's ATK
+      overrides:
+        - {index: 0, event: "cast:self:skill", target: main}
+
+    515832:   # Ammo Rain: Dame Laru (ult) only
+      overrides:
+        - {index: 0, drop: true}
+      note: "Ult form only; the ult isn't used."
+
+    515841:   # Silver Bullet: Dame Laru (ult) only
+      overrides: [{index: 0, drop: true}]
+      note: "Ult form only; the ult isn't used."
+
+    515842:   # Untouched King: Dame Laru (ult) only
+      overrides: [{index: 0, drop: true}]
+      note: "Ult form only; the ult isn't used."
+
+    515843:   # Toy Army: Dame Laru (ult) only
+      overrides: [{index: 0, drop: true}]
+      note: "Ult form only; the ult isn't used."
+
+    515833:   # Fairy Tale Rule: all-Ignis squad -> shells raise Ignis DMG Taken
+      overrides:
+        - {index: 0, event: "hit:self:shell"}

@@ -1,0 +1,7 @@
+# The Cat's Treasure — melody and harmony 2 are scripted. Harmony 1 comes from EffectIds.
+# Stats: 57 Skill DMG, 61 Skill DMG Taken, 18 Ignis DMG.
+melody:
+  - {stat: 57, value: Param1, target: main, event: "cast:main:skill|cast:main:recast", duration: 9}
+  - {stat: 61, value: Param2, target: enemy, event: "cast:main:skill|cast:main:recast", duration: 9, max_stacks: 3, note: "Dark Evil Eye 1/2/3 stacks = 1x/2x/3x; Ignis Skill DMG Taken as Skill DMG Taken (all-Ignis team)"}
+harmony2:
+  - {stat: 18, value: Param1, target: main, uptime: 0.6, note: "at 3 Dark Evil Eye stacks; uptime GUESS"}

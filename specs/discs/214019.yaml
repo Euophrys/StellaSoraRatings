@@ -1,0 +1,9 @@
+# One Shot, One Down — melody and harmony 2 are scripted. Harmony 1 comes from EffectIds.
+# Stats: 18 Ignis DMG, 1 ATK.
+melody:
+  - {stat: 18, value: Param1, target: team, note: "Destiny Card bonus not modelled (0 cards)"}
+harmony2:
+  - {stat: 1, pct: true, value: Param1, target: team, note: "base"}
+  - {stat: 1, pct: true, value: Param3, times: 6.33, target: team, note: "ramp: +1 stack per 8 s, max 10; 6.33 = average over a 120 s fight"}
+overrides:
+  - {part: harmony1, stat: 18, drop: true}   # vs targets with Ignis VUL: no VUL source in the team

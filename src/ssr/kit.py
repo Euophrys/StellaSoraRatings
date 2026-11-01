@@ -29,15 +29,21 @@ class HitSpec:
     applies_mark: bool = False
     requires: tuple[int, ...] = ()
     excludes: tuple[int, ...] = ()
+    requires_all: tuple[int, ...] = ()   # lands only if all of these potentials are in the build
     # procs only
     event: str = ""
     icd: float = 0.0
+    every: object = 1      # fire on every Nth matching event (number or {ref: ...})
+    when: str = ""         # only fires while this condition holds, e.g. "while:status:butterfly"
 
 
 @dataclass
 class Followup:
-    after: str
-    every: int
+    after: str = ""        # cast after every Nth cast of this action, once its lock ends
+    every: object = 1      # N: a number, or {ref: ...} resolved per potential level
+    event: str = ""        # or: cast after every Nth matching event (e.g. "hit:self:glow")
+    delay: float = 0.0     # seconds after `after`'s lock ends before it's cast (input / animation gap)
+    autos: bool = False    # the main auto attacks during the delay
 
 
 @dataclass
@@ -48,6 +54,7 @@ class ActionSpec:
     duration: float = 0.0
     skill_id: int | None = None
     followup: Followup | None = None
+    starts_cd: str = ""    # casting this (re)starts that action's cooldown from the end of this one's lock
 
 
 @dataclass
@@ -84,6 +91,18 @@ class BuffSpec:
     hit_tags: tuple = ()
     per_stack: bool = False
     name: str = ""
+    add: object = 1            # stacks added per event
+    requires: tuple = ()       # only with any of these potentials
+    excludes: tuple = ()       # not with any of these potentials
+    minions: bool = False      # also reaches the owner's minions
+
+
+@dataclass
+class TalentSpec:
+    """A key talent (Talent Type 1, unlocked by a dupe): its behaviour isn't in data."""
+    buffs: list[BuffSpec] = field(default_factory=list)
+    buff_events: dict[str, str] = field(default_factory=dict)   # named base buff -> extra event alternative
+    note: str = ""
 
 
 @dataclass
@@ -98,6 +117,7 @@ class Kit:
     buffs: list[BuffSpec] = field(default_factory=list)
     reset_cd: dict[str, str] = field(default_factory=dict)
     on_field: dict[str, float] = field(default_factory=dict)   # support: seconds on the battlefield per cast
+    talents: dict[int, TalentSpec] = field(default_factory=dict)
 
 
 @dataclass
@@ -122,7 +142,8 @@ def _hitspec(d: dict) -> HitSpec:
         interval=float(d.get("interval", 0.1)), tags=tuple(d.get("tags", ())),
         triggers_mark=bool(d.get("triggers_mark", False)), applies_mark=bool(d.get("applies_mark", False)),
         requires=tuple(int(x) for x in d.get("requires", ())), excludes=tuple(int(x) for x in d.get("excludes", ())),
-        event=str(d.get("event", "")), icd=d.get("icd", 0.0),
+        requires_all=tuple(int(x) for x in d.get("requires_all", ())),
+        event=str(d.get("event", "")), icd=d.get("icd", 0.0), every=d.get("every", 1), when=str(d.get("when", "")),
     )
 
 
@@ -132,7 +153,8 @@ def _action(name: str, d: dict, skill_id: int | None) -> ActionSpec:
         name=name, hits=[_hitspec(h) for h in d.get("hits", [])],
         lock=float(d.get("lock", DEFAULT_LOCKS.get(name, 0.0))), duration=float(d.get("duration", 0.0)),
         skill_id=d.get("skill_id", skill_id),
-        followup=Followup(fu["after"], int(fu["every"])) if fu else None,
+        followup=Followup(fu.get("after", ""), fu.get("every", 1), fu.get("event", ""), float(fu.get("delay", 0.0)), bool(fu.get("autos", False))) if fu else None,
+        starts_cd=str(d.get("starts_cd", "")),
     )
 
 
@@ -154,6 +176,17 @@ def _potential(d: dict) -> PotentialSpec:
     )
 
 
+def _buff(b: dict) -> BuffSpec:
+    return BuffSpec(effect=int(b["effect"]) if "effect" in b else None, level=b.get("level", "skill"), event=b["event"],
+                    duration=b.get("duration", "inf"), target=b.get("target", "self"),
+                    max_stacks=b.get("max_stacks", 1), attribute=b.get("attribute"), as_stat=b.get("as_stat"),
+                    hit_tags=tuple(b.get("hit_tags", ())), per_stack=bool(b.get("per_stack", False)),
+                    name=b.get("name", ""), add=b.get("add", 1),
+                    requires=tuple(int(x) for x in b.get("requires", ())),
+                    excludes=tuple(int(x) for x in b.get("excludes", ())),
+                    minions=bool(b.get("minions", False)))
+
+
 def load_kit(gd: GameData, path: Path, role: str) -> Kit:
     with open(path, encoding="utf-8") as f:
         doc = yaml.safe_load(f)
@@ -165,12 +198,10 @@ def load_kit(gd: GameData, path: Path, role: str) -> Kit:
         if role == "support" and name == "auto":
             continue
         actions[name] = _action(name, a, ids.get(name))
-    buffs = [BuffSpec(effect=int(b["effect"]) if "effect" in b else None, level=b["level"], event=b["event"],
-                      duration=b.get("duration", "inf"), target=b.get("target", "self"),
-                      max_stacks=b.get("max_stacks", 1), attribute=b.get("attribute"), as_stat=b.get("as_stat"),
-                      hit_tags=tuple(b.get("hit_tags", ())), per_stack=bool(b.get("per_stack", False)),
-                      name=b.get("name", ""))
-             for b in sec.get("buffs", [])]
+    buffs = [_buff(b) for b in sec.get("buffs", [])]
+    talents = {int(k): TalentSpec(buffs=[_buff(b) for b in (v or {}).get("buffs", [])],
+                                  buff_events=dict((v or {}).get("buff_events") or {}), note=(v or {}).get("note", ""))
+               for k, v in (sec.get("talents") or {}).items()}
     mark = sec.get("mark")
     return Kit(
         char_id=char_id, role=role, actions=actions,
@@ -181,6 +212,7 @@ def load_kit(gd: GameData, path: Path, role: str) -> Kit:
         buffs=buffs,
         reset_cd=dict((sec.get("base_rules") or {}).get("reset_cd", {})),
         on_field={k: float(v) for k, v in (sec.get("on_field") or DEFAULT_ON_FIELD).items()} if role == "support" else {},
+        talents=talents,
     )
 
 
@@ -221,24 +253,28 @@ def _apply_override(gd, m: Modifier, s: dict, level: int, pot: dict) -> Modifier
         kw["target"] = s["target"]
     if "as_stat" in s:
         kw["stat"] = int(s["as_stat"])
+    if "minions" in s:
+        kw["minions"] = bool(s["minions"])
     if "stacks" in s:  # constant stack count folded into the value
         n = (m.trigger.max_stacks if (s["stacks"] == "max" and m.trigger) else value(gd, s["stacks"], level, pot))
         kw["value"] = m.value * n
     if "value" in s:
         kw["value"] = value(gd, s["value"], level, pot)
-    trig_keys = {"event", "duration", "max_stacks", "uptime", "icd", "per_stack", "stacks_from"}
+    trig_keys = {"event", "duration", "max_stacks", "uptime", "icd", "per_stack", "stacks_from", "reset_on"}
     if trig_keys & set(s):
         base = m.trigger or Trigger(event="unknown", duration=math.inf)
         dur = s.get("duration", base.duration)
         tkw = dict(
             event=s.get("event", base.event),
             duration=math.inf if dur in ("inf", None) else value(gd, dur, level, pot),
-            max_stacks=int(s.get("max_stacks", base.max_stacks)),
+            max_stacks=int(value(gd, s.get("max_stacks", base.max_stacks), level, pot)),
             uptime=s.get("uptime", base.uptime),
-            icd=float(s.get("icd", base.icd)),
+            icd=value(gd, s.get("icd", base.icd), level, pot),
             every=base.every,
             per_stack=bool(s.get("per_stack", base.per_stack)),
             stacks_from=s.get("stacks_from", base.stacks_from),
+            add=base.add,
+            reset_on=tuple(s.get("reset_on", base.reset_on)),
         )
         trig = Trigger(**tkw)
         if trig.event == "always":
@@ -256,41 +292,66 @@ def resolve_potential(gd: GameData, kit: Kit, potential_id: int, level: int) -> 
     spec = kit.potentials.get(potential_id, PotentialSpec())
     pot = gd.table("Potential")[str(potential_id)]
     out: list[Modifier] = []
+    from .effects import with_minion_scope
+    mods = with_minion_scope(mods, gd.text(f"Potential.{potential_id}.2") or "")
     for i, m in enumerate(mods):
+        cur = [m]
         for o in spec.overrides:
             if (o.index is not None and o.index == i) or (o.index is None and o.stat == m.stat):
-                m = _apply_override(gd, m, o.set, level, pot)
-                if m is None:
-                    break
-        if m is not None:
-            out.append(m)
+                base = {k: v for k, v in o.set.items() if k != "copies"}
+                sets = [{**base, **c} for c in o.set["copies"]] if "copies" in o.set else [base]
+                cur = [x for x in (_apply_override(gd, c, st, level, pot) for c in cur for st in sets) if x is not None]
+        out += cur
     cd_reduce = None
     if spec.cd_reduce:
         cd_reduce = {"action": spec.cd_reduce.get("action", "skill"),
                      "seconds": value(gd, spec.cd_reduce["seconds"], level, pot),
                      "times": value(gd, spec.cd_reduce.get("times", 1), level, pot)}
-    procs = [HitSpec(**{**p.__dict__, "icd": value(gd, p.icd, level, pot)}) for p in spec.procs]
+    procs = [HitSpec(**{**p.__dict__, "icd": value(gd, p.icd, level, pot),
+                        "every": max(1, int(round(value(gd, p.every, level, pot))))}) for p in spec.procs]
+    add_actions = {n: replace(a, followup=replace(a.followup, every=max(1, int(round(value(gd, a.followup.every, level, pot))))))
+                   if a.followup else a for n, a in spec.add_actions.items()}
     if spec.note:
         notes = notes + [spec.note]
     return ResolvedPotential(
         potential_id=potential_id, level=level, modifiers=out, notes=notes,
-        add_hits=spec.add_hits, replace_hits=spec.replace_hits, add_actions=spec.add_actions,
+        add_hits=spec.add_hits, replace_hits=spec.replace_hits, add_actions=add_actions,
         mark_tags=spec.mark_tags, extra_casts=spec.extra_casts, reset_cd=spec.reset_cd,
         cd_reduce=cd_reduce, procs=procs,
     )
 
 
-def resolve_buffs(gd: GameData, kit: Kit, skill_levels: dict[str, int]) -> list[Modifier]:
+def kit_buffs(kit: Kit, talent_ids: list[int]) -> list[BuffSpec]:
+    """The kit's base buffs plus what the unlocked key talents add or change."""
+    buffs = list(kit.buffs)
+    for tid in talent_ids:
+        ts = kit.talents.get(tid)
+        if ts is None:
+            continue
+        buffs = [replace(b, event=f"{b.event}|{ts.buff_events[b.name]}") if b.name in ts.buff_events else b
+                 for b in buffs]
+        buffs += ts.buffs
+    return buffs
+
+
+def resolve_buffs(gd: GameData, kit: Kit, skill_levels: dict[str, int], owned: set | None = None,
+                  buffs: list[BuffSpec] | None = None) -> list[Modifier]:
     """Modifiers granted by base skills (e.g. Noya's Starender, Glimmer), leveled by skill level."""
     from .effects import _oaa_row_modifiers
     out = []
-    for b in kit.buffs:
+    owned = owned or set()
+    for b in (kit.buffs if buffs is None else buffs):
+        if (b.requires and not any(r in owned for r in b.requires)) or any(e in owned for e in b.excludes):
+            continue
         lv = skill_levels.get(b.level, 10)
         dur = math.inf if b.duration == "inf" else value(gd, b.duration, lv)
-        trig = Trigger(event=b.event, duration=dur, max_stacks=int(value(gd, b.max_stacks, lv)), per_stack=b.per_stack)
+        trig = Trigger(event=b.event, duration=dur, max_stacks=int(value(gd, b.max_stacks, lv)), per_stack=b.per_stack,
+                       add=int(value(gd, b.add, lv)))
         src = f"{gd.char_name(kit.char_id)} {b.level} {'status ' + b.name if b.name else 'buff'} ({b.effect or b.attribute})"
         if b.attribute is not None:
             mods = _oaa_row_modifiers(level_row(gd, "OnceAdditionalAttributeValue", b.attribute, lv), src)
+        elif b.effect is None:   # pure status (e.g. a minion count): no stat, only stacks
+            mods = [Modifier(stat=0, value=0.0, source=src)]
         else:
             notes: list[str] = []
             vrow = level_row(gd, "EffectValue", b.effect, lv)
@@ -302,5 +363,6 @@ def resolve_buffs(gd: GameData, kit: Kit, skill_levels: dict[str, int]) -> list[
                 kw["stat"] = int(b.as_stat)
             if b.hit_tags:
                 kw["hit_tags"] = b.hit_tags
+            kw["minions"] = b.minions
             out.append(m.with_(**kw))
     return out

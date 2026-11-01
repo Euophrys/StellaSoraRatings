@@ -1,0 +1,137 @@
+# Flora (126) — Ignis. Hits scale with ATK (data).
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+char_id: 126
+
+main:
+  actions:
+    skill:
+      hits:
+        - {hit: 126310001, count: 1, tags: [skill]}   # stub: main-role kit not authored
+    ult:
+      hits:
+        - {hit: 126400001, count: 1, tags: [ult]}
+
+support:
+  energy_per_second: 2.0          # GUESS
+  on_field: {skill: 4.0, ult: 4.533}  # user-timed (ult 03,12 -> teleport 07,28)
+  actions:
+    skill:                         # Flutter Flare: 3 Mindflare (buffs) + 3 Soulflare (hits) Butterflies
+      hits:
+        - {hit: 126320001, count: 3, offset: 0.6, interval: 0.3, tags: [soulflare], applies_mark: true}   # timing GUESS
+    ult:                           # Undying Phoenix: burst, then an 8 s egg ticking 1/s (text)
+      hits:
+        - {hit: 126400001, count: 1, offset: 0.8, tags: [ult]}
+        - {hit: 126400002, count: 8, offset: 1.5, interval: 1.0, tags: [ult, egg], applies_mark: true}
+
+  buffs:
+    - effect: 12632012             # Butterfly Mark (Word 2021): Ignis DMG Taken per stack, from each Soulflare hit
+      name: butterfly
+      level: skill
+      event: "hit:self:soulflare"
+      duration: {ref: "BuffValue,NoLevel,12632001,Time,10K"}
+      max_stacks: {ref: "BuffValue,NoLevel,12632001,LaminatedNum,Fixed"}
+      target: enemy
+    - effect: 12693005             # Mindflare: main's Crit DMG (skill level)
+      level: skill
+      event: "cast:self:skill"
+      duration: {ref: "BuffValue,NoLevel,12693015,Time,10K"}
+      target: main
+    - effect: 12632013             # each Mindflare: main's Crit Rate; also the "mindflare" status (count of butterflies)
+      name: mindflare
+      level: skill
+      event: "cast:self:skill"
+      add: 3
+      max_stacks: {ref: "BuffValue,NoLevel,12632003,LaminatedNum,Fixed"}
+      duration: {ref: "BuffValue,NoLevel,12632003,Time,10K"}
+      target: main
+      excludes: [512623]
+    - effect: 12632013             # with Ashes of the Past: 5 Mindflares
+      name: mindflare
+      level: skill
+      event: "cast:self:skill"
+      add: 5
+      max_stacks: {ref: "BuffValue,NoLevel,12632003,LaminatedNum,Fixed"}
+      duration: {ref: "BuffValue,NoLevel,12632003,Time,10K"}
+      target: main
+      requires: [512623]
+
+  potentials:
+    512621:   # Ember of Tomorrow (pink): +2 Soulflares; each Butterfly Mark stack adds Ignis DMG Taken
+      add_hits:
+        skill: [{hit: 126320001, count: 2, offset: 1.5, interval: 0.3, tags: [soulflare], applies_mark: true}]
+      overrides:
+        - {index: 0, event: "while:status:butterfly", per_stack: true, target: enemy}
+
+    512622:   # Ember Rekindled (pink): main's hits spawn Soulflares (35%/Butterfly stack), 1/s
+      procs:
+        - {event: "hit:main:any", when: "while:status:butterfly", hit: 126522001, icd: 1.0, tags: [soulflare], applies_mark: true}
+      note: "Fires every second while the target has Butterfly Mark (35% per stack per hit, Amber hits ~6/s). Spawned Soulflares re-apply Butterfly Mark."
+
+    512623:   # Ashes of the Past (pink): +2 Mindflares; main's Crit DMG while Mindflares are present
+      overrides:
+        - {index: 0, event: "while:status:mindflare", target: main}
+
+    512624:   # Spark of Ashes (pink): main's hits, 20%/Mindflare: Scorched Butterfly + bonus DMG, 1/s
+      procs:
+        - {event: "hit:main:any", when: "while:status:mindflare", hit: 126524001, icd: 1.0, tags: [scorched], applies_mark: true}
+      overrides:
+        - {index: 0, drop: true}
+      note: "Scorched Butterfly every second while Mindflares are up (3-5 x 20% per hit). The +DMG on the proc hit is not modelled."
+
+    512625:   # Foreshadowing Verification: main's Crit DMG vs Butterfly-Marked targets
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:butterfly", target: main}
+
+    512626:   # Crowd Effect: main's ATK per Butterfly-Marked target (1 target)
+      overrides:
+        - {index: 0, event: "while:status:butterfly", max_stacks: 1, target: main}
+      note: "Single target: one stack."
+
+    512627:   # Perfect Acting: skill cast -> main's ATK; main's crits spawn Scorched Butterflies 1/s
+      procs:
+        - {event: "hit:main:any", hit: 126527001, icd: 1.0, tags: [scorched], applies_mark: true}
+      overrides:
+        - {index: 0, event: "cast:self:skill", target: main}
+      note: "Scorched Butterfly assumed every second (main crits often)."
+
+    512628:   # Visual Impact: main's crit -> main's ATK
+      overrides:
+        - {index: 0, event: "hit:main:any", target: main}
+      note: "Assumes the main crits at least every 3 s."
+
+    512629:   # Reinforced Impression: main's Crit Rate per Mindflare
+      overrides:
+        - {index: 0, event: "while:status:mindflare", per_stack: true, target: main}
+
+    512630:   # Post-credits Scene: Mindflares turn into Scorched Butterflies when they expire
+      add_hits:
+        skill:
+          - {hit: 126530001, count: 3, offset: 10.0, interval: 0.2, tags: [scorched], applies_mark: true, excludes: [512623]}
+          - {hit: 126530001, count: 5, offset: 10.0, interval: 0.2, tags: [scorched], applies_mark: true, requires: [512623]}
+      note: "Mindflares assumed to die when they expire (10 s)."
+
+    512631:   # Guest Performer: skill cast -> all Ignis Trekkers' ATK
+      overrides:
+        - {index: 0, event: "cast:self:skill", target: team}
+
+    512632:   # Backstage Support: healing only
+      note: "Healing; no damage value."
+
+    512633:   # Everlasting Show: lowers the target's ATK (defensive)
+      overrides:
+        - {index: 0, drop: true}
+      note: "Defensive; no damage value."
+
+    512641:   # Lethal Inferno: ult DMG -> target's Ignis DMG Taken, stacking
+      overrides:
+        - {index: 0, event: "hit:self:ult"}
+
+    512642:   # Weave of Annihilation: the Egg explodes when it breaks
+      add_hits:
+        ult: [{hit: 126542001, count: 1, offset: 9.6, tags: [ult], applies_mark: true}]   # GUESS: breaks at the end of its 8 s
+      note: "Explosion assumed when the Egg expires; the stun is ignored."
+
+    512643:   # Reincarnation of Fire: faster Egg ticks + 7 extra hits
+      add_hits:
+        ult: [{hit: 126543001, count: 7, offset: 1.7, interval: 1.0, tags: [ult]}]
+      note: "The shorter Egg attack interval is not modelled (amount not in data)."

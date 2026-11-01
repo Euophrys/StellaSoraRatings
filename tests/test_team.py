@@ -7,7 +7,7 @@ def test_team_members(gd, team):
     assert [m.char_id for m in team.members] == [162, 115, 107]
     assert team.members[0].role == "main" and team.members[1].role == "support"
     assert {gd.item_name(p) for p in team.members[0].pinks} == {"Lucent Blitz", "Dawnflare"}
-    assert team.members[0].kit.actions["skill"].lock == 5.0
+    assert team.members[0].kit.actions["skill"].lock == 2.1
 
 
 def test_team_discs(gd, team):

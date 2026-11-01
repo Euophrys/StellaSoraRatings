@@ -1,6 +1,14 @@
 # Firstlight Noya (162) — Lux. Hits scale with Max HP (data).
 # Schema: specs/README.md. Every guessed number is marked GUESS.
 char_id: 162
+#
+# User, frame-timed (2026-11-01, skill build: Lucent Blitz + Dawnflare, Prism Warp). Offsets in seconds after the cast.
+#   auto string (start 11,14): greatsword hits +0.20, +0.53 | +1.03, +1.37, +1.60 | +2.33, +2.50; backflip, longsword
+#     Strike 4 at +3.30, +3.40; dash (sprint attack) hits +4.10 x2, +4.30, +4.47, +4.77; next string's first hit at +4.90.
+#   skill (40,15): first hit +0.07, Glows visible +0.17, last Glow fired +1.37, Glows return ~+1.70; first auto hit +2.30.
+#     CD starts at the cast.
+#   Radiance Flurry (27,09): control back at +1.40; no CD after it.
+#   ult (3,27): control back at +3.23.
 
 main:
   energy_per_second: 2.0          # GUESS passive ult energy regen
@@ -8,22 +16,26 @@ main:
 
   actions:
     auto:
-      duration: 3.0               # GUESS: one 4-strike string in ~3 s, standing in melee (no sprint attacks)
+      duration: 4.7               # user-timed: next string's first hit 4.9 s after the start, first hit at +0.2
       hits:
-        - {hit: 162100001, count: 2, offset: 0.0, interval: 0.2, tags: [greatsword, auto]}   # Strike 1 x2 (text)
-        - {hit: 162100002, count: 3, offset: 0.7, interval: 0.15, tags: [greatsword, auto]}  # Strike 2 x3 (text)
-        - {hit: 162100003, count: 2, offset: 1.5, interval: 0.2, tags: [greatsword, auto]}   # Strike 3 x2 (text)
-        - {hit: 162100004, count: 2, offset: 2.3, interval: 0.1, tags: [glow, auto]}         # Strike 4: 2 Glows (text)
+        - {hit: 162100001, count: 2, offset: 0.2, interval: 0.333, tags: [greatsword, auto]}  # Strike 1 x2 (text, user-timed)
+        - {hit: 162100002, count: 3, offset: 1.033, interval: 0.283, tags: [greatsword, auto]} # Strike 2 x3
+        - {hit: 162100003, count: 2, offset: 2.333, interval: 0.167, tags: [greatsword, auto]} # Strike 3 x2
+        - {hit: 162100004, count: 2, offset: 3.3, interval: 0.1, tags: [glow, auto]}          # Strike 4: 2 Glows
+        # The backflip puts her out of range, so the string ends in a longsword sprint attack (x3, text; 1.5 s ICD)
+        - {hit: 162100005, count: 3, offset: 4.1, interval: 0.183, tags: [longsword, sprint, auto]}
+        # Dawnflare: the sprint also fires 3 Glows (user saw 5 hits total for the dash; 3 sprint + Glows overlapping, GUESS)
+        - {hit: 162310009, count: 3, offset: 4.1, interval: 0.333, tags: [glow, auto], requires: [516202]}
 
     skill:                         # Storm Flash: Radiance, CD from data
-      lock: 5.0                    # user-timed in game: ~5 s before autos resume
+      lock: 2.1                    # user-timed: first auto hit lands 2.3 s after the cast (auto's first hit is at +0.2)
       hits:
-        - {hit: 162310001, count: 5, offset: 0.2, interval: 0.15, tags: [longsword], triggers_mark: true}  # x5 (text)
-        - {hit: 162310002, count: 1, offset: 1.3, tags: [greatsword], triggers_mark: true}
-        - {hit: 162310008, count: 1, offset: 1.8, tags: [starfall], triggers_mark: true}
+        - {hit: 162310001, count: 5, offset: 0.067, interval: 0.1, tags: [longsword], triggers_mark: true}  # x5 (text)
+        - {hit: 162310002, count: 1, offset: 1.0, tags: [greatsword], triggers_mark: true}                  # GUESS timing
+        - {hit: 162310008, count: 1, offset: 1.4, tags: [starfall], triggers_mark: true}                    # GUESS timing
 
     ult:                           # Empyrean Starender, greatsword form by default
-      lock: 4.0                    # user-timed in game: ~4 s
+      lock: 3.23                   # user-timed: 3,27 -> 7,04
       hits:
         - {hit: 162400001, count: 5, offset: 0.5, interval: 0.2, tags: [greatsword, ult_gs], triggers_mark: true, excludes: [516206]}  # x5 (text)
         - {hit: 162400002, count: 1, offset: 1.8, tags: [greatsword, ult_gs], triggers_mark: true, excludes: [516206]}
@@ -46,32 +58,41 @@ main:
       as_stat: 50
       hit_tags: [auto]
     - effect: 16290003             # Starender: Crit Rate (value from data at ult level)
+      name: starender
       level: ult
       event: cast:self:ult
       duration: {ref: "Buff,LevelUp,16290003,Time,10K"}
       target: self
 
+  talents:
+    1620116:   # Buried Past (T1 key talent): Starender from her first hit; Crit DMG while in Starender
+      buff_events: {starender: "hit:self:any&once"}   # "Dealing any DMG grants her Starender. Once every 5 minutes" (> fight length)
+      buffs:
+        - {attribute: 16296111, level: ult, event: "while:status:starender"}   # Crit DMG +12% (data)
+
   potentials:
     516201:   # Lucent Blitz (pink): +4 longsword attacks and 9 Glows on skill
       add_hits:
         skill:
-          - {hit: 162310001, count: 4, offset: 1.0, interval: 0.15, tags: [longsword], triggers_mark: true}  # "4 more longsword attacks"; reuses the x5 hit (GUESS)
-          - {hit: 162310005, count: 9, offset: 1.6, interval: 0.1, tags: [glow]}                            # "fires 9 Glows" (text)
+          - {hit: 162310001, count: 4, offset: 0.567, interval: 0.1, tags: [longsword], triggers_mark: true}  # "4 more longsword attacks"; reuses the x5 hit (GUESS)
+          - {hit: 162310005, count: 9, offset: 0.167, interval: 0.15, tags: [glow]}                          # "fires 9 Glows" (text); user-timed +0.17 .. +1.37
 
     516202:   # Dawnflare (pink): 17 Glows -> Radiance Flurry follow-up
       add_actions:
         flurry:
-          followup: {after: skill, every: 2}   # user: follow-up skill after every 2 skill casts
-          lock: 3.0                            # user-timed in game: ~3 s
+          followup: {event: "hit:self:glow", every: {param: Param1}}   # every 17 Glows fired (data); ~every 2 skills with Lucent Blitz, matching in-game
+          lock: 1.4                            # user-timed: 27,09 -> 28,21
           skill_id: 16231000                   # uses the main skill's level
           hits:
             - {hit: 162310003, count: 6, offset: 0.6, interval: 0.15, tags: [longsword, flurry], triggers_mark: true}  # x6 (text)
-      note: "Sprint-attack Glows not modelled (melee range assumed)."
+      note: "Sprint-attack Glows (3 per auto string) modelled; the string ends in a sprint after the backflip."
 
     516205:   # Prism Warp: Glows return; Skill Crit Rate on longsword + Glow hits
       add_hits:
-        skill: [{hit: 162310006, count: 9, offset: 2.3, interval: 0.1, tags: [glow_return], requires: [516201]}]
-        auto: [{hit: 162310006, count: 2, offset: 2.8, interval: 0.1, tags: [glow_return]}]
+        skill: [{hit: 162310006, count: 9, offset: 1.7, interval: 0.15, tags: [glow_return], requires: [516201]}]   # user-timed return ~+1.7
+        auto:
+          - {hit: 162310006, count: 2, offset: 3.8, interval: 0.1, tags: [glow_return]}
+          - {hit: 162310006, count: 3, offset: 4.6, interval: 0.1, tags: [glow_return], requires: [516202]}   # sprint Glows (Dawnflare)
         ult: [{hit: 162310006, count: 7, offset: 2.5, interval: 0.1, tags: [glow_return], requires: [516241]}]
       overrides:
         - {stat: 71, hit_tags: [longsword, glow, glow_return]}
@@ -89,21 +110,36 @@ main:
         - {index: 1, event: cast:self:skill, target: "class:2"}   # "Lux Versatile Trekkers" = class 2
       note: "Second buff goes to Lux Versatile (class 2) Trekkers. Range-increase chance ignored."
 
-    516208:   # Eclipse Phantom: field needs Judgment Starfall (Sinbreaker, not taken in skill build)
+    516203:   # Stardust Descent (pink): extra Starfalls (AoE Lux Auto DMG, hit from Param2)
       add_hits:
-        auto: [{hit: 162310010, count: 6, offset: 3.0, interval: 0.5, tags: [field], requires: [516204]}]  # GUESS: 1 Judgment Starfall per string
-      overrides:
-        - {stat: 70, hit_tags: [greatsword, starfall, ult_gs]}
+        skill: [{hit: 162310008, count: 2, offset: 1.9, interval: 0.2, tags: [starfall]}]   # "+2 Starfalls" per skill (text); timing GUESS
+      procs:
+        - {event: "mark:self", hit: 162310008, icd: 1.0, offset: 0.3, tags: [starfall]}     # 1 Starfall per Mark trigger, 1 s ICD (text)
+      note: "Sprint-attack Starfalls not modelled (melee range assumed)."
 
-    516209:   # Gavel of Absolution: lightning when Starfalls dissipate; skill cast -> Auto Crit Rate
-      add_hits:
-        skill: [{hit: 162310007, count: 1, offset: 4.0, tags: [lightning]}]   # 1 Starfall per skill (text); dissipates ~2 s later GUESS
+    516204:   # Sinbreaker (pink): every N Starfalls absorbed -> next auto is Judgment Starfall
+      procs:
+        - {event: "hit:self:starfall", every: {ref: "BuffValue,NoLevel,16204011,LaminatedNum,Fixed"}, hit: 162100007, count: 2,
+           offset: 0.5, interval: 0.3, icd: 0.0, tags: [greatsword, judgment, auto], triggers_mark: true}  # x2 (text); added on top of the auto string (GUESS: no auto hit lost)
+      overrides:
+        - {index: 0, hit_tags: [auto]}   # "during Auto Attacks"
+      note: "Judgment Starfall added on top of the auto string; every Starfall assumed absorbed."
+
+    516208:   # Eclipse Phantom: field on Judgment Starfall (Sinbreaker)
+      procs:
+        - {event: "hit:self:judgment", hit: 162310010, count: 6, offset: 0.5, interval: 0.5, icd: 1.0, tags: [field], requires: [516204]}  # x6 (text); one field per Judgment
+      overrides:
+        - {stat: 70, hit_tags: [greatsword, starfall, ult_gs, judgment]}
+
+    516209:   # Gavel of Absolution: lightning when each Starfall dissipates; skill cast -> Auto Crit Rate
+      procs:
+        - {event: "hit:self:starfall", hit: 162310007, offset: 2.0, tags: [lightning]}   # GUESS: every Starfall dissipates ~2 s after landing
       overrides:
         - {index: 0, event: cast:self:skill}
 
     516210:   # Resolve: Sunder: DEF PEN on greatsword/Starfalls (ult swap needs Judgment Starfall)
       overrides:
-        - {stat: 9, hit_tags: [greatsword, starfall, ult_gs]}
+        - {stat: 9, hit_tags: [greatsword, starfall, ult_gs, judgment]}
 
     516211:   # Searing Sun: DMG vs Glimmer targets + flat stat
       overrides:

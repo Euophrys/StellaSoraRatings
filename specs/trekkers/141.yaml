@@ -1,0 +1,165 @@
+# Chixia (141) — Ignis, Versatile. Hits scale with ATK (data).
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+# Summon hits (Crimson Dragon, Tiger of the East, Blazing Barrier) are HitDamage DamageType 7 = Minion DMG.
+#
+# User, frame-timed (2026-11-01; offsets below are seconds after Chixia's skill cast C):
+#   on the field C -> C+10.03 (teleport-out not counted); ult on the field 3.40 s, ult hits continue after she leaves.
+#   Summons, one every 2 s: slot 0 (Tiger with Tiger of the East, else a Dragon) at C+0.8, then Dragons.
+#   Tiger: summon C+0.8, roar, ready C+3.97; swipe, pounce, swipe, double swipe, then swipe/swipe/double ~1.3 s apart;
+#     starts to leave ~13.8 s after ready. Damage checks out against +50% Minion DMG stacks at summon +2/+4/+6 s
+#     (28k swipe at 1 stack, 18k pounce at 2, 63k swipe at 3; all ~0.057 x multiplier).
+#   Minion slots are tagged s0..s3 (per-minion stacks, e.g. Blood Fed).
+#   Dragon: summon animation 1.13 s, then 4 Ink shots ~1.5 s apart (first 0.73 s after it's active), charge at +7.07 s.
+#     The clip-1 dragon looked shorter (appears 06,14, gone 12,20 = 6.2 s); clip 2's fuller timing is used.
+#   Ult: first hit 1.43 s after the cast.
+char_id: 141
+
+main:
+  actions:
+    skill:
+      hits:
+        - {hit: 141310001, count: 1, tags: [skill]}   # stub: main-role kit not authored
+    ult:
+      hits:
+        - {hit: 141400001, count: 1, tags: [ult]}
+
+support:
+  energy_per_second: 2.0          # GUESS
+  on_field: {skill: 10.03, ult: 3.4}   # user-timed
+
+  actions:
+    skill:                         # Awakening: Crimson Dragon (CD 18 s, data)
+      hits:
+        # --- slot 0: Tiger of the East (pink 514123), ready C+3.97
+        - {hit: 0, offset: 3.967, tags: [tiger_up], requires: [514123]}
+        - {hit: 0, count: 3, offset: 2.8, interval: 2.0, tags: [tiger_tick], requires: [514123]}   # +50% Minion DMG stacks
+        - {hit: 141523002, offset: 4.767, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}   # swipe
+        - {hit: 141523001, offset: 6.033, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}   # pounce (boss moved)
+        - {hit: 141523003, offset: 7.167, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}   # swipe
+        - {hit: 141523004, count: 2, offset: 8.433, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}   # double swipe
+        # then swipe / swipe / double swipe, ~1.3 s apart (GUESS spacing after 14,18), twice
+        - {hit: 141523002, count: 3, offset: 9.9, interval: 3.9, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}
+        - {hit: 141523003, count: 3, offset: 11.2, interval: 3.9, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}
+        - {hit: 141523004, count: 3, offset: 12.5, interval: 3.9, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}
+        - {hit: 141523004, count: 3, offset: 12.6, interval: 3.9, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}
+        # --- slot 0 without the Tiger pink: a Dragon, active C+1.93
+        - {hit: 0, offset: 1.933, tags: [dragon_up], excludes: [514123]}
+        - {hit: 141320001, count: 4, offset: 2.667, interval: 1.5, tags: [dragon, minion, s0], applies_mark: true, excludes: [514123]}
+        - {hit: 141320002, offset: 9.0, tags: [dragon, minion, charge, s0], applies_mark: true, excludes: [514123]}
+        # --- slots 1, 2: Dragons, active C+3.9 and C+5.9
+        - {hit: 0, count: 2, offset: 3.9, interval: 2.0, tags: [dragon_up]}
+        - {hit: 141320001, count: 4, offset: 4.633, interval: 1.5, tags: [dragon, minion, s1], applies_mark: true}
+        - {hit: 141320002, offset: 10.967, tags: [dragon, minion, charge, s1], applies_mark: true}
+        - {hit: 141320001, count: 4, offset: 6.633, interval: 1.5, tags: [dragon, minion, s2], applies_mark: true}
+        - {hit: 141320002, offset: 12.967, tags: [dragon, minion, charge, s2], applies_mark: true}
+        # --- slot 3 (Crimson Dragon: Convergence): a Dragon, active C+7.9
+        - {hit: 0, offset: 7.9, tags: [dragon_up], requires: [514121]}
+        - {hit: 141320001, count: 4, offset: 8.633, interval: 1.5, tags: [dragon, minion, s3], applies_mark: true, requires: [514121]}
+        - {hit: 141320002, offset: 14.967, tags: [dragon, minion, charge, s3], applies_mark: true, requires: [514121]}
+
+    ult:                           # Dragon's Ascension: every 0.3 s for 5 s (text) = 17 hits; first hit +1.43 s (user)
+      hits:
+        - {hit: 141400001, count: 17, offset: 1.433, interval: 0.3, tags: [ult], excludes: [514132]}
+        - {hit: 141400001, count: 17, offset: 1.433, interval: 0.3, tags: [ult], applies_mark: true, requires: [514132]}
+
+  buffs:
+    # Minion counts (pure statuses): each Tiger / Dragon from when it's ready until it leaves (user-timed).
+    - {name: tiger, event: "marker:self:tiger_up", duration: 13.767, max_stacks: 1}
+    - {name: dragon, event: "marker:self:dragon_up", duration: 7.067, max_stacks: 4}
+
+  potentials:
+    514121:   # Crimson Dragon: Convergence (pink): Dragon Minion DMG; +1 Dragon (slot 3 hits above)
+      overrides:
+        - {index: 0, event: always, hit_tags: [dragon]}
+
+    514122:   # Crimson Dragon: Chant (pink): with 2+ minions, minion ATK + ATK SPD
+      overrides:
+        - {index: 0, event: "while:status:dragon+tiger>=2", hit_tags: [minion]}
+        - {index: 1, drop: true}            # ATK SPD: not modelled
+      note: "Minion ATK SPD not modelled (summon attack timings are user-timed at base speed)."
+
+    514123:   # Sigil Unleashed: Tiger of the East (pink): slot 0 becomes the Tiger; +50% Minion DMG every 2 s
+      overrides:
+        - {index: 0, event: "marker:self:tiger_tick", duration: inf, hit_tags: [tiger], reset_on: ["cast:self:skill"]}
+      note: "Stacks at summon +2/+4/+6 s; checked against the user's damage numbers."
+
+    514124:   # Tiger of the East: Blazing Scales (pink): first minion's Blazing Barrier, AoE every 0.5 s
+      add_hits:
+        skill:
+          - {hit: 141524001, count: 27, offset: 4.167, interval: 0.5, tags: [barrier, minion, s0], requires: [514123]}
+          - {hit: 141524001, count: 14, offset: 2.133, interval: 0.5, tags: [barrier, minion, s0], excludes: [514123]}
+      # User (clip 3): barrier appears 0.2 s after the tiger is ready; ticks 11,00 / 11,15 / 12,01 (0.5 s).
+      # 4445 per tick vs 22393 tiger double swipe: per % of multiplier 67 vs 126, which fits 141524001 without the Tiger stacks.
+      note: "Barrier ticks every 0.5 s while the first minion is out (user-checked on the Tiger). Doesn't get Tiger of the East's stacks. Doesn't apply Marks (GUESS)."
+
+    514125:   # Ink Sigil: Horn Call: each minion -> all friendly units' ATK
+      overrides:
+        - {index: 0, event: "while:status:dragon+tiger", per_stack: true, target: team}
+
+    514126:   # Ink Sigil: Trail Seeker: when the main casts the Main Skill, each Dragon x2 / the Tiger x5 extra hits
+      procs:
+        - {event: "cast:main:skill|cast:main:recast", when: "while:status:dragon>=1", hit: 141526001, count: 2, offset: 0.5, interval: 0.3, tags: [dragon, minion, s1], applies_mark: true}
+        - {event: "cast:main:skill|cast:main:recast", when: "while:status:dragon>=2", hit: 141526001, count: 2, offset: 0.55, interval: 0.3, tags: [dragon, minion, s2], applies_mark: true}
+        - {event: "cast:main:skill|cast:main:recast", when: "while:status:dragon>=3", hit: 141526001, count: 2, offset: 0.6, interval: 0.3, tags: [dragon, minion, s3], applies_mark: true}
+        - {event: "cast:main:skill|cast:main:recast", when: "while:status:dragon>=4", hit: 141526001, count: 2, offset: 0.65, interval: 0.3, tags: [dragon, minion, s0], applies_mark: true}
+        - {event: "cast:main:skill|cast:main:recast", when: "while:status:tiger", hit: 141526002, count: 5, offset: 0.5, interval: 0.2, tags: [tiger, minion, s0], applies_mark: true}
+      note: "One extra attack per minion out at each main skill cast; PTC's recast counts (user). Hit timing GUESS. For Blood Fed, the n-th Dragon proc counts as slot n's Dragon."
+
+    514127:   # Ink Sigil: Barrier Construct: minions raise nearby friendly Crit Rate, up to 6 stacks
+      overrides:
+        - {index: 0, event: "while:status:dragon+tiger", per_stack: true, target: team}
+      note: "One stack per minion out (user): Tiger + 3 Dragons = 4."
+
+    514128:   # Ink Sigil: Blood Fed: minion Minion DMG per second, up to 15
+      # Per minion, from its own summon (user). Summon starts: slot 0 C+0.8, slots 1-3 every 2 s after.
+      add_hits:
+        skill:
+          - {hit: 0, count: 15, offset: 1.8, interval: 1.0, tags: [bf_s0]}
+          - {hit: 0, count: 15, offset: 3.767, interval: 1.0, tags: [bf_s1]}
+          - {hit: 0, count: 15, offset: 5.767, interval: 1.0, tags: [bf_s2]}
+          - {hit: 0, count: 15, offset: 7.767, interval: 1.0, tags: [bf_s3], requires: [514121]}
+      overrides:
+        - index: 0
+          duration: inf
+          reset_on: ["cast:self:skill"]
+          copies:
+            - {event: "marker:self:bf_s0", hit_tags: [s0]}
+            - {event: "marker:self:bf_s1", hit_tags: [s1]}
+            - {event: "marker:self:bf_s2", hit_tags: [s2]}
+            - {event: "marker:self:bf_s3", hit_tags: [s3]}
+      note: "Ramps per minion from its own summon (user): Dragons (~8 s) reach ~8 stacks, the Tiger 15."
+
+    514130:   # Ink Sigil: Raid: minion DMG to close-by targets
+      overrides:
+        - {index: 0, hit_tags: [minion]}
+      note: "Single boss assumed close to the minions."
+
+    514131:   # Majestic Stride: Chixia's Minion DMG
+      overrides:
+        - {index: 0, event: always, hit_tags: [minion]}
+
+    514132:   # Prayer of Raging Flame: ult applies Ignis Mark; ult DMG -> all friendly units' ATK, stacking
+      overrides:
+        - {index: 0, event: "hit:self:ult", target: team}
+      note: "'When dealing DMG' read as the ult's DMG."
+
+    514129:   # Ink Sigil: Ambush: minion DMG -> friendly ATK near the target, 4 s
+      overrides:
+        - {index: 0, event: "hit:self:minion", target: team}
+
+    514133:   # Sigil Unleashed: Flame Glow: all Ignis Trekkers' Ignis DMG
+      overrides:
+        - {index: 0, event: always, target: team}
+
+    514141:   # Dragon Blaze: ult crit -> Chixia's ATK, stacking
+      overrides:
+        - {index: 0, event: "hit:self:ult"}
+      note: "Assumes the ult crits on most hits (17 hits)."
+
+    514142:   # Blazing Vortex: on ult cast, AoE every 0.5 s for 8 s
+      add_hits:
+        ult: [{hit: 141442001, count: 16, offset: 1.433, interval: 0.5, tags: [ult, vortex]}]   # GUESS: starts with the first ult hit
+
+    514143:   # Dragon Breath: after the ult ends, AoE every 2 s for 8 s
+      add_hits:
+        ult: [{hit: 141443001, count: 4, offset: 8.233, interval: 2.0, tags: [ult, breath]}]   # GUESS: ult ends +6.23 s, first tick 2 s later

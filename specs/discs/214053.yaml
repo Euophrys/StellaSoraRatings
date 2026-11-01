@@ -1,0 +1,6 @@
+# Joyful Gathering — melody and harmony 1 are scripted. Harmony 2 comes from EffectIds.
+# Stats: 57 Skill DMG. Shields are not modelled.
+melody:
+  - {stat: 57, value: Param1, target: main, event: "cast:main:skill|cast:main:recast", duration: 12}
+harmony1:
+  - {stat: 57, value: Param1, target: main, event: "cast:main:skill|cast:main:recast", duration: 12, max_stacks: 3, note: "per Dark Blessing stack"}

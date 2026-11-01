@@ -17,10 +17,16 @@ def main(argv=None) -> None:
     ap.add_argument("team", type=Path)
     ap.add_argument("-o", "--out", type=Path, default=Path("out"))
     ap.add_argument("--data", type=Path, default=DEFAULT_DATA_ROOT)
+    ap.add_argument("--pinks", nargs="*", metavar="TREKKER",
+                    help="search pink pairs instead of rating: the named members in order (default: the main); "
+                         "members not named keep their team-file pinks")
     a = ap.parse_args(argv)
     gd = GameData(a.data)
     team = load_team(gd, a.team)
     t0 = time.time()
+    if a.pinks is not None:
+        _pinks(gd, team, a.pinks, t0)
+        return
 
     print(f"[{team.name}] rating discs ...", flush=True)
     discs = rate_discs(gd, team)
@@ -47,6 +53,33 @@ def main(argv=None) -> None:
     i6 = 5
     for r in sorted(pots, key=lambda r: -r.gains[i6])[:10]:
         print(f"  {gd.char_name(r.char_id):16s} {r.name:34s} {r.gains[i6]:7.2%}{'  (in ref)' if r.in_reference else ''}")
+
+
+def _pinks(gd, team, names: list[str], t0: float) -> None:
+    from .builds import search_pinks
+    idx = {gd.char_name(m.char_id): i for i, m in enumerate(team.members)}
+    try:
+        members = [idx[n] if n in idx else int(n) for n in names] or [0]
+    except ValueError:
+        raise SystemExit(f"unknown member in {names}; team has {list(idx)}")
+
+    def progress(i, pair):
+        print(f"  {gd.char_name(team.members[i].char_id)}: {' + '.join(gd.item_name(p) for p in pair)} ...", flush=True)
+
+    _, results = search_pinks(gd, team, members, progress)
+    for i, rows in results.items():
+        m = team.members[i]
+        best_own = rows[0].total_own_discs
+        best_team = max(r.total_team_discs for r in rows)
+        print(f"\n{gd.char_name(m.char_id)} ({m.role}) pink pairs, % of best (team discs | own discs):")
+        for r in rows:
+            print(f"  {' + '.join(r.names):58s} {r.total_team_discs / best_team:7.1%} {r.total_own_discs / best_own:7.1%}")
+            pots = ", ".join(f"{gd.item_name(p)}" for (c, p) in r.reference if c == m.char_id)
+            discs = ", ".join(gd.item_name(d) for d, _ in r.own_discs)
+            print(f"      ref: {pots}")
+            if m.role == "main":
+                print(f"      discs: {discs}")
+    print(f"\ndone in {time.time() - t0:.0f}s")
 
 
 if __name__ == "__main__":

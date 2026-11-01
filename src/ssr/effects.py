@@ -7,6 +7,7 @@ marked `assumed` / `needs_scope` so the kit YAML can pin them down.
 from __future__ import annotations
 
 import math
+import re
 from pathlib import Path
 from dataclasses import dataclass, field, replace
 from functools import lru_cache
@@ -33,6 +34,8 @@ class Trigger:
     every: int = 1          # activates on every Nth matching event
     per_stack: bool = False # "while:status:X": value x X's current stacks
     stacks_from: str = ""   # each activation adds as many stacks as status X currently has
+    add: int = 1            # stacks added per activation
+    reset_on: tuple = ()    # events that clear all stacks (e.g. a reload)
 
 
 @dataclass(frozen=True)
@@ -47,6 +50,7 @@ class Modifier:
     needs_scope: bool = False       # attribute only applies to some hits; kit should set hit_tags
     source: str = ""
     name: str = ""                  # names a status (e.g. "glimmer") other rules can refer to
+    minions: bool | None = None     # also reaches the owner's minions (None = undecided -> no, unless a minion stat)
 
     def label(self) -> str:
         return stat_name(self.stat, self.is_pct)
@@ -55,12 +59,36 @@ class Modifier:
         return replace(self, **kw)
 
 
+_MINION_WORDS = re.compile(r"\bminions?(?!'?s? DMG)\b|\b(?:friendly|all|allied) units\b", re.I)
+MINION_STATS = {66, 74, 81}   # Minion DMG / Crit Rate / Crit DMG: only minions have them
+
+
+def text_reaches_minions(text: str, stat: int) -> bool:
+    """Does a buff in this text reach minions? In game, buffs scoped to "Trekkers" don't; "minions" or
+    "friendly/all units" do (user, 2026-11-01). Looks at the sentence naming the stat, else the whole text."""
+    if not text:
+        return False
+    clean = re.sub(r"<[^>]+>|##|#\d+#", "", text)
+    sentences = [x for x in re.split(r"(?<=[.!?])\s*", clean) if x]
+    word = re.sub(r"%| \(flat\)$", "", stat_name(stat)).strip().lower()
+    # what a sentence increases: the part after "increase(s)" (the condition before it doesn't scope the buff)
+    targets = [x.lower().split("increase", 1)[1] if "increase" in x.lower() else x.lower() for x in sentences]
+    named = [x for x in targets if word and word in x]
+    return any(_MINION_WORDS.search(x) for x in (named or targets))
+
+
+def with_minion_scope(mods: list["Modifier"], text: str) -> list["Modifier"]:
+    return [m if m.minions is not None else m.with_(minions=text_reaches_minions(text, m.stat)) for m in mods]
+
+
 def _is_pct(stat: int, second_subtype: int | None) -> bool:
     # ATK/DEF/HP: EffectDesc Type2ID 1 = base, 2 = %, 3 = flat. Base and flat are both additive here.
     return stat in BASE_STATS and second_subtype == 2
 
 
-def _target_for(stat: int, target1: int | None) -> str:
+def _target_for(stat: int, target1: int | None, value: float = 0.0) -> str:
+    if stat in TAKEN_STATS and value < 0:
+        return "self"   # "reduces DMG taken by <our Trekker>": defensive, never an enemy debuff
     if stat in TAKEN_STATS or target1 == 2:
         return "enemy"
     return "self"
@@ -95,7 +123,7 @@ def _interpret(gd: GameData, effect_row: dict | None, value_row: dict, source: s
         if et == CONDITIONAL_STAT and trigger is None:
             trigger = Trigger(event="unknown", duration=0.0)
         m = Modifier(stat=stat, value=v, is_pct=_is_pct(stat, value_row.get("EffectTypeSecondSubtype")),
-                     target=_target_for(stat, target1), trigger=trigger,
+                     target=_target_for(stat, target1, v), trigger=trigger,
                      assumed=trigger is not None and trigger.uptime is None and trigger.event == "unknown",
                      source=source)
         return [m]
@@ -250,10 +278,12 @@ def _spec_modifiers(entries: list[dict], row: dict, source: str) -> list[Modifie
             trig = Trigger(event=e.get("event", "unknown"),
                            duration=math.inf if dur == "inf" else _spec_value(dur, row),
                            max_stacks=int(_spec_value(e.get("max_stacks", 1), row)),
-                           uptime=e.get("uptime"), every=int(_spec_value(e.get("every", 1), row)))
+                           uptime=e.get("uptime"), every=int(_spec_value(e.get("every", 1), row)),
+                           icd=float(_spec_value(e.get("icd", 0), row)))
         out.append(Modifier(stat=int(e["stat"]), value=val, is_pct=bool(e.get("pct", False)),
                             target=e.get("target", "main"), hit_tags=tuple(e.get("hit_tags", ())),
-                            trigger=trig, source=source + (f" [{e['note']}]" if e.get("note") else "")))
+                            trigger=trig, source=source + (f" [{e['note']}]" if e.get("note") else ""),
+                            minions=e.get("minions")))
     return out
 
 
@@ -272,15 +302,17 @@ def _override_part(mods: list[Modifier], overrides: list[dict], row: dict) -> li
                 kw["target"] = o["target"]
             if "hit_tags" in o:
                 kw["hit_tags"] = tuple(o["hit_tags"])
-            if {"event", "duration", "max_stacks", "uptime", "every"} & set(o):
+            if "minions" in o:
+                kw["minions"] = bool(o["minions"])
+            if {"event", "duration", "max_stacks", "uptime", "every", "icd"} & set(o):
                 b = m.trigger or Trigger(event="unknown", duration=math.inf)
                 dur = o.get("duration", b.duration)
                 trig = Trigger(event=o.get("event", b.event),
                                duration=math.inf if dur == "inf" else _spec_value(dur, row),
                                max_stacks=int(_spec_value(o.get("max_stacks", b.max_stacks), row)),
-                               uptime=o.get("uptime", b.uptime), icd=b.icd,
+                               uptime=o.get("uptime", b.uptime), icd=float(_spec_value(o.get("icd", b.icd), row)),
                                every=int(_spec_value(o.get("every", b.every), row)))
-                kw["trigger"] = trig
+                kw["trigger"] = None if trig.event == "always" else trig
                 kw["assumed"] = trig.event == "unknown" and trig.uptime is None
             m = m.with_(**kw)
         if m is not None:
@@ -314,9 +346,10 @@ def disc_modifiers(gd: GameData, disc_id: int, copies: int) -> tuple[list[Modifi
             part = []
             for eid in row["EffectId"]:
                 part += effect_modifiers(gd, eid, label, notes)
+            part = with_minion_scope(part, gd.text(row.get("Desc", "")) or "")
             mods += _override_part(part, [o for o in spec.get("overrides", []) if o.get("part") == key], row)
         if key in spec:
-            mods += _spec_modifiers(spec[key], row, label)
+            mods += with_minion_scope(_spec_modifiers(spec[key], row, label), gd.text(row.get("Desc", "")) or "")
         elif not row.get("EffectId"):
             notes.append(f"{label}: scripted effect, no spec in specs/discs/ (not modelled)")
     return mods, notes

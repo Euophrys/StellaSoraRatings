@@ -22,8 +22,8 @@ AUTO_CRIT_DMG, SKILL_CRIT_DMG, ULT_CRIT_DMG, MARK_CRIT_DMG, MINION_CRIT_DMG, PRO
 
 ELEMENTS = {1: "Aqua", 2: "Ignis", 3: "Terra", 4: "Ventus", 5: "Lux", 6: "Umbra"}
 
-# Hit DamageType -> slot. 7 = "Derivative" (projectile) — see docs/assumptions.md.
-SLOT_OF_DAMAGE_TYPE = {1: "auto", 2: "skill", 3: "ult", 4: "other", 5: "mark", 6: "minion", 7: "proj"}
+# Hit DamageType -> slot. 7 = Minion DMG (only summoners use it; their text says "Minion DMG") — see docs/assumptions.md.
+SLOT_OF_DAMAGE_TYPE = {1: "auto", 2: "skill", 3: "ult", 4: "other", 5: "mark", 7: "minion"}
 SLOT_DMG = {"auto": AUTO_DMG, "skill": SKILL_DMG, "ult": ULT_DMG, "other": OTHER_DMG,
             "mark": MARK_DMG, "minion": MINION_DMG, "proj": PROJ_DMG}
 SLOT_CRIT_RATE = {"auto": AUTO_CRIT_RATE, "skill": SKILL_CRIT_RATE, "ult": ULT_CRIT_RATE,

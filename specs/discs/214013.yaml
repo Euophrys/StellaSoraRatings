@@ -1,0 +1,6 @@
+# Voyage Blueprint — all parts come from EffectIds; this pins down their triggers.
+# Melody: any Ignis Trekker's skill cast gives the main a shield, once per 20 s (EffectType 42, no damage).
+# Harmony 1 fires when the main gains that shield, so it's "Ignis DMG for 12 s, at most once per 20 s" (user).
+overrides:
+  - {part: harmony1, stat: 18, event: "cast:any:skill", icd: 20, duration: 12, target: team}
+  - {part: harmony2, stat: 57, event: always}   # main's Skill DMG while HP > 50%: assumed always

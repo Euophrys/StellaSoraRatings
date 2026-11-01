@@ -13,7 +13,7 @@ main:
 
 support:
   energy_per_second: 2.0          # GUESS passive ult energy regen
-  on_field: {skill: 4.0, ult: 4.0}  # GUESS: seconds on the battlefield per cast (tune in game)
+  on_field: {skill: 2.93, ult: 4.1}  # user-timed 2026-11-01: skill 21,19 -> 24,17; ult 11,12 -> 15,15
   actions:
     skill:                          # Aegis Intervention: bounces up to 6 times (text)
       hits:

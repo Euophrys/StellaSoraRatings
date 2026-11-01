@@ -1,0 +1,175 @@
+# Amber (103) — Ignis. Hits scale with ATK (data).
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+char_id: 103
+
+main:
+  energy_per_second: 2.0          # GUESS passive ult energy regen
+  mark: {hit: 103000001}          # Incineration: Ignis Mark DMG when Amber triggers Sacred Flame
+
+  actions:
+    auto:                          # Duet: user, frame-timed: 12 shots in 2.03 s, then a 0.77 s reload. The string restarts after every cast (= reload).
+      duration: 20.0               # longer than any gap between casts, so the first-magazine segment only plays after a cast
+      skill_id: 10310000
+      hits:
+        # first magazine after a cast: 12 rounds (base), Bullet Storm AoE rounds, or 36 rounds (Dominant Firepower)
+        - {hit: 103100001, count: 11, offset: 0.0, interval: 0.1849, tags: [auto, shot], excludes: [510301, 510302]}
+        - {hit: 103100001, count: 1, offset: 2.034, tags: [auto, shot, mag_end], excludes: [510301, 510302]}
+        - {hit: 103502001, count: 11, offset: 0.0, interval: 0.1849, tags: [auto, shot, storm], requires: [510302], excludes: [510301]}
+        - {hit: 103502001, count: 1, offset: 2.034, tags: [auto, shot, storm, mag_end], requires: [510302], excludes: [510301]}
+        - {hit: 103100001, count: 35, offset: 0.0, interval: 0.1849, tags: [auto, shot, dp], requires: [510301], excludes: [510302]}
+        - {hit: 103100001, count: 1, offset: 6.472, tags: [auto, shot, dp, mag_end], requires: [510301], excludes: [510302]}
+        - {hit: 103502001, count: 35, offset: 0.0, interval: 0.1849, tags: [auto, shot, dp, storm], requires_all: [510301, 510302]}
+        - {hit: 103502001, count: 1, offset: 6.472, tags: [auto, shot, dp, storm, mag_end], requires_all: [510301, 510302]}
+        # later magazines: 12 rounds 0.185 s apart, 0.77 s reload, repeating every 2.80 s
+        - {hit: 103100001, count: 7, offset: 2.800, interval: 2.800, tags: [auto, shot], excludes: [510301]}
+        - {hit: 103100001, count: 7, offset: 2.985, interval: 2.800, tags: [auto, shot], excludes: [510301]}
+        - {hit: 103100001, count: 7, offset: 3.170, interval: 2.800, tags: [auto, shot], excludes: [510301]}
+        - {hit: 103100001, count: 7, offset: 3.355, interval: 2.800, tags: [auto, shot], excludes: [510301]}
+        - {hit: 103100001, count: 7, offset: 3.540, interval: 2.800, tags: [auto, shot], excludes: [510301]}
+        - {hit: 103100001, count: 7, offset: 3.725, interval: 2.800, tags: [auto, shot], excludes: [510301]}
+        - {hit: 103100001, count: 7, offset: 3.909, interval: 2.800, tags: [auto, shot], excludes: [510301]}
+        - {hit: 103100001, count: 7, offset: 4.094, interval: 2.800, tags: [auto, shot], excludes: [510301]}
+        - {hit: 103100001, count: 7, offset: 4.279, interval: 2.800, tags: [auto, shot], excludes: [510301]}
+        - {hit: 103100001, count: 7, offset: 4.464, interval: 2.800, tags: [auto, shot], excludes: [510301]}
+        - {hit: 103100001, count: 7, offset: 4.649, interval: 2.800, tags: [auto, shot], excludes: [510301]}
+        - {hit: 103100001, count: 7, offset: 4.834, interval: 2.800, tags: [auto, shot, mag_end], excludes: [510301]}
+        - {hit: 103100001, count: 5, offset: 7.238, interval: 2.800, tags: [auto, shot], requires: [510301]}
+        - {hit: 103100001, count: 5, offset: 7.423, interval: 2.800, tags: [auto, shot], requires: [510301]}
+        - {hit: 103100001, count: 5, offset: 7.608, interval: 2.800, tags: [auto, shot], requires: [510301]}
+        - {hit: 103100001, count: 5, offset: 7.793, interval: 2.800, tags: [auto, shot], requires: [510301]}
+        - {hit: 103100001, count: 5, offset: 7.977, interval: 2.800, tags: [auto, shot], requires: [510301]}
+        - {hit: 103100001, count: 5, offset: 8.162, interval: 2.800, tags: [auto, shot], requires: [510301]}
+        - {hit: 103100001, count: 5, offset: 8.347, interval: 2.800, tags: [auto, shot], requires: [510301]}
+        - {hit: 103100001, count: 5, offset: 8.532, interval: 2.800, tags: [auto, shot], requires: [510301]}
+        - {hit: 103100001, count: 5, offset: 8.717, interval: 2.800, tags: [auto, shot], requires: [510301]}
+        - {hit: 103100001, count: 5, offset: 8.902, interval: 2.800, tags: [auto, shot], requires: [510301]}
+        - {hit: 103100001, count: 5, offset: 9.087, interval: 2.800, tags: [auto, shot], requires: [510301]}
+        - {hit: 103100001, count: 5, offset: 9.272, interval: 2.800, tags: [auto, shot, mag_end], requires: [510301]}
+
+    skill:                         # Fireworks Jam: x2 + x4 (text), CD from data
+      lock: 2.233                  # user, frame-timed: cast 03,20 -> ends 05,27 (30 fps)
+      hits:
+        - {hit: 103310002, count: 1, offset: 0.2, tags: [fj], triggers_mark: true}    # shot 1 (user, frame-timed)
+        - {hit: 103310002, count: 1, offset: 0.833, tags: [fj], triggers_mark: true}  # shot 2
+        - {hit: 103310001, count: 8, offset: 1.567, interval: 0.06, tags: [fj], triggers_mark: true}  # shot 3: ~8 small hits (user count; text says x4)
+
+    ult:                           # Spark of Finality
+      lock: 1.167                  # user, frame-timed: 03,18 -> can attack 04,23
+      hits:
+        - {hit: 103400001, count: 1, offset: 0.5, tags: [ult], triggers_mark: true}
+
+  buffs:
+    - effect: 10331001             # Fireworks Jam: Auto DMG for 10 s (text)
+      level: skill
+      event: "cast:self:skill|cast:self:recast"
+      duration: {ref: "BuffValue,NoLevel,10331001,Time,10K"}
+      target: self
+
+  potentials:
+    510301:   # Dominant Firepower (pink): 36-round reload after skill; Auto DMG until the magazine is empty
+      overrides:
+        - {index: 0, event: always, hit_tags: [dp]}
+      note: "36 rounds after each Fireworks Jam (auto string variant). The ult also restarts the string (GUESS)."
+
+    510302:   # Bullet Storm (pink): full reload after skill; AoE rounds (own hit) until the magazine is empty
+      note: "Rounds of the first magazine after a cast use the AoE hit. Single target: AoE adds nothing."
+
+    510303:   # Precise Temperature Control (pink): recast within 2 s; +DMG multiplier if the first cast triggered a Mark
+      add_actions:
+        recast:
+          followup: {after: skill, every: 1, delay: 0.15, autos: true}   # user: recast at +2.47 s (key mashed) with 1 auto shot in between; no gap (perfect play) is within 0.5%
+          lock: 2.233
+          starts_cd: skill         # user: the skill CD only starts once the recast finishes
+          skill_id: 10331030       # the recast skill row (same hits, data)
+          hits:
+            - {hit: 103310002, count: 1, offset: 0.2, tags: [fj, recast], triggers_mark: true}    # shot 1 (user, frame-timed)
+            - {hit: 103310002, count: 1, offset: 0.833, tags: [fj, recast], triggers_mark: true}  # shot 2
+            - {hit: 103310001, count: 8, offset: 1.567, interval: 0.06, tags: [fj, recast], triggers_mark: true}  # shot 3: ~8 small hits (user count; text says x4)
+      overrides:
+        - {index: 0, as_stat: 50, hit_tags: [recast]}   # EAT 85 "DMG multiplier", put in the general DMG bucket
+      note: "Recast after every skill once its lock ends; the skill CD starts after the recast. The multiplier bonus assumes the first cast triggered a Mark, and is added to the DMG bucket rather than multiplying the hit."
+
+    510304:   # Echo of Hospitality (pink): extra hit per Fireworks Jam hit, max 5/s
+      procs:
+        - {event: "hit:self:fj", hit: 103304001, icd: 0.2, tags: [echo]}
+
+    510305:   # Greed Gunfire: N Crit Hits -> full reload + Auto DMG, ICD
+      overrides:
+        - {index: 0, event: "hit:self:auto", icd: {ref: "ScriptParameterValue,NoLevel,10350511,CommonData,10K"}, hit_tags: [auto]}
+      note: "Fires on the first auto after its ICD (the crit count is reached within ~2 s). The free reload is not modelled."
+
+    510306:   # Ardent Trigger: each Auto DMG hit stacks Auto DMG; resets on reload
+      overrides:
+        - {index: 0, hit_tags: [auto], event: "hit:self:auto", duration: inf, max_stacks: {ref: "ScriptParameterValue,NoLevel,10306011,CommonData,10K"},
+           reset_on: ["hit:self:mag_end", "cast:self:any"]}
+
+    510307:   # Confident Mode: after skill, ATK SPD + Auto DMG
+      overrides:
+        - {index: 0, drop: true}                                    # ATK SPD: not modelled
+        - {index: 1, event: "cast:self:skill|cast:self:recast", hit_tags: [auto]}
+        - {index: 2, drop: true}                                    # name-only row (Param4), duplicate
+      note: "ATK SPD not modelled (the auto string is user-timed at base speed)."
+
+    510308:   # Weakness Mark: skill cast -> ATK, stacking
+      overrides:
+        - {index: 0, event: "cast:self:skill|cast:self:recast"}
+
+    510309:   # Grand Finale: Fireworks Jam Skill DMG + 2 extra rounds
+      # User, frame by frame with Grand Finale: shots 1 and 2 hit twice each (big hit), shot 3 hits 10 times (small hit).
+      # Without potentials (user): 1 big, 1 big, ~8 small. So Grand Finale adds one big hit to shots 1 and 2 and 2 small hits to shot 3.
+      add_hits:
+        skill:
+          - {hit: 103310002, count: 1, offset: 0.233, tags: [fj], triggers_mark: true}
+          - {hit: 103310002, count: 1, offset: 0.867, tags: [fj], triggers_mark: true}
+          - {hit: 103310001, count: 2, offset: 2.047, interval: 0.06, tags: [fj], triggers_mark: true}
+        recast:
+          - {hit: 103310002, count: 1, offset: 0.233, tags: [fj, recast], triggers_mark: true}
+          - {hit: 103310002, count: 1, offset: 0.867, tags: [fj, recast], triggers_mark: true}
+          - {hit: 103310001, count: 2, offset: 2.047, interval: 0.06, tags: [fj, recast], triggers_mark: true}
+      overrides:
+        - {index: 0, hit_tags: [fj]}
+      note: "Hit counts from a frame-by-frame look with Grand Finale (2+2 big, 10 small)."
+
+    510310:   # Spectacular Finale: needs kills (none vs a single boss)
+      overrides:
+        - {index: 0, drop: true}
+      note: "Needs kills; worth nothing against a single boss."
+
+    510311:   # Fiery Rhythm: DMG to elite/boss -> ATK, ICD
+      overrides:
+        - {index: 0, event: "hit:self:any", icd: {ref: "ScriptParameterValue,NoLevel,10351111,CommonData,10K"}}
+
+    510312:   # Blazing Waltz: ATK while moving
+      overrides:
+        - {index: 0, hit_tags: [], uptime: 0.5}   # GUESS: moving half the fight
+      note: "Moving uptime is a guess (50%)."
+
+    510313:   # Keen Accent: Crit Hit on a Sacred Flame target -> ATK, stacking
+      overrides:
+        - {index: 0, event: "hit:self:any"}
+      note: "Assumes the target has Sacred Flame and Amber crits often enough to keep stacks up."
+
+    510341:   # Bursting Spark: ult -> ATK
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+
+    510342:   # Overloaded Spark: ult resets skill CD; for a while after, skill CD -50% and Skill DMG
+      reset_cd: {ult: skill}
+      overrides:
+        - {index: 0, event: "cast:self:ult", duration: {ref: "ScriptParameterValue,NoLevel,10354211,CommonData,10K"}}
+      note: "The 50% skill cooldown cut after the ult is not modelled (only the reset)."
+
+    510343:   # Soul-Hunting Spark: after the ult hits (no kill), Ignis DMG vs that target
+      overrides:
+        - {index: 0, hit_tags: [], event: "hit:self:ult", duration: {ref: "BuffValue,NoLevel,10354311,Time,10K"}}
+      note: "Kill bonus ignored (single boss)."
+
+support:
+  energy_per_second: 2.0
+  actions:
+    skill:
+      hits:
+        - {hit: 103320001, count: 1, offset: 0.3, tags: [skill]}   # stub: support kit not authored
+    ult:
+      hits:
+        - {hit: 103400001, count: 1, offset: 0.5, tags: [ult]}

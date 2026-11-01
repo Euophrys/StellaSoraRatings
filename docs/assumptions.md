@@ -7,7 +7,7 @@ A running log of every modelling choice that isn't read straight from the game d
 - **Param `LevelUp` refs:** level n of base id X is row `X + n×10` in the `<Source>Value` table (e.g. `16241001` → Lv1 `16241011`, Lv9 `16241091`). Missing levels clamp to the highest row present. `NoLevel` refs read the named table at the id as given, whatever the level.
 - **Formats:** any format starting `10K` is divided by 10000. `HdPct`, `Pct`, `Hd`, `Fixed` are used raw. `Enum,EAT` returns the integer stat id.
 - **Stat names (EAT):** `EffectDesc` rows with Id 12xxxx, `Type2ID` 2. Other `EffectDesc` families reuse `TypeID` for skill/potential level-ups.
-- **Hit DamageType → slot:** 1 auto, 2 skill, 3 ult, 4 other, 5 mark. **7 → "proj" (Derivative DMG, EAT 68).** DamageType 7 hits (52 of them) sit under both skills (SkillSlotType 2) and autos (5); the Attribute table has a `PROJECTILEDMG` column, the only bucket left unaccounted for. Assumed, not verified.
+- **Hit DamageType → slot:** 1 auto, 2 skill, 3 ult, 4 other, 5 mark, **7 minion (Minion DMG, EAT 66; Minion Crit 74/81).** Only summoner Trekkers have DamageType 7 hits (Snowish Laru's Colonel Walnut / General Curly, whose text says "Minion DMG"). Derivative DMG (EAT 68) is a separate stat (its own emblem line) that nothing feeds; what it applies to is unknown.
 - **Disc base stats:** `Attribute` row (group `AttrBaseGroupId`, lvl 90, max Break) gives flat ATK/HP/DEF plus one percentage substat: `WEE/FEE/SEE/AEE/LEE/DEE` = Aqua/Ignis/Terra/Ventus/Lux/Umbra DMG, `NORMALDMG/SKILLDMG/ULTRADMG` = Auto/Skill/Ult DMG, value ÷ 10000 (My Guiding Star `LEE 1500` = +15% Lux DMG). Copies n add `DiscExtraAttribute` Break n−1.
 
 ## Damage formula
@@ -68,3 +68,19 @@ Maygi: 8.65% / 0.05%. **Chosen: RES 145**, i.e. a "weak" enemy (250) with ~105 P
 - **EffectType 45** = a stat add under a condition (e.g. "if the main's HP is above 80%"). It's treated as a stat add with an assumed trigger unless a spec pins it down.
 - **On the battlefield:** a support is on the field for `on_field` seconds after each skill or ult cast (default 4 s, GUESS). `while:on_field:<who>` effects are active only then.
 - **Stellar Crash:** each blade adds as many Lux DMG Taken stacks as the target has Glimmer stacks.
+
+## Amber / Snowish Laru / Flora (2026-11-01)
+
+- **Negative "DMG Taken"** ("reduces DMG taken by the main") is defensive and goes on the owner, not the enemy. It used to decode as an enemy debuff that *lowered* team damage (10 discs, incl. A Moment in the Afternoon and Sparkling Moment).
+- **Duplicate Lv1 rows:** when a potential's Param names a stat through a `NoLevel` ref to the Lv1 row (e.g. Two-Gun Salute `15825011`), that row also decodes as a modifier. Such duplicates are dropped in the kit spec (Lv1 value = the leveled ref's first value).
+- **Amber's auto:** 12 shots in ~2 s + ~0.5 s reload (user-timed); every cast restarts it with a full magazine.
+- **Supports can skip their ult** (kit leaves it out): Snowish Laru's ult isn't used in the reference video.
+- **Snowish Laru on-field 14 s** per skill (user-timed); her skill CD keeps ticking meanwhile.
+
+## Amber / Flora / Chixia: minions (2026-11-01)
+
+- **Which buffs reach minions** (user, from community knowledge of the "minion bug"): buffs scoped to "Trekkers" (e.g. "all Ignis Trekkers' Ignis DMG", "the squad's ATK") **don't** reach minions. Buffs that say "minions" or "friendly/all units" do. Enemy debuffs (DMG Taken) always count. Minion hits get the summoner's stat sheet (base stats, disc stats and emblems), Minion DMG/Crit stats, enemy debuffs and modifiers that reach minions.
+- The flag is read from the text (`effects.text_reaches_minions`): it looks at what the sentence naming the stat *increases* (the part after "increase"), or at the whole text when the stat is only a `&ParamN&` placeholder. Specs set `minions: true|false` where the text names minions differently (Laru's Heart's Edict: "their Crit DMG" = Walnut's and Curly's).
+- Team assumption `minion_buffs: all` gives minions every buff again, for comparison. With the text rule, Chixia's share falls from 68% to 62%. The Laru team moves less than 2%.
+- **Chixia's own buffs on herself** ("Chixia's ATK", Dragon Blaze) don't reach her minions. The Word text says minions "inherit 100% of Chixia's ATK"; that's read as her stat sheet, not her buffs.
+- **Snowy Night Surprise's Hymn** needs the summoner's own Ode, which comes from her own Skill DMG (Word 6002): `&recent:skill_dmg:12.25`.
