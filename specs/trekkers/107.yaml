@@ -1,0 +1,93 @@
+# Tilia (107) — Lux. Hits scale with ATK (data).
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+char_id: 107
+
+main:
+  actions:
+    skill:
+      hits:
+        - {hit: 107310001, count: 1, tags: [skill]}   # main-role kit not authored beyond a stub
+    ult:
+      hits:
+        - {hit: 107400001, count: 1, tags: [ult]}
+
+support:
+  energy_per_second: 2.0          # GUESS passive ult energy regen
+  actions:
+    skill:                          # Aegis Intervention: bounces up to 6 times (text)
+      hits:
+        - {hit: 107320001, count: 6, offset: 0.4, interval: 0.3, tags: [aegis], applies_mark: true}
+    ult:                            # Glorious Smite
+      hits:
+        - {hit: 107400001, count: 1, offset: 0.6, tags: [ult]}
+        - {hit: 107400002, count: 8, offset: 1.0, interval: 1.0, tags: [sphere], applies_mark: true}  # GUESS: sphere ticks 1/s for 8 s
+
+  buffs:
+    - effect: 10795002             # squad ATK% when the skill deals DMG (value from data at support skill level)
+      level: skill
+      event: cast:self:skill
+      duration: {ref: "Buff,LevelUp,10795012,Time,10K"}
+      target: team
+
+  potentials:
+    510721:   # Holy Inscription (pink, not in build): spheres raise Lux DMG Taken
+      overrides:
+        - {index: 0, event: cast:self:skill}
+
+    510722:   # Renewed Spectrum (pink): each Aegis hit cuts skill CD, limited per cast
+      cd_reduce:
+        action: skill
+        seconds: {ref: "ScriptParameterValue,NoLevel,10722011,CommonData,10K"}
+        times: {ref: "ScriptParameterValue,NoLevel,10722012,CommonData,10K"}
+
+    510723:   # Perfect Spiral (pink): Aegis hits the main -> AoE hit + Skill DMG Taken stack
+      add_hits:
+        skill: [{hit: 107322301, count: 1, offset: 0.4, tags: [spiral]}]
+      overrides:
+        - {index: 0, event: "hit:self:spiral"}
+
+    510725:   # Enemy Counter: vs stun-immune targets (bosses): extra hit + Lux DMG Taken
+      add_hits:
+        skill: [{hit: 107322501, count: 1, offset: 0.5, tags: [counter]}]   # GUESS: boss is stun-immune
+      overrides:
+        - {index: 0, event: "hit:self:counter"}
+
+    510726:   # Blinding Beam: inflicting Lux Mark -> Mark DMG Taken
+      overrides:
+        - {index: 0, event: "hit:self:aegis"}
+
+    510727:   # Knight's Seal: ally triggers Lux Mark -> squad stat
+      overrides:
+        - {index: 0, event: "mark:any", target: team}
+      note: "Energy gain not modelled."
+
+    510728:   # Brilliant Relay: Aegis reaches the main -> main's stat, stacking
+      overrides:
+        - {index: 0, event: cast:self:skill, target: main}
+
+    510730:   # Revealed Flaw: vs targets below an HP threshold (95% in data)
+      add_hits:
+        skill: [{hit: 107322301, count: 1, offset: 0.6, tags: [flaw]}]
+      overrides:
+        - {index: 0, event: "hit:self:flaw"}
+      note: "Threshold from data is high (95%); assumed always met. ICD not modelled."
+
+    510731:   # Guardian's Resolve: Tilia enters combat -> main's stat
+      overrides:
+        - {index: 0, event: cast:self:skill, target: main}   # GUESS: support "enters combat" on each support skill
+
+    510729:   # Trick Boost: Aegis ricochets -> squad stat, stacking
+      overrides:
+        - {index: 0, event: "hit:self:aegis", target: team}
+
+    510733:   # Banner of Glory: main's DEF (no damage)
+      overrides:
+        - {index: 0, event: always, target: main}
+
+    510741:   # Knight Oath: Skyfall: Ult DMG on her ult
+      overrides:
+        - {index: 0, hit_tags: [ult]}
+
+    510743:   # Knight Oath: Courage: ult cast -> squad stat
+      overrides:
+        - {index: 0, event: cast:self:ult, target: team}

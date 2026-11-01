@@ -1,0 +1,122 @@
+# Firefly (115) — Lux. Hits scale with ATK (data).
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+char_id: 115
+
+main:
+  actions:
+    skill:
+      hits:
+        - {hit: 115110001, count: 4, interval: 0.5, tags: [cannon]}   # GUESS: main-role kit not authored beyond a stub
+    ult:
+      hits:
+        - {hit: 115400001, count: 4, offset: 0.5, interval: 0.4, tags: [ult]}
+
+support:
+  energy_per_second: 2.0          # GUESS passive ult energy regen
+  actions:
+    skill:                          # Starflare Pursuit: 16 s Sword Form (text), CD from data
+      hits:
+        # Avalanche: Giant Sword, one 4-strike string ~4 s, looped 4x over 16 s  # GUESS cadence
+        - {hit: 115120001, count: 4, offset: 0.5, interval: 4.0, tags: [giant_sword], applies_mark: true}
+        - {hit: 115120002, count: 4, offset: 1.3, interval: 4.0, tags: [giant_sword], applies_mark: true}
+        - {hit: 115120003, count: 4, offset: 2.1, interval: 4.0, tags: [giant_sword], applies_mark: true}
+        - {hit: 115120004, count: 20, offset: 2.9, interval: 0.8, tags: [giant_sword], applies_mark: true}  # Strike 4 x5 per string (text) x4 strings
+        # Avalanche: Flying Blades: 2 blades fired every 3 s (text) during 16 s -> 5 volleys
+        - {hit: 115120005, count: 10, offset: 3.0, interval: 1.5, tags: [flying_blade], applies_mark: true}
+    ult:                            # Stellar Torrent: 2 shots, each x2 cannon + 2 slashes (text)
+      hits:
+        - {hit: 115400001, count: 4, offset: 0.5, interval: 0.4, tags: [ult]}
+        - {hit: 115400002, count: 2, offset: 1.0, interval: 1.2, tags: [ult]}
+        - {hit: 115400003, count: 2, offset: 1.3, interval: 1.2, tags: [ult]}
+      # "All of Firefly's skill Cooldowns are reset when Stellar Torrent ends" (text)
+
+  base_rules:
+    reset_cd: {ult: skill}
+
+  potentials:
+    511521:   # Radiance Blade: Twin Shadow (pink, all-Lux squad): extra Flying Blades, stacking blade buffs
+      add_hits:
+        skill: [{hit: 115120005, count: 5, offset: 3.2, interval: 3.0, tags: [flying_blade], applies_mark: true}]  # GUESS: +1 blade per volley
+      overrides:
+        - {index: 0, hit_tags: [flying_blade], stacks: {ref: "BuffValue,NoLevel,11521011,LaminatedNum,Fixed", times: 0.5}}  # GUESS: average half of max stacks over Sword Form
+        - {index: 1, hit_tags: [flying_blade], stacks: {ref: "BuffValue,NoLevel,11521011,LaminatedNum,Fixed", times: 0.5}}
+      note: "Extra blade count and average stacks are guesses."
+
+    511522:   # Radiance Blade: Firefly (pink): blade Crit Rate; each blade hit adds an AoE hit + Mark
+      add_hits:
+        skill: [{hit: 115122202, count: 15, offset: 3.1, interval: 1.0, tags: [blade_burst], applies_mark: true}]  # one per Flying Blade hit (10 base + 5 Twin Shadow) GUESS
+      overrides:
+        - {index: 0, hit_tags: [flying_blade]}
+
+    511523:   # Radiance Blade: Blazing Edge (pink, not in build)
+      add_hits:
+        skill: [{hit: 115122305, count: 16, offset: 0.6, interval: 1.0, tags: [giant_sword_extra], applies_mark: true}]  # GUESS: one per Giant Sword strike
+      overrides:
+        - {index: 0, hit_tags: [giant_sword]}
+
+    511524:   # Radiance Blade: Pursuing Slash (pink, not in build): Dominating Slash after 8 Giant Sword attacks
+      add_hits:
+        skill:
+          - {hit: 115322401, count: 2, offset: 6.0, interval: 8.0, tags: [slash], applies_mark: true}  # GUESS: twice per Sword Form
+          - {hit: 115322402, count: 4, offset: 6.3, interval: 4.0, tags: [slash], applies_mark: true}
+          - {hit: 115322403, count: 6, offset: 6.6, interval: 2.6, tags: [slash], applies_mark: true}
+
+    511525:   # Lightforged Blade: Glow/Halo stacks from main's Marks, consumed on support skill cast
+      overrides:
+        - {index: 0, hit_tags: [flying_blade], stacks: 6}   # GUESS: ~6 Mark triggers between casts
+        - {index: 1, hit_tags: [flying_blade], stacks: 6}
+
+    511526:   # Stellar Crash: main's Skill DMG fires a Flying Blade; Lux DMG Taken stacks per blade
+      procs:
+        - {event: "hit:main:skill_dmg", hit: 115322601, icd: {ref: "ScriptParameterValue,NoLevel,11526011,CommonData,10K"}, tags: [stellar_blade], applies_mark: true}
+      overrides:
+        - {index: 0, event: "hit:self:stellar_blade"}
+      note: "Debuff stacks scale with Light Curtain stacks in game; modelled as 1 stack per blade."
+
+    511527:   # Blade of Falling Petals: Sword Form end -> 4 Avalanches x2; Skill Crit DMG stacks
+      add_hits:
+        skill: [{hit: 115322701, count: 8, offset: 16.0, interval: 0.1, tags: [petals], applies_mark: true}]
+      overrides:
+        - {index: 0, event: "hit:self:petals"}
+
+    511528:   # Blade Flash: Giant Sword stacking Auto DMG
+      overrides:
+        - {index: 0, drop: true}                         # Movement SPD
+        - {index: 1, hit_tags: [giant_sword], stacks: {ref: "BuffValue,NoLevel,11528011,LaminatedNum,Fixed", times: 0.6}}  # GUESS average stacks
+
+    511530:   # Radiant Ripple: Giant Sword hits proc an extra hit, ICD from data
+      procs:
+        - {event: "hit:self:giant_sword", hit: 115323001, icd: {ref: "ScriptParameterValue,NoLevel,11530011,CommonData,10K"}, tags: [ripple], applies_mark: true}
+
+    511531:   # Sanctuary of Light: ult inflicts Mark; shield (no damage)
+      add_hits:
+        ult: []
+      note: "Ult Mark application not modelled separately (Sword Form already keeps Marks up)."
+
+    511532:   # Cosmic Brilliance: support skill cast -> squad Lux Trekkers' stat
+      overrides:
+        - {index: 0, event: cast:self:skill, target: team}
+
+    511529:   # Luminous Onslaught: on main's Mark trigger (Thunderbolt) -> enemy Lux DMG Taken, Firefly ATK
+      overrides:
+        - {index: 0, event: "mark:main"}
+        - {index: 1, event: "mark:main"}
+      note: "Text names Thunderbolt (another Lux Mark product); assumed to work with Noya's Lucent."
+
+    511533:   # Domain of Purity: squad Lux DMG in all-Lux squad (+ more while Firefly is on field)
+      overrides:
+        - {index: 0, event: always, target: team}
+        - {index: 1, drop: true}   # support isn't on the field
+      note: "On-field bonus dropped (Firefly is a support)."
+
+    511541:   # Persistent Warmth: after ult, next skill cast -> Lux DMG
+      overrides:
+        - {index: 0, event: cast:self:ult}
+
+    511542:   # Ultimate Radiance: Ult DMG on her ult
+      overrides:
+        - {index: 0, hit_tags: [ult]}
+
+    511543:   # Radiance of Shattered Stars: Ult DMG vs low-HP targets
+      overrides:
+        - {index: 0, hit_tags: [ult], uptime: 0.3}   # GUESS: target below threshold 30% of the fight
