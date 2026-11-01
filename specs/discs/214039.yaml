@@ -1,0 +1,3 @@
+# Summer Sanctuary — harmony 2 is scripted.
+harmony2:
+  - {stat: 57, value: {value: Param2, times: Param1}, target: team, event: "cast:main:skill", duration: Param3, note: "full Diffraction stacks at each main skill cast GUESS"}

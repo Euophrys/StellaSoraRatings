@@ -11,10 +11,16 @@ def test_ripples_melody(gd):
     assert any(m.value == pytest.approx(0.30) for m in mods6 if m.stat == lux[0].stat and m.trigger is None)
 
 
-def test_ripples_triggered_buff_flagged(gd):
+def test_ripples_triggered_buff_from_data(gd):
     mods, _ = disc_modifiers(gd, 214038, copies=1)
+    trig = [m for m in mods if m.trigger is not None and "melody" in m.source]
+    assert trig and trig[0].trigger.max_stacks == 9 and trig[0].trigger.duration == 15
+
+
+def test_disc_buff_without_spec_is_assumed(gd):
+    mods, _ = disc_modifiers(gd, 214030, copies=1)   # A Moment in the Afternoon: no spec file
     trig = [m for m in mods if m.trigger is not None]
-    assert trig and all(m.assumed for m in trig) and trig[0].trigger.max_stacks == 9 and trig[0].trigger.duration == 15
+    assert all(m.assumed for m in trig if m.trigger.event == "unknown")
     assert trig[0].stat == elem_stat(ELEM_TAKEN_BASE, 5) and trig[0].target == "enemy"
 
 
@@ -60,3 +66,27 @@ def test_every_potential_interprets_without_crash(gd):  # Review Focus 1/2
     for k in gd.table("Potential"):
         for lv in (1, 9):
             potential_modifiers(gd, int(k), lv)
+
+
+def test_scripted_disc_from_spec(gd):  # My Guiding Star: no EffectIds, values from MainSkill Params
+    from ssr.stats import CRIT_RATE, SKILL_TAKEN
+    mods, notes = disc_modifiers(gd, 214066, copies=1)
+    hp = [m for m in mods if m.stat == HP and m.is_pct]
+    assert hp and hp[0].value == pytest.approx(0.15) and hp[0].target == "team" and hp[0].trigger is None
+    cr = [m for m in mods if m.stat == CRIT_RATE][0]
+    assert cr.trigger.event == "mark:main" and cr.trigger.duration == 8 and cr.target == "main"
+    assert [m for m in mods if m.stat == SKILL_TAKEN][0].target == "enemy"
+    mods6, _ = disc_modifiers(gd, 214066, copies=6)
+    assert [m for m in mods6 if m.stat == HP and m.is_pct][0].value == pytest.approx(0.30)
+
+
+def test_scripted_disc_without_spec_is_noted(gd):  # Review Focus 2: never silently dropped
+    mods, notes = disc_modifiers(gd, 214062, copies=1)   # All That Was Beautiful: all parts scripted, no spec
+    assert any("scripted" in n for n in notes)
+
+
+def test_disc_spec_overrides_data_part(gd):  # Ripples melody debuff needs Ultimate DMG from the main
+    from ssr.stats import elem_stat, ELEM_TAKEN_BASE
+    mods, _ = disc_modifiers(gd, 214038, copies=1)
+    m = [m for m in mods if m.stat == elem_stat(ELEM_TAKEN_BASE, 5)][0]
+    assert m.trigger.event == "hit:main:ult_dmg" and not m.assumed and m.trigger.max_stacks == 9

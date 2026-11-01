@@ -58,3 +58,20 @@ def test_marks_trigger(gd, team):
 
 def test_deterministic(gd, team):
     assert simulate(gd, team, Build()).total == simulate(gd, team, Build()).total
+
+
+def test_every_n_events_trigger(gd, team):
+    from ssr.effects import Trigger
+    base = simulate(gd, team, Build(), discs=FILLERS)
+    never = simulate(gd, team, Build(), discs=FILLERS, extra=[(0, Modifier(
+        stat=SKILL_DMG, value=0.5, trigger=Trigger("hit:0:skill_dmg", 5.0, every=10**6), source="t"))])
+    often = simulate(gd, team, Build(), discs=FILLERS, extra=[(0, Modifier(
+        stat=SKILL_DMG, value=0.5, trigger=Trigger("hit:0:skill_dmg", 5.0, every=3), source="t"))])
+    assert never.total == pytest.approx(base.total) and often.total > base.total
+
+
+def test_class_target_reaches_versatile_only(gd, team):  # Firefly is class 2 (Versatile)
+    from ssr.stats import ATK
+    base = simulate(gd, team, Build(), discs=FILLERS)
+    r = simulate(gd, team, Build(), discs=FILLERS, extra=[(0, Modifier(stat=ATK, value=0.5, is_pct=True, target="class:2", source="t"))])
+    assert r.by_member[1] > base.by_member[1] and r.by_member[2] == pytest.approx(base.by_member[2])

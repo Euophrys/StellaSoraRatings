@@ -1,0 +1,6 @@
+# Seed Alike — melody and harmony 2 are scripted. "Lux Versatile Trekkers" = class 2 (Firefly here).
+melody:
+  - {stat: 1, pct: true, value: {value: Param1, times: Param3}, target: "class:2", uptime: 0.3, note: "Light Particle max stacks while the Versatile support is on the field GUESS"}
+  - {stat: 56, value: Param4, target: main, uptime: 0.3, note: "Wings of Light GUESS uptime"}
+harmony2:
+  - {stat: 57, value: Param3, target: main, uptime: 0.3, note: "Lucent while Wings of Light GUESS uptime"}

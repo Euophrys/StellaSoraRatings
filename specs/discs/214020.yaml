@@ -1,0 +1,3 @@
+# Sparkling Moment — melody is scripted.
+melody:
+  - {stat: 21, value: Param1, target: team, note: "Destiny Card bonus not modelled (0 cards)"}

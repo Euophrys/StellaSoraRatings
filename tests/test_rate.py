@@ -73,3 +73,10 @@ def test_emblem_rows_include_second_pen_line(gd, team):
     pen1 = [r for r in rows if r.line_name == "Lux PEN"][0]
     pen2 = [r for r in rows if r.line_name == "Lux PEN (2nd line)"][0]
     assert pen1.personal > 0 and pen2.personal <= pen1.personal
+
+
+def test_disc_row_carries_decode_notes(gd, team):  # Review Focus 2: undecodable/scripted parts reach the sheet
+    gn = gd.find_item("Good Night", within="Disc")
+    row = rate_discs(gd, team, disc_ids=[gn, 214062])
+    assert any("EffectType 45" in n for n in row[0].notes + row[1].notes)
+    assert any("scripted" in n for r in row for n in r.notes)

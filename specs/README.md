@@ -100,6 +100,26 @@ Plain numbers are only for timings, counts and uptimes.
 
 `cast:<who>:<action>`, `hit:<who>:<tag>` (each tag of each landed hit, plus the
 damage bucket: `auto_dmg`, `skill_dmg`, `ult_dmg`, `mark_dmg`, ...), `mark:<who>`.
-`<who>` is `self`, `main`, `any`, or a member index. A modifier with
+`<who>` is `self`, `main`, `any`, or a member index. Targets are `self`, `main`, `team`, `enemy`, or `class:N` (members of `Character.Class` N: 1 Vanguard, 2 Versatile, 3 Support). A modifier with
 `event: unknown` (data couldn't say when it applies) uses a constant
 `uptime × max_stacks` and is listed as assumed in the sheet.
+
+# Disc spec files (`specs/discs/<disc id>.yaml`)
+
+Many discs' melody/harmony are scripted: the row has no `EffectId`, only text and
+`ParamN` strings (`"15%"`, `"8"`). A disc spec says what those Params do; values are
+always read from the row (melody at the disc's C-level, harmony at Level 1).
+Scripted parts without a spec are listed in the Discs sheet's Notes as not modelled.
+
+```yaml
+melody:            # also harmony1 / harmony2
+  - {stat: 3, pct: true, value: Param1, target: team}
+  - {stat: 6, value: Param4, target: main, event: "mark:main", duration: Param5}
+  - {stat: 57, value: Param3, times: 3, target: main}               # times: a number or a Param
+  - {stat: 21, value: Param2, target: team, event: "hit:main:skill_dmg", every: Param1, duration: Param3}
+overrides:         # pin down data-derived parts the data can't explain
+  - {part: melody, stat: 39, event: "hit:main:ult_dmg"}
+```
+
+Entry keys: `stat` (EAT id), `value`, `times`, `pct`, `target`, `hit_tags`, `event`,
+`duration`, `max_stacks`, `every` (activate on every Nth event), `uptime`, `note`.

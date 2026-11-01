@@ -1,0 +1,14 @@
+# My Guiding Star — melody and both harmonies are scripted (no EffectIds).
+# Values come from the MainSkill / SecondarySkill row's ParamN; this file only says what they do.
+# Stats: 3 HP, 6 Crit Rate, 8 Crit DMG, 56 Auto DMG, 57 Skill DMG, 60 Auto DMG Taken, 61 Skill DMG Taken, 78 Skill Crit DMG.
+melody:
+  - {stat: 3, pct: true, value: Param1, target: team}                                  # squad HP
+  - {stat: 61, value: Param2, target: enemy, event: "hit:main:skill_dmg", duration: Param3, note: "Lux Skill DMG Taken as Skill DMG Taken (all-Lux team)"}
+  - {stat: 6, value: Param4, target: main, event: "mark:main", duration: Param5}        # Crit Rate on Lucent
+harmony1:
+  - {stat: 60, value: Param1, target: enemy, event: "hit:main:auto_dmg", duration: Param2, note: "Lux Auto DMG Taken as Auto DMG Taken"}
+  - {stat: 57, value: Param3, times: 3, target: main, note: "3 Starwish stacks (melody + both harmonies) GUESS"}
+  - {stat: 56, value: Param3, times: 3, target: main, note: "3 Starwish stacks GUESS"}
+harmony2:
+  - {stat: 8, value: Param1, target: main, event: "cast:any:skill", duration: Param2}
+  - {stat: 78, value: Param3, times: 3, target: main, note: "3 Starwish stacks GUESS"}

@@ -1,0 +1,8 @@
+# Eternal Brilliance — melody and both harmonies are scripted.
+melody:
+  - {stat: 57, value: Param2, times: 10, target: main, uptime: 1.0, note: "Eternity at 10 stacks (main hits often) GUESS"}
+  - {stat: 21, value: Param4, target: team, uptime: 1.0}
+harmony1:
+  - {stat: 56, value: Param2, times: 10, target: main, uptime: 1.0, note: "per Eternity stack, 10 stacks GUESS"}
+harmony2:
+  - {stat: 21, value: Param1, target: main, uptime: 0.8, note: "Eternity max (20) stacks GUESS uptime"}

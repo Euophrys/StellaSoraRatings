@@ -73,8 +73,8 @@ main:
       mark_tags: [glow]
       overrides:
         - {index: 0, event: cast:self:skill}
-        - {index: 1, event: cast:self:skill}
-      note: "Second buff is for Lux Versatile Trekkers; modelled on Noya. Range-increase chance ignored."
+        - {index: 1, event: cast:self:skill, target: "class:2"}   # "Lux Versatile Trekkers" = class 2
+      note: "Second buff goes to Lux Versatile (class 2) Trekkers. Range-increase chance ignored."
 
     516208:   # Eclipse Phantom: field needs Judgment Starfall (Sinbreaker, not taken in skill build)
       add_hits:

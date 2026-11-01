@@ -49,6 +49,7 @@ def _disc_stats(gd, disc_id, copies) -> StatBlock:
 
 
 def _disc_mods(gd, disc_id, copies) -> list[Modifier]:
+    """Disc melody/harmony modifiers; data-derived "self" effects are squad-wide per assumptions."""
     if disc_id == FILLER:
         return []
     key = ("mods", id(gd), disc_id, copies)
@@ -73,7 +74,10 @@ def _event_matches(pattern: str, ev: str) -> bool:
     return all(a == b or a == "any" for a, b in zip(p, e))
 
 
-def _targets(target: str, owner: int, n: int) -> list[int | str]:
+def _targets(target: str, owner: int, n: int, classes: list[int] | None = None) -> list[int | str]:
+    if target.startswith("class:"):
+        want = int(target.split(":")[1])
+        return [i for i, c in enumerate(classes or []) if c == want]
     if target == "team":
         return list(range(n))
     if target == "main":
@@ -91,6 +95,7 @@ class _Mod:
     event: str = ""            # normalized; "" = always on
     stacks: list = field(default_factory=list)   # expiry times
     last_trigger: float = -1e9
+    count: int = 0
     constant: float = 1.0      # multiplier for always-on / uptime-based mods
 
 
@@ -130,13 +135,15 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     uptime_default = float(team.assumptions.get("unknown_trigger_uptime", 1.0))
     disc_team = team.assumptions.get("disc_stats_target", "team") == "team"
 
+    classes = [gd.table("Character")[str(m.char_id)].get("Class", 0) for m in team.members]
+
     # ---- per-member setup: potentials, actions, levels
     members: list[_Member] = []
     mods: list[_Mod] = []
 
     def add_mod(m: Modifier, owner: int, src_target: str | None = None):
         tgt = src_target or m.target
-        rec = _targets(tgt, owner, n)
+        rec = _targets(tgt, owner, n, classes)
         t = m.trigger
         if t is None:
             mods.append(_Mod(m, owner, rec))
@@ -282,6 +289,10 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         for md in by_event:
             if _event_matches(md.event, ev):
                 trig = md.mod.trigger
+                if trig.every > 1:
+                    md.count += 1
+                    if md.count % trig.every:
+                        continue
                 if t - md.last_trigger < trig.icd:
                     continue
                 md.last_trigger = t

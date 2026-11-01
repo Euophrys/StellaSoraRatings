@@ -7,8 +7,11 @@ marked `assumed` / `needs_scope` so the kit YAML can pin them down.
 from __future__ import annotations
 
 import math
+from pathlib import Path
 from dataclasses import dataclass, field, replace
 from functools import lru_cache
+
+import yaml
 
 from .data import GameData
 from .refs import level_row
@@ -26,6 +29,7 @@ class Trigger:
     max_stacks: int = 1
     uptime: float | None = None
     icd: float = 0.0
+    every: int = 1          # activates on every Nth matching event
 
 
 @dataclass(frozen=True)
@@ -205,22 +209,108 @@ def potential_modifiers(gd: GameData, potential_id: int, level: int) -> tuple[li
     return mods, notes
 
 
+DISC_SPECS = Path(__file__).resolve().parents[2] / "specs" / "discs"
+
+
+def _param_value(raw) -> float:
+    txt = str(raw).strip()
+    return float(txt[:-1]) / 100 if txt.endswith("%") else float(txt)
+
+
+def _spec_value(v, row: dict) -> float:
+    if isinstance(v, str) and v.startswith("Param"):
+        return _param_value(row[v])
+    if isinstance(v, dict):
+        return _spec_value(v["value"], row) * _spec_value(v.get("times", 1), row)
+    return float(v)
+
+
+@lru_cache(maxsize=None)
+def _disc_spec(disc_id: int) -> dict | None:
+    p = DISC_SPECS / f"{disc_id}.yaml"
+    if not p.exists():
+        return None
+    with open(p, encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+def _spec_modifiers(entries: list[dict], row: dict, source: str) -> list[Modifier]:
+    out = []
+    for e in entries or []:
+        val = _spec_value(e["value"], row) * _spec_value(e.get("times", 1), row)
+        trig = None
+        if "event" in e or "uptime" in e:
+            dur = e.get("duration", "inf")
+            trig = Trigger(event=e.get("event", "unknown"),
+                           duration=math.inf if dur == "inf" else _spec_value(dur, row),
+                           max_stacks=int(_spec_value(e.get("max_stacks", 1), row)),
+                           uptime=e.get("uptime"), every=int(_spec_value(e.get("every", 1), row)))
+        out.append(Modifier(stat=int(e["stat"]), value=val, is_pct=bool(e.get("pct", False)),
+                            target=e.get("target", "main"), hit_tags=tuple(e.get("hit_tags", ())),
+                            trigger=trig, source=source + (f" [{e['note']}]" if e.get("note") else "")))
+    return out
+
+
+def _override_part(mods: list[Modifier], overrides: list[dict], row: dict) -> list[Modifier]:
+    """Pin down semantics of data-derived disc effects (event, target, stacks...) from the spec."""
+    out = []
+    for m in mods:
+        for o in overrides:
+            if o.get("stat") not in (None, m.stat):
+                continue
+            if o.get("drop"):
+                m = None
+                break
+            kw = {}
+            if "target" in o:
+                kw["target"] = o["target"]
+            if "hit_tags" in o:
+                kw["hit_tags"] = tuple(o["hit_tags"])
+            if {"event", "duration", "max_stacks", "uptime", "every"} & set(o):
+                b = m.trigger or Trigger(event="unknown", duration=math.inf)
+                dur = o.get("duration", b.duration)
+                trig = Trigger(event=o.get("event", b.event),
+                               duration=math.inf if dur == "inf" else _spec_value(dur, row),
+                               max_stacks=int(_spec_value(o.get("max_stacks", b.max_stacks), row)),
+                               uptime=o.get("uptime", b.uptime), icd=b.icd,
+                               every=int(_spec_value(o.get("every", b.every), row)))
+                kw["trigger"] = trig
+                kw["assumed"] = trig.event == "unknown" and trig.uptime is None
+            m = m.with_(**kw)
+        if m is not None:
+            out.append(m)
+    return out
+
+
 def disc_modifiers(gd: GameData, disc_id: int, copies: int) -> tuple[list[Modifier], list[str]]:
+    """Melody (MainSkill at C-level) + harmony (SecondarySkill Level 1) modifiers.
+
+    Parts with EffectIds are read from data. Scripted parts (no EffectId) use specs/discs/<id>.yaml,
+    whose values come from that row's Param strings; without a spec they are noted, never dropped.
+    """
     d = gd.table("Disc")[str(disc_id)]
-    src = f"{gd.item_name(disc_id)} ({disc_id})"
+    name = gd.item_name(disc_id)
+    src = f"{name} ({disc_id})"
     notes: list[str] = []
     mods: list[Modifier] = []
+    spec = _disc_spec(disc_id) or {}
     lv = max(1, min(copies, 6))
-    for row in gd.table("MainSkill").values():
-        if row.get("GroupId") == d.get("MainSkillGroupId") and row.get("Level") == lv:
-            for eid in row.get("EffectId", []):
-                mods += effect_modifiers(gd, eid, src + " melody", notes)
-    for g in ("SecondarySkillGroupId1", "SecondarySkillGroupId2"):
+    parts = [("melody", r) for r in gd.table("MainSkill").values()
+             if r.get("GroupId") == d.get("MainSkillGroupId") and r.get("Level") == lv]
+    for key, g in (("harmony1", "SecondarySkillGroupId1"), ("harmony2", "SecondarySkillGroupId2")):
         gid = d.get(g)
-        if not gid:
-            continue
-        for row in gd.table("SecondarySkill").values():
-            if row.get("GroupId") == gid and row.get("Level") == 1:
-                for eid in row.get("EffectId", []):
-                    mods += effect_modifiers(gd, eid, src + " harmony", notes)
+        if gid:
+            parts += [(key, r) for r in gd.table("SecondarySkill").values()
+                      if r.get("GroupId") == gid and r.get("Level") == 1]
+    for key, row in parts:
+        label = f"{src} {key}"
+        if row.get("EffectId"):
+            part = []
+            for eid in row["EffectId"]:
+                part += effect_modifiers(gd, eid, label, notes)
+            mods += _override_part(part, [o for o in spec.get("overrides", []) if o.get("part") == key], row)
+        if key in spec:
+            mods += _spec_modifiers(spec[key], row, label)
+        elif not row.get("EffectId"):
+            notes.append(f"{label}: scripted effect, no spec in specs/discs/ (not modelled)")
     return mods, notes

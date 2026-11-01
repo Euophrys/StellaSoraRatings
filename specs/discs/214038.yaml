@@ -1,0 +1,6 @@
+# Ripples of Nostalgia — harmony 2 is scripted. Melody and harmony 1 come from EffectIds.
+harmony2:
+  - {stat: 21, value: Param2, target: team, event: "hit:main:skill_dmg", every: Param1, duration: Param3}   # squad Lux DMG every N Skill DMG hits
+overrides:
+  # Melody's Lux DMG Taken debuff fires when the main deals *Ultimate DMG* (text). Data can't say so.
+  - {part: melody, stat: 39, event: "hit:main:ult_dmg"}

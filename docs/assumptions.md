@@ -39,3 +39,24 @@ A running log of every modelling choice that isn't read straight from the game d
 - **Marks:** a support hit with `applies_mark` puts a Mark up; a main hit that can trigger Marks consumes it and deals the Mark hit, at most once per `mark_icd` (1 s). One Mark at a time (GUESS).
 - **Hit levels:** `levelTypeData` 1 → that potential's level (pinks Lv1); 3 → skill level of `LevelData` slot (5 auto, 2/1 skill, 4 ult) incl. emblem +N; 4 → ascension (9th entry); none → the casting action's skill level.
 - **Modifiers:** triggered buffs add a stack per matching event (refreshing the oldest past `max_stacks`) and expire after their duration. Unknown triggers are a constant `uptime × max_stacks`. Disc stats and disc effects go to the whole team (`disc_stats_target: team`).
+
+## Enemy RES calibration (Task 9)
+
+Noya's Lux PEN emblem lines (110 PEN each, best roll) against the baseline team (pinks, Maygi's top-3 discs at C1, no emblems):
+
+| enemy RES | 1st line | 2nd line |
+| --- | --- | --- |
+| 110 | 5.09% | 0.00% |
+| 140 | 8.12% | 0.36% |
+| **145** | **8.65%** | **0.49%** |
+| 150 | 9.19% | 0.64% |
+| 250 (weak) | 22.88% | 8.12% |
+| 570 (raid) | 10.64% | 5.61% |
+
+Maygi: 8.65% / 0.05%. **Chosen: RES 145**, i.e. a "weak" enemy (250) with ~105 PEN already in the build (the gist's "weak + 1 rainbow PEN" ≈ 140). The first line matches exactly; the second line can't get closer than ~0.4% on this curve without breaking the first, since RES − 2×110 is below zero at any RES that gives 8.65% for the first line. Not forced further: the near-zero second line likely means Maygi's baseline already had more PEN or he measured differently. Enemy DEF left at 0 (unknown); DEF only scales everything equally unless a DEF PEN source is rated.
+
+## Discs with scripted effects
+
+46 of 104 discs have a melody or harmony with no `EffectId` (the effect lives in a script, only text + Params in data). These are modelled by `specs/discs/<id>.yaml` where written (My Guiding Star, Ripples of Nostalgia, Summer Sanctuary, Sparkling Moment, Stellar Destination, Seed Alike, Eternal Brilliance) and otherwise **listed as "scripted, not modelled"** in the Discs sheet's Notes. Their ratings understate them.
+
+- "Lux Versatile Trekkers" = `Character.Class` 2 (Firefly here; FL Noya is class 1 Vanguard, Tilia class 3 Support).

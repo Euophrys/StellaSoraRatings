@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .data import GameData
+from .effects import disc_modifiers
 from .game import potential_pools
 from .kit import resolve_potential
 from .sim import SimResult, simulate
@@ -46,8 +47,9 @@ def rate_discs(gd: GameData, team: TeamConfig, disc_ids: list[int] | None = None
             vals[("main", c)] = gain(base, r_main)
             vals[("support", c)] = gain(base, r_sup)
             unknown |= {u for u in r_main.unknown_modifiers if str(d) in u}
+        decode_notes = disc_modifiers(gd, d, 1)[1]
         rows.append(DiscRow(d, gd.item_name(d), vals[("main", 1)], vals[("main", 6)],
-                            vals[("support", 1)], vals[("support", 6)], sorted(unknown)))
+                            vals[("support", 1)], vals[("support", 6)], decode_notes + sorted(unknown)))
     rows.sort(key=lambda r: -r.main_c1)
     return rows
 
