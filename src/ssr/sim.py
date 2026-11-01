@@ -12,6 +12,7 @@ from .formula import Enemy, hit_damage, slot_of
 from .game import char_base_stats, disc_base_stats, hit, hit_level, skill_cd, talent_nodes, ult_energy
 from .kit import ActionSpec, HitSpec, ResolvedPotential, kit_buffs, resolve_buffs, resolve_potential
 from .stats import StatBlock
+from .emblems import EmblemChargeEfficiency, EmblemPotentialLevel, line_relevant
 from .team import FILLER, FILLER_SOURCE_DISC, Build, EmblemLine, EmblemSkillLevel, TeamConfig
 
 DEFAULT_BUSY = 1.5   # GUESS: seconds after a main cast before another cast can start (animation)
@@ -133,6 +134,7 @@ class _Member:
     energy: float = 0.0
     ult_cost: float = 0.0
     energy_cap: dict = field(default_factory=dict)
+    charge: float = 1.0   # Charge Efficiency emblem multiplier on energy gained
     cast_count: dict = field(default_factory=lambda: defaultdict(int))
 
 
@@ -141,7 +143,8 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     """Simulate one fight.
 
     discs: (main_slots, support_slots) as [(disc_id, copies)], default the team's lineup.
-    extra: [(member_idx, Modifier | EmblemLine | EmblemSkillLevel | ResolvedPotential)] for rating.
+    extra: [(member_idx, Modifier | EmblemLine | EmblemSkillLevel | EmblemPotentialLevel | EmblemChargeEfficiency
+            | ResolvedPotential)] for rating.
     """
     n = len(team.members)
     extra = extra or []
@@ -190,6 +193,12 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                 levels[x.action] = levels.get(x.action, 10) + x.plus
         pot_levels = {p: 1 for p in mc.pinks}
         pot_levels.update(build.levels_for(mc.char_id))
+        lines_i = (list(mc.emblems) if emblems else []) + [x for (j, x) in extra if j == i]
+        for x in lines_i:   # Lv90 "+N": fights at target + N (cap 9); not taken still fights at N
+            if isinstance(x, EmblemPotentialLevel) and line_relevant(x, 0, mc.role):
+                pot_levels[x.potential_id] = min(9, pot_levels.get(x.potential_id, 0) + x.plus)
+        charge = 1.0 + sum(x.value for x in lines_i
+                           if isinstance(x, EmblemChargeEfficiency) and x.role == mc.role)
         resolved = [_potential(gd, kit, p, lv) for p, lv in pot_levels.items()]
         resolved += [x for (j, x) in extra if j == i and isinstance(x, ResolvedPotential)]
         owned = set(pot_levels)
@@ -231,6 +240,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                     m.energy_cap[name] = sk["GetEnergyLimit"] / 10000
         if "ult" in actions and actions["ult"].skill_id:
             m.ult_cost = ult_energy(gd, actions["ult"].skill_id)
+        m.charge = charge
         members.append(m)
 
         for rp in resolved:
@@ -524,7 +534,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             gain = max(0.0, min(hd.energy, cap - energy_used[key]))
             energy_used[key] += gain
             for mm in members:
-                mm.energy += gain * (1.0 if mm.idx == 0 else mm.kit.energy_conv)
+                mm.energy += gain * (1.0 if mm.idx == 0 else mm.kit.energy_conv) * mm.charge
         if h.applies_mark:
             mark_up[0] = True
         triggers = h.triggers_mark or bool(tags & m.mark_tags)

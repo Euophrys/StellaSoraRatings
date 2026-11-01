@@ -9,58 +9,12 @@ import yaml
 from .data import GameData, REPO_ROOT
 from .formula import Enemy
 from .kit import Kit, SPECS, load_kit, pink_ids
-from .stats import stat_name
+from .emblems import (EmblemChargeEfficiency, EmblemLine, EmblemPotentialLevel, EmblemSkillLevel,  # noqa: F401 (re-export)
+                      _SKILL_SLOTS, emblem_lines)
 
 TEAMS = REPO_ROOT / "teams"
 FILLER = 0   # stats-only filler disc (Eternal Brilliance stats, Lv90 C6, no effects)
 FILLER_SOURCE_DISC = 214067
-
-
-@dataclass(frozen=True)
-class EmblemLine:
-    name: str
-    stat: int
-    value: float
-    is_pct: bool = False
-
-
-@dataclass(frozen=True)
-class EmblemSkillLevel:
-    name: str
-    slot: str      # auto | main_skill | support_skill | ult
-    plus: int
-
-    @property
-    def action(self) -> str:
-        return {"auto": "auto", "main_skill": "skill", "support_skill": "skill", "ult": "ult"}[self.slot]
-
-    def applies_to(self, role: str) -> bool:
-        return not ((self.slot == "main_skill" and role != "main") or (self.slot == "support_skill" and role != "support"))
-
-
-_SKILL_SLOTS = {1: ("auto", "Auto"), 2: ("main_skill", "Skill"), 3: ("support_skill", "Support"), 4: ("ult", "Ult")}
-
-
-def emblem_lines(gd: GameData) -> list[EmblemLine | EmblemSkillLevel]:
-    """Every emblem stat line and skill-level line at its best roll (rarity 1, highest Level)."""
-    best: dict[tuple, dict] = {}
-    for r in gd.table("CharGemAttrValue").values():
-        if r.get("Rarity") != 1 or r.get("AttrType") not in (7, 12):
-            continue
-        key = (r["AttrType"], r.get("AttrTypeFirstSubtype"), r.get("AttrTypeSecondSubtype"))
-        if key not in best or r["Level"] > best[key]["Level"]:
-            best[key] = r
-    out: list = []
-    for (atype, sub1, sub2), r in sorted(best.items(), key=lambda kv: (kv[0][0], kv[0][1] or 0, kv[0][2] or 0)):
-        if atype == 12:
-            is_pct = sub1 in (1, 2, 3) and sub2 == 2
-            out.append(EmblemLine(stat_name(sub1, is_pct).replace(" (flat)", ""), sub1, float(r["Value"]), is_pct))
-        elif sub1 in _SKILL_SLOTS:
-            slot, label = _SKILL_SLOTS[sub1]
-            plus = int(float(r["Value"]))
-            out.append(EmblemSkillLevel(f"{label} +{plus}", slot, plus))
-    # flat ATK/HP/DEF lines share names with nothing; % lines are "ATK%" etc.
-    return out
 
 
 @dataclass

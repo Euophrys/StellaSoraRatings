@@ -8,7 +8,8 @@ from .effects import disc_modifiers
 from .game import potential_pools
 from .kit import resolve_potential
 from .sim import SimResult, simulate
-from .stats import ELEM_DMG_BASE, ELEM_PEN_BASE, ELEM_RES_BASE, ELEM_TAKEN_BASE, ELEM_IGNORE_RES_BASE
+from .emblems import line_relevant
+from .stats import ELEM_PEN_BASE
 from .team import FILLER, Build, EmblemLine, EmblemSkillLevel, TeamConfig, emblem_lines
 
 ALL_FILLER = ([(FILLER, 6)] * 3, [(FILLER, 6)] * 3)
@@ -66,18 +67,6 @@ class EmblemRow:
     notes: list[str] = field(default_factory=list)
 
 
-_ELEM_BASES = (ELEM_DMG_BASE, ELEM_PEN_BASE, ELEM_RES_BASE, ELEM_TAKEN_BASE, ELEM_IGNORE_RES_BASE)
-
-
-def _line_relevant(line, element: int, role: str) -> bool:
-    if isinstance(line, EmblemSkillLevel):
-        return line.applies_to(role) and not (role == "support" and line.slot == "auto")
-    for b in _ELEM_BASES:
-        if b <= line.stat < b + 6:
-            return line.stat == b + element - 1
-    return True
-
-
 def rate_emblems(gd: GameData, team: TeamConfig, build: Build, members: list[int] | None = None) -> list[EmblemRow]:
     base = simulate(gd, team, build, emblems=False)
     rows = []
@@ -87,7 +76,7 @@ def rate_emblems(gd: GameData, team: TeamConfig, build: Build, members: list[int
             continue
         element = gd.table("Character")[str(m.char_id)]["EET"]
         for line in lines:
-            if not _line_relevant(line, element, m.role):
+            if not line_relevant(line, element, m.role):
                 continue
             r = simulate(gd, team, build, emblems=False, extra=[(i, line)])
             rows.append(EmblemRow(i, m.char_id, line.name,

@@ -84,3 +84,9 @@ Maygi: 8.65% / 0.05%. **Chosen: RES 145**, i.e. a "weak" enemy (250) with ~105 P
 - Team assumption `minion_buffs: all` gives minions every buff again, for comparison. With the text rule, Chixia's share falls from 68% to 62%. The Laru team moves less than 2%.
 - **Chixia's own buffs on herself** ("Chixia's ATK", Dragon Blaze) don't reach her minions. The Word text says minions "inherit 100% of Chixia's ATK"; that's read as her stat sheet, not her buffs.
 - **Snowy Night Surprise's Hymn** needs the summoner's own Ode, which comes from her own Skill DMG (Word 6002): `&recent:skill_dmg:12.25`.
+
+## Build guide page: emblems (2026-11-01)
+
+- **Emblem "+N" on a potential not taken in the run** is assumed to give that potential at level N (user, 2026-11-01; real behaviour unknown). With a target it fights at target + N, capped at 9.
+- **Charge Efficiency (AttrType 37)** lines: "(Main)" applies only while the trekker is the main, "(Support)" only while a support (Claude's reading; the data names their attributes `EnergyEfficiency` / `EnergyConvRatio`). Each multiplies the energy that trekker gains from the main's hits by `1 + value`; passive energy per second is unchanged. Unconfirmed in game.
+- **Emblem stat lines are offered in every slot** (Lv70/80/90); `CharGemAttrValue` has three TypeId groups that look like per-slot pools (the third lacks element PEN and Charge Efficiency), but which group is which slot isn't confirmed, so the page doesn't restrict by them.
