@@ -112,7 +112,8 @@ def test_bad_state_is_400_naming_the_value(client):
 
 
 def test_malformed_json_is_400(client):
-    req = urllib.request.Request(client.base + "/api/jobs", data=b"{nope", method="POST")
+    req = urllib.request.Request(client.base + "/api/jobs", data=b"{nope", method="POST",
+                                 headers={"Content-Type": "application/json"})
     with pytest.raises(urllib.error.HTTPError) as e:
         urllib.request.urlopen(req, timeout=10)
     assert e.value.code == 400
@@ -213,3 +214,18 @@ def test_catalog_potentials_in_game_row_order(client):
     amber = next(t for t in client.get("/api/catalog")["trekkers"] if t["name"] == "Amber")
     row1 = [p["name"] for p in amber["roles"]["main"]["potentials"] if p["row"] == 1]
     assert row1 == ["Confident Mode", "Greed Gunfire", "Ardent Trigger"]
+
+
+def test_rejects_foreign_host_and_non_json_posts(client):
+    port = client.base.rsplit(":", 1)[1]
+    req = urllib.request.Request(client.base + "/api/teams", headers={"Host": f"evil.example:{port}"})
+    with pytest.raises(urllib.error.HTTPError) as e:
+        urllib.request.urlopen(req, timeout=10)
+    assert e.value.code == 403
+    req = urllib.request.Request(client.base + "/api/jobs", method="POST", data=json.dumps(
+        {"kind": "recalc", "state": state()}).encode(), headers={"Content-Type": "text/plain"})
+    with pytest.raises(urllib.error.HTTPError) as e:
+        urllib.request.urlopen(req, timeout=10)
+    assert e.value.code == 415
+    req = urllib.request.Request(client.base + "/api/teams", headers={"Host": f"localhost:{port}"})
+    assert urllib.request.urlopen(req, timeout=10).status == 200

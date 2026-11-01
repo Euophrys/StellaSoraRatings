@@ -22,6 +22,7 @@ from .jobs import JobBusy, JobRunner
 
 TEAMS_DIR: Path = TEAMS
 STATIC = Path(__file__).parent / "static"
+LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
 STEM = re.compile(r"^[A-Za-z0-9_-]+$")
 TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
          ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png"}
@@ -160,8 +161,19 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError(400, "body must be a JSON object")
         return body
 
+    def _guard(self, method: str):
+        """Localhost only: refuse other Host names (DNS rebinding) and non-JSON writes (cross-site form posts)."""
+        host = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]").lower()
+        if host not in LOCAL_HOSTS:
+            raise ApiError(403, f"host {host!r} not allowed; open the page on 127.0.0.1 or localhost")
+        if method in ("POST", "PUT"):
+            ctype = (self.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+            if ctype != "application/json":
+                raise ApiError(415, "send JSON (Content-Type: application/json)")
+
     def _dispatch(self, method: str):
         try:
+            self._guard(method)
             path = urlparse(self.path).path
             parts = [unquote(p) for p in path.strip("/").split("/")] if path.strip("/") else []
             self._route(method, path, parts)
