@@ -55,3 +55,13 @@ def test_hit_level_source(gd):
     assert hit_level(hit(gd, 162310006), lv, pots) == 4        # levelTypeData 1 = Prism Warp's level
     assert hit_level(hit(gd, 162310006), lv, {}) == 1
     assert hit_level(hit(gd, 162000001), lv, pots) == 9        # levelTypeData 4 = ascension, max
+
+
+def test_hit_pct_clamps_past_zero_padding(gd):  # Review Focus 5: arrays padded with zeros
+    h = hit(gd, 162310006)   # 9 real entries then zeros
+    assert hit_pct(h, 13) == hit_pct(h, 9) > 0
+    pad = next(k for k, v in gd.table("HitDamage").items()
+               if v.get("levelTypeData") is None and (v.get("SkillPercentAmend") or [0])[0]
+               and len(v["SkillPercentAmend"]) > 1 and not any(v["SkillPercentAmend"][1:]))
+    hp = hit(gd, int(pad))
+    assert hit_pct(hp, 10) == hp.pct[0] > 0

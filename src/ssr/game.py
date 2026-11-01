@@ -86,7 +86,9 @@ def hit_level(h: Hit, skill_levels: dict[str, int], potential_levels: dict[int, 
 
 
 def hit_pct(h: Hit, skill_level: int) -> float:
-    return h.pct[max(1, min(skill_level, len(h.pct))) - 1]
+    """Multiplier at `skill_level`, clamped to the last real (non-zero) entry: many arrays are zero-padded."""
+    last = max((i for i, x in enumerate(h.pct) if x), default=0) + 1
+    return h.pct[max(1, min(skill_level, last)) - 1]
 
 
 def disc_base_stats(gd: GameData, disc_id: int, level: int = 90, copies: int = 1) -> StatBlock:
