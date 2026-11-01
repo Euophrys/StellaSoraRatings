@@ -19,6 +19,9 @@ def level_row(gd: GameData, table: str, base_id: int, level: int) -> dict:
         row = t.get(str(base_id + lv * 10))
         if row is not None:
             return row
+    row = t.get(str(base_id))  # single-level entries reference their only row directly
+    if row is not None:
+        return row
     raise KeyError(f"{table}: no level rows for {base_id}")
 
 

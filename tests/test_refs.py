@@ -53,3 +53,14 @@ def test_statblock_final():
     t = StatBlock(); t.flat[HP] += 10
     s.add(t)
     assert s.flat[HP] == 10
+
+
+def test_levelup_ref_without_level_rows_uses_base_row(gd):  # Review Focus 1: 516204 refs 16204011 directly
+    r = "OnceAdditionalAttribute,LevelUp,16204011,Value1,10KHdPct"
+    assert resolve(gd, r, 1).value == pytest.approx(0.2)
+    assert resolve(gd, r, 9).value == pytest.approx(0.2)
+
+
+def test_levelup_ref_missing_everywhere_raises_keyerror(gd):
+    with pytest.raises(KeyError):
+        resolve(gd, "OnceAdditionalAttribute,LevelUp,99999990001,Value1,10K", 1)
