@@ -1,0 +1,120 @@
+# Teresa (127) — Aqua, Support. Hits scale with ATK (data).
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+#
+# User, frame-timed (2026-11-01, 30 fps):
+#   Skill: cast 8,29; Tidal Domain indicator gone 15,27 (+6.93 s); leaves 19,14 (+10.5 s).
+#     Surging Shield appears 9,23 (+0.8 s), gone 17,22 (8 s with Surge: Infinite); not broken (user wasn't hit).
+#   Second clip: appears 34,17; shield at the plant; plant hits 35,16 (+0.97 s); domain ticks from 36,17 (+2.0 s), 1 s apart.
+#   Ult: cast 2,01; hits 4,15 (+2.47 s); leaves 7,17 (+5.53 s).
+char_id: 127
+
+main:
+  actions:
+    skill:
+      hits:
+        - {hit: 127310001, count: 1, tags: [skill]}   # stub: main-role kit not authored
+    ult:
+      hits:
+        - {hit: 127400001, count: 1, tags: [ult]}
+
+support:
+  energy_per_second: 2.0          # GUESS
+  on_field: {skill: 10.5, ult: 5.533}   # user-timed
+
+  actions:
+    skill:                         # Billowing Tide: plant hit, then Tidal Domain 1/s for 6 s (inflicts Aqua Mark: Torrent)
+      hits:
+        - {hit: 0, offset: 0.8, tags: [shield_up]}                                                      # user: shield appears +0.8 s
+        - {hit: 127320001, offset: 0.967, tags: [teresa_skill]}                                          # user-timed
+        - {hit: 127320002, count: 6, offset: 2.0, interval: 1.0, tags: [domain], applies_mark: true}    # user-timed
+
+    ult:                           # Slicing Riptide: two waves; inflicts Aqua Mark: Torrent
+      hits:
+        - {hit: 127400001, offset: 2.467, tags: [teresa_ult], applies_mark: true}   # user-timed
+        - {hit: 127400002, offset: 2.567, tags: [teresa_ult], applies_mark: true}   # GUESS: second wave 0.1 s later
+
+  buffs:
+    # Surging Shield on the main (Shield 12750002 time, text); Surge: Infinite doubles it.
+    - {name: surging_shield, event: "marker:self:shield_up", target: main, level: skill,
+       duration: {ref: "Shield,LevelUp,12750002,Time,10K"}, excludes: [512721]}
+    - {name: surging_shield, event: "marker:self:shield_up", target: main, level: skill,
+       duration: {ref: "Shield,LevelUp,12750002,Time,10K", times: 2}, requires: [512721]}
+    # Tidal Domain up (text: 6 s; Surge: Immortality +67%)
+    - {name: tidal_domain, event: "cast:self:skill", target: main, duration: 6.5, excludes: [512723]}
+    - {name: tidal_domain, event: "cast:self:skill", target: main, duration: 10.5, requires: [512723]}
+
+  potentials:
+    512721:   # Surge: Infinite (pink): shield lasts twice as long (buff above); Aqua main's ATK while shielded
+      overrides:
+        - {index: 0, event: "while:status:surging_shield", target: main}
+      note: "Shield lasts its full 8 s (user, unhit)."
+
+    512722:   # Surge: Ripple (pink): while shielded, the main's hits -> a wave (Skill DMG, inflicts Mark), 1/0.5 s
+      procs:
+        - {event: "hit:main:any", when: "while:status:surging_shield", hit: 127522001, icd: 0.5, tags: [ripple], applies_mark: true}
+      note: "Assumes the shield lasts its full duration."
+
+    512723:   # Surge: Immortality (pink): Tidal Domain lasts 67% longer (6 s -> 10 s: 4 more ticks)
+      add_hits:
+        skill: [{hit: 127320002, count: 4, offset: 8.0, interval: 1.0, tags: [domain], applies_mark: true}]
+
+    512724:   # Surge: Thunderbolt (pink): Tidal Domain DMG multiplier +44%
+      overrides:
+        - {index: 0, as_stat: 50, hit_tags: [domain]}   # EAT 85 "DMG multiplier", put in the general DMG bucket
+      note: "The multiplier bonus is added to the DMG bucket rather than multiplying the hit (as Precise Temperature Control)."
+
+    512725:   # Isn't It Awesome!: while shielded, the Aqua main's ATK and ATK SPD
+      overrides:
+        - {index: 0, drop: true}   # ATK SPD: not modelled
+        - {index: 1, event: "while:status:surging_shield", target: main}
+      note: "ATK SPD not modelled (auto string is user-timed at base speed)."
+
+    512726:   # Hold On!: while shielded, the main's ATK; CD cut when the main is attacked (ignored)
+      overrides:
+        - {index: 0, event: "while:status:surging_shield", target: main}
+      note: "The 1 s cooldown cut when the main is attacked isn't modelled."
+
+    512727:   # I'll Protect You!: shield absorbs more (defensive)
+      overrides:
+        - {index: 0, drop: true}
+      note: "Defensive; no damage value."
+
+    512728:   # Stay Away!: Tidal Domain ticks twice as often; domain DMG -> main's ATK stacks (1/0.5 s)
+      add_hits:
+        skill:
+          - {hit: 127320002, count: 6, offset: 2.5, interval: 1.0, tags: [domain], applies_mark: true}
+          - {hit: 127320002, count: 4, offset: 8.5, interval: 1.0, tags: [domain], applies_mark: true, requires: [512723]}
+      overrides:
+        - {index: 0, event: "hit:self:domain", icd: 0.5, target: main}
+
+    512729:   # Let Me Help!: Aqua Trekkers in Tidal Domain: Auto DMG every second, 5 stacks
+      overrides:
+        - {index: 0, event: "hit:self:domain", icd: 1.0, target: team}
+      note: "Stacks from domain ticks (~1/s); everyone assumed to stand in the domain."
+
+    512730:   # How About This!: the Aqua main's hits in Tidal Domain: 50% geyser (Skill DMG, inflicts Mark)
+      procs:
+        - {event: "hit:main:any", when: "while:status:tidal_domain", hit: 127530001, every: 2, tags: [geyser], applies_mark: true}
+      note: "50% chance as every 2nd main hit; no ICD in the text."
+
+    512731:   # Band-aid Collector: squad ATK while Teresa is on the battlefield
+      overrides:
+        - {index: 0, event: "while:on_field:self", target: team}
+
+    512733:   # Shortcut Seeker: Aqua Trekkers' ATK
+      overrides:
+        - {index: 0, event: always, target: team}
+
+    512741:   # Wave Breaker: ult DMG -> target's Movement SPD down and Aqua DMG Taken up, 20 s
+      overrides:
+        - {index: 0, drop: true}   # enemy Movement SPD: no damage value
+        - {index: 1, event: "hit:self:teresa_ult"}
+
+    512742:   # Power Unbound: ult cast -> squad ATK, 20 s
+      overrides:
+        - {index: 0, event: "cast:self:ult", target: team}
+
+    512743:   # Demonic Devour: ult DMG vs Aqua Mark: Torrent / Chill / Frozen targets
+      overrides:
+        - {index: 0, hit_tags: [teresa_ult]}
+      note: "Target assumed to always carry Aqua Mark: Torrent or Chill."

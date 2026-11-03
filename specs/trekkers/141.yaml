@@ -33,15 +33,15 @@ support:
         # --- slot 0: Tiger of the East (pink 514123), ready C+3.97
         - {hit: 0, offset: 3.967, tags: [tiger_up], requires: [514123]}
         - {hit: 0, count: 3, offset: 2.8, interval: 2.0, tags: [tiger_tick], requires: [514123]}   # +50% Minion DMG stacks
-        - {hit: 141523002, offset: 4.767, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}   # swipe
-        - {hit: 141523001, offset: 6.033, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}   # pounce (boss moved)
-        - {hit: 141523003, offset: 7.167, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}   # swipe
-        - {hit: 141523004, count: 2, offset: 8.433, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}   # double swipe
+        - {hit: 141523002, offset: 4.767, tags: [tiger, minion, s0, close], applies_mark: true, requires: [514123]}   # swipe
+        - {hit: 141523001, offset: 6.033, tags: [tiger, minion, s0, close], applies_mark: true, requires: [514123]}   # pounce (boss moved)
+        - {hit: 141523003, offset: 7.167, tags: [tiger, minion, s0, close], applies_mark: true, requires: [514123]}   # swipe
+        - {hit: 141523004, count: 2, offset: 8.433, tags: [tiger, minion, s0, close], applies_mark: true, requires: [514123]}   # double swipe
         # then swipe / swipe / double swipe, ~1.3 s apart (GUESS spacing after 14,18), twice
-        - {hit: 141523002, count: 3, offset: 9.9, interval: 3.9, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}
-        - {hit: 141523003, count: 3, offset: 11.2, interval: 3.9, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}
-        - {hit: 141523004, count: 3, offset: 12.5, interval: 3.9, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}
-        - {hit: 141523004, count: 3, offset: 12.6, interval: 3.9, tags: [tiger, minion, s0], applies_mark: true, requires: [514123]}
+        - {hit: 141523002, count: 3, offset: 9.9, interval: 3.9, tags: [tiger, minion, s0, close], applies_mark: true, requires: [514123]}
+        - {hit: 141523003, count: 3, offset: 11.2, interval: 3.9, tags: [tiger, minion, s0, close], applies_mark: true, requires: [514123]}
+        - {hit: 141523004, count: 3, offset: 12.5, interval: 3.9, tags: [tiger, minion, s0, close], applies_mark: true, requires: [514123]}
+        - {hit: 141523004, count: 3, offset: 12.6, interval: 3.9, tags: [tiger, minion, s0, close], applies_mark: true, requires: [514123]}
         # --- slot 0 without the Tiger pink: a Dragon, active C+1.93
         - {hit: 0, offset: 1.933, tags: [dragon_up], excludes: [514123]}
         - {hit: 141320001, count: 4, offset: 2.667, interval: 1.5, tags: [dragon, minion, s0], applies_mark: true, excludes: [514123]}
@@ -86,7 +86,7 @@ support:
     514124:   # Tiger of the East: Blazing Scales (pink): first minion's Blazing Barrier, AoE every 0.5 s
       add_hits:
         skill:
-          - {hit: 141524001, count: 27, offset: 4.167, interval: 0.5, tags: [barrier, minion, s0], requires: [514123]}
+          - {hit: 141524001, count: 27, offset: 4.167, interval: 0.5, tags: [barrier, minion, s0, close], requires: [514123]}
           - {hit: 141524001, count: 14, offset: 2.133, interval: 0.5, tags: [barrier, minion, s0], excludes: [514123]}
       # User (clip 3): barrier appears 0.2 s after the tiger is ready; ticks 11,00 / 11,15 / 12,01 (0.5 s).
       # 4445 per tick vs 22393 tiger double swipe: per % of multiplier 67 vs 126, which fits 141524001 without the Tiger stacks.
@@ -102,7 +102,7 @@ support:
         - {event: "cast:main:skill|cast:main:recast", when: "while:status:dragon>=2", hit: 141526001, count: 2, offset: 0.55, interval: 0.3, tags: [dragon, minion, s2], applies_mark: true}
         - {event: "cast:main:skill|cast:main:recast", when: "while:status:dragon>=3", hit: 141526001, count: 2, offset: 0.6, interval: 0.3, tags: [dragon, minion, s3], applies_mark: true}
         - {event: "cast:main:skill|cast:main:recast", when: "while:status:dragon>=4", hit: 141526001, count: 2, offset: 0.65, interval: 0.3, tags: [dragon, minion, s0], applies_mark: true}
-        - {event: "cast:main:skill|cast:main:recast", when: "while:status:tiger", hit: 141526002, count: 5, offset: 0.5, interval: 0.2, tags: [tiger, minion, s0], applies_mark: true}
+        - {event: "cast:main:skill|cast:main:recast", when: "while:status:tiger", hit: 141526002, count: 5, offset: 0.5, interval: 0.2, tags: [tiger, minion, s0, close], applies_mark: true}
       note: "One extra attack per minion out at each main skill cast; PTC's recast counts (user). Hit timing GUESS. For Blood Fed, the n-th Dragon proc counts as slot n's Dragon."
 
     514127:   # Ink Sigil: Barrier Construct: minions raise nearby friendly Crit Rate, up to 6 stacks
@@ -130,9 +130,10 @@ support:
       note: "Ramps per minion from its own summon (user): Dragons (~8 s) reach ~8 stacks, the Tiger 15."
 
     514130:   # Ink Sigil: Raid: minion DMG to close-by targets
+      # User (2026-11-02): Dragons are stationary turrets (rarely close); the Tiger moves with the boss (always close).
       overrides:
-        - {index: 0, hit_tags: [minion]}
-      note: "Single boss assumed close to the minions."
+        - {index: 0, hit_tags: [close]}
+      note: "Only the Tiger's hits and its Blazing Barrier (tag close): Dragons are stationary turrets, rarely close (user)."
 
     514131:   # Majestic Stride: Chixia's Minion DMG
       overrides:
@@ -140,8 +141,8 @@ support:
 
     514132:   # Prayer of Raging Flame: ult applies Ignis Mark; ult DMG -> all friendly units' ATK, stacking
       overrides:
-        - {index: 0, event: "hit:self:ult", target: team}
-      note: "'When dealing DMG' read as the ult's DMG."
+        - {index: 0, drop: true}   # ATK buff: never fires on one target (user, in-game + community)
+      note: "ATK% buff not modelled: in game it only stacks when hitting multiple targets (user-checked: never fires on a single boss). The text doesn't say so. The ult's Ignis Mark still applies."
 
     514129:   # Ink Sigil: Ambush: minion DMG -> friendly ATK near the target, 4 s
       overrides:

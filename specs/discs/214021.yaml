@@ -1,0 +1,7 @@
+# United by Fate — melody is scripted. Destiny Cards only exist in a side mode: 0 outside it (user).
+# Stats: 17 Aqua DMG.
+melody:
+  - {stat: 17, value: Param1, target: team, note: "0 Destiny Cards"}
+overrides:
+  - {part: harmony1, index: 0, event: always}     # vs Aqua VUL = Aqua DMG Taken debuffs (user); Winter's Grip / Wave Breaker keep one up
+  - {part: harmony1, index: 1, drop: true}        # DMG taken reduction (defensive)

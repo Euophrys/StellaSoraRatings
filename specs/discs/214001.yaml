@@ -1,5 +1,5 @@
 # Meowing Cat God — all parts come from EffectIds; this pins down their triggers.
 overrides:
   - {part: melody, stat: 1, event: "cast:main:skill|cast:main:recast", target: team}   # main's skill cast -> Ignis squad ATK, 8 s
-  - {part: harmony1, stat: 58, event: "cast:main:skill|cast:main:recast"}              # while the main has Blazing Armor (8 s after its skill)
+  - {part: harmony1, stat: 58, event: "cast:main:skill|cast:main:recast", main_element: 2}   # while the main has Blazing Armor (8 s after its skill); only an Ignis main gets it
   - {part: harmony2, stat: 1, drop: true}                                             # needs kills: none against a single boss

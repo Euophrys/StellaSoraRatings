@@ -1,0 +1,43 @@
+# Amber (main) + Flora + Chixia, all Ignis. Pinks from a community "Standard Amber-Flora-Chixia Team" build.
+# User timings: Chixia on the field 10.03 s per skill, 3.40 s per ult (see specs/trekkers/141.yaml);
+# Flora 4 s per skill, 4.53 s per ult; Amber ult 1.17 s.
+# Test fixture: frozen copy of teams/amber_flora_chixia.yaml (the build page saves over files in teams/).
+name: amber_flora_chixia
+fight_length: 120
+tick: 0.05
+mark_icd: 1.0
+enemy:
+  res: 145        # same calibration as the FL Noya team (docs/assumptions.md)
+  defense: 500
+  broken: 1.0
+
+members:
+  - trekker: Amber
+    role: main
+    pinks: [Precise Temperature Control, Dominant Firepower]
+    skill_levels: {auto: 10, skill: 10, ult: 10}
+    emblems: []
+  - trekker: Flora
+    role: support
+    pinks: [Ashes of the Past, Ember of Tomorrow]
+    skill_levels: {skill: 10, ult: 10}
+    emblems: []
+  - trekker: Chixia
+    role: support
+    pinks: ["Crimson Dragon: Convergence", "Sigil Unleashed: Tiger of the East"]
+    skill_levels: {skill: 10, ult: 10}
+    emblems: []
+
+# Top 3 main discs from this team's own disc rating (C1, all-filler lineup, minion buff rule), 2026-11-01.
+discs:
+  main:
+    - {name: Meowing Cat God, copies: 1}
+    - {name: Snowy Night Surprise, copies: 1}
+    - {name: Fireworks, copies: 1}
+  support: [filler, filler, filler]
+
+reference: {steps: 2, main_picks: 2, support_picks: 1, level: 6}
+
+assumptions:
+  unknown_trigger_uptime: 1.0
+  disc_stats_target: team

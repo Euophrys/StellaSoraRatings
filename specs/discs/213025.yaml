@@ -1,0 +1,3 @@
+# Sweet Invitation (Umbra) — from EffectIds; this pins down harmony 1's trigger.
+overrides:
+  - {part: harmony1, stat: 1, event: "cast:element6:ult", minions: true}   # Umbra Trekker's ult -> Umbra ATK (and Minions), 30 s, 3 stacks

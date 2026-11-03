@@ -1,0 +1,142 @@
+# Freesia (125) — Aqua, Versatile. Hits scale with ATK (data).
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+#
+# User, frame-timed (2026-11-01, 30 fps):
+#   Skill: cast 21,17; field hit 22,10 (+0.77 s); flowers burst 23,22 (+2.17 s), 8 hits with Chill Forecast; leaves 24,28 (+3.37 s).
+#   Ult: cast 51,00; last ult hit ~52,09 (+1.3 s). Berserk autos (as a support): strike hits 54,13 / 54,28 / 55,20
+#     (+3.43 / +3.93 / +4.67 s); recovers and moves at 57,04 (+6.13 s); leaves 1:08,00 (+17 s).
+#     She keeps attacking (or closing in) the whole time (user): string ~2.7 s first hit -> recovery.
+char_id: 125
+
+main:
+  actions:
+    skill:
+      hits:
+        - {hit: 125310001, count: 1, tags: [skill]}   # stub: main-role kit not authored
+    ult:
+      hits:
+        - {hit: 125400001, count: 1, tags: [ult]}
+
+support:
+  energy_per_second: 2.0          # GUESS
+  on_field: {skill: 3.367, ult: 17.0}   # user-timed
+
+  actions:
+    skill:                         # Frost Bloom: field hit, then the Ice Flowers burst; inflicts Aqua Mark: Torrent
+      hits:
+        - {hit: 125320001, offset: 0.767, tags: [frost_bloom], applies_mark: true}
+        # Ice Flower bursts: 8 hits on the boss, with or without Chill Forecast (user: its extra flowers only add reach)
+        - {hit: 125320002, count: 8, offset: 2.167, interval: 0.033, tags: [frost_bloom, flower], applies_mark: true}
+
+    ult:                           # Elegy of Frost: 2 hits, then an AoE hit and Berserk (20 s); auto attacks as a support
+      hits:
+        - {hit: 125400001, offset: 0.6, tags: [freesia_ult], excludes: [512532]}                       # GUESS timing
+        - {hit: 125400002, offset: 0.9, tags: [freesia_ult], excludes: [512532]}                       # GUESS timing
+        - {hit: 125400003, offset: 1.3, tags: [freesia_ult], excludes: [512532]}                       # user: ~52,09
+        - {hit: 125400001, offset: 0.6, tags: [freesia_ult], applies_mark: true, requires: [512532]}   # Silent Prayer: inflicts Aqua Mark: Torrent
+        - {hit: 125400002, offset: 0.9, tags: [freesia_ult], applies_mark: true, requires: [512532]}
+        - {hit: 125400003, offset: 1.3, tags: [freesia_ult], applies_mark: true, requires: [512532]}
+        # Berserk auto string (text): S1 x2, S2 x2, S3 1 + 4 + 1. First string user-timed; she attacks continuously (user):
+        # 2.7 s string + ~0.3 s wind-up to the next first hit (GUESS) = one every 3 s until she leaves.
+        - {hit: 125100061, count: 5, offset: 3.433, interval: 3.0, tags: [berserk_auto]}
+        - {hit: 125100062, count: 5, offset: 3.5, interval: 3.0, tags: [berserk_auto]}
+        - {hit: 125100071, count: 5, offset: 3.933, interval: 3.0, tags: [berserk_auto]}
+        - {hit: 125100071, count: 5, offset: 4.0, interval: 3.0, tags: [berserk_auto]}
+        - {hit: 125100081, count: 5, offset: 4.667, interval: 3.0, tags: [berserk_auto]}
+        - {hit: 125100082, count: 5, offset: 4.767, interval: 3.0, tags: [berserk_auto]}
+        - {hit: 125100082, count: 5, offset: 4.867, interval: 3.0, tags: [berserk_auto]}
+        - {hit: 125100082, count: 5, offset: 4.967, interval: 3.0, tags: [berserk_auto]}
+        - {hit: 125100082, count: 5, offset: 5.067, interval: 3.0, tags: [berserk_auto]}
+        - {hit: 125100083, count: 5, offset: 5.4, interval: 3.0, tags: [berserk_auto]}
+
+  buffs:
+    - effect: 12594001             # Berserk (Word 2014): Freesia's ATK while it lasts
+      name: berserk
+      level: ult
+      event: "cast:self:ult"
+      duration: 20.0               # text (Word 2014 / ult text)
+      target: self
+
+  potentials:
+    512521:   # Realm of Frost (pink): Frost Bloom Skill DMG; bigger flower range (single target: nothing)
+      overrides:
+        - {index: 0, hit_tags: [frost_bloom]}
+
+    512522:   # Chill Forecast (pink): Frost Bloom Skill DMG; more Ice Flowers (skill hits above)
+      overrides:
+        - {index: 0, hit_tags: [frost_bloom]}
+      note: "Extra Ice Flowers only reach further (3-line cone): no extra hits on a single target (user)."
+
+    512523:   # Localized Snowfall (pink): skill cast in Berserk -> 30% per auto within 6 s to summon an Ice Flower
+      procs:
+        - {event: "cast:self:skill", when: "while:status:berserk", hit: 125322301, offset: 1.0, tags: [frost_bloom, snowfall]}
+        - {event: "cast:self:skill", when: "while:status:berserk", hit: 125322302, offset: 2.0, tags: [frost_bloom, snowfall]}
+      note: "One flower per skill cast in Berserk (GUESS: ~2 strings x 3 strikes x 30% in 6 s, capped at one)."
+
+    512524:   # Frost Warning (pink): Freesia's hits on Chill/Frozen targets -> extra AoE Aqua Skill DMG
+      procs:
+        - {event: "hit:self:any", when: "while:status:chill", hit: 125322401, icd: 1.0, tags: [frost_warning]}
+      note: "ICD 1 s is a GUESS (the text has none)."
+
+    512525:   # Winter's Grip: Frost Bloom hits -> target's Aqua DMG Taken, stacking
+      overrides:
+        - {index: 0, event: "hit:self:frost_bloom", max_stacks: {param: Param3}}
+
+    512526:   # Penetrating Chill: each Frost Bloom hit on the same target -> Skill DMG, up to 12 stacks
+      overrides:
+        - {index: 0, hit_tags: [frost_bloom], event: "hit:self:frost_bloom", duration: inf, max_stacks: {param: Param2},
+           reset_on: ["cast:self:skill"]}
+      note: "Stacks within one Frost Bloom cast, reset on the next cast (GUESS)."
+
+    512527:   # Crackling Zero: Ice Flowers leave Ice Seeds, which hit 2 s later
+      add_hits:
+        skill:
+          - {hit: 125322701, count: 8, offset: 4.167, interval: 0.033, tags: [frost_bloom, seed]}
+      note: "One seed per Ice Flower, 2 s after the burst (GUESS)."
+
+    512528:   # Ocean of Law: in Berserk, autos on Chill/Frozen targets -> ATK stacks
+      overrides:
+        - {index: 0, event: "hit:self:berserk_auto&while:status:chill"}
+
+    512530:   # Blessing of Faith: skill cast in Berserk -> +3 s Berserk, Skill DMG stacks
+      overrides:
+        - {index: 0, hit_tags: [], event: "cast:self:skill&while:status:berserk"}
+      note: "The +3 s Berserk extension isn't modelled (she leaves the field at 17 s anyway)."
+
+    512531:   # Guardian's Heart: squad Crit Rate with an all-Aqua squad
+      overrides:
+        - {index: 0, event: always, target: team}
+
+    512532:   # Silent Prayer: ult Ultimate DMG; ult inflicts Aqua Mark: Torrent (ult hits above)
+      overrides:
+        - {index: 0, hit_tags: [freesia_ult]}
+
+    512529:   # Power of Redemption: ATK per second on the battlefield, up to 25; removed when she leaves
+      add_hits:
+        skill: [{hit: 0, count: 3, offset: 1.0, interval: 1.0, tags: [por_tick]}]
+        ult: [{hit: 0, count: 17, offset: 1.0, interval: 1.0, tags: [por_tick]}]
+      overrides:
+        - {index: 0, event: "marker:self:por_tick", duration: inf, reset_on: ["cast:self:skill", "cast:self:ult"]}
+      note: "One stack per second on the field; cleared when she comes back (only her own hits use it)."
+
+    512533:   # Temporal Revival: skill cast -> 50% chance: squad Auto DMG, 2 stacks
+      overrides:
+        - {index: 0, event: "cast:self:skill", target: team, value: {param: Param2, times: 0.5}}
+        - {index: 1, drop: true}   # script row duplicate
+      note: "50% chance as half the value."
+
+    512541:   # Ice Vortex: ult Ultimate DMG; in Berserk, ult hits stack Freesia's Crit DMG
+      overrides:
+        - {index: 0, hit_tags: [], event: "hit:self:freesia_ult", duration: 20.0, max_stacks: {param: Param2}}
+        - {index: 1, hit_tags: [freesia_ult]}
+      note: "Crit DMG stacks from her 3 ult hits, kept for Berserk (GUESS)."
+
+    512542:   # Wuthering Cold Snap: skill cast in Berserk -> Auto DMG stacks
+      overrides:
+        - {index: 0, hit_tags: [berserk_auto], event: "cast:self:skill&while:status:berserk|cast:self:ult"}
+      note: "Assumes the ult cast counts as 'any skill' (it starts Berserk)."
+
+    512543:   # Frost Slash: within 10 s of the ult, autos on Chill/Frozen bosses: 50% for +Auto DMG
+      overrides:
+        - {index: 0, hit_tags: [berserk_auto], event: "cast:self:ult", duration: {param: Param2}, value: {param: Param4, times: 0.5}}
+      note: "50% chance as half the value; the Frozen on Berserk entry isn't modelled."

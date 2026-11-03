@@ -5,4 +5,4 @@ melody:
 harmony2:
   - {stat: 56, value: Param1, target: main, event: "hit:main:ult_dmg", duration: Param3, max_stacks: 10, note: "per Courage stack; starts when Courage ends, modelled from the ult hit"}
 overrides:
-  - {part: harmony1, stat: 1, event: "hit:any:skill_dmg"}   # Ignis squad ATK when an Ignis Trekker deals Skill DMG (text)
+  - {part: harmony1, stat: 1, event: "hit:element2:skill_dmg"}   # Ignis squad ATK when an Ignis Trekker deals Skill DMG (text)

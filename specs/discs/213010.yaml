@@ -1,0 +1,4 @@
+# Steam Syndrome — all parts from EffectIds.
+overrides:
+  - {part: melody, index: 1, event: always}                     # main above 80% HP (user: assume always)
+  - {part: harmony1, index: 0, event: "while:on_field:support"} # while an Aqua support is on the field

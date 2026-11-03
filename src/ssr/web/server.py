@@ -64,14 +64,15 @@ def _recalc(gd: GameData, team: TeamConfig):
             def p(phase, done, total, i=i):
                 progress(f"emblems: {gd.char_name(team.members[i].char_id)}", done, total)
             emblems[str(i)] = [asdict(r) for r in emblem_table(gd, team, build, i, progress=p)]
-        total = simulate(gd, team, build).total
-        return {"grid": {f"{i}:{pid}": v for (i, pid), v in grid.items()}, "emblems": emblems, "total": total}
+        r = simulate(gd, team, build)
+        return {"grid": {f"{i}:{pid}": v for (i, pid), v in grid.items()}, "emblems": emblems, "total": r.total,
+                "breaks": len(r.breaks)}
     return run
 
 
-def _optimize(gd: GameData, team: TeamConfig, split, max_level):
+def _optimize(gd: GameData, team: TeamConfig, split, max_level, total=None):
     def run(progress):
-        r = optimize(gd, team, split, max_level=max_level, progress=progress)
+        r = optimize(gd, team, split, max_level=max_level, progress=progress, total=total)
         return {"targets": _name_targets(gd, team, r.build), "total": r.total, "base_total": r.base_total,
                 "method": r.method}
     return run
@@ -111,7 +112,10 @@ class App:
             max_level = body.get("max_level", team.max_level)
             if not isinstance(max_level, int) or not 1 <= max_level <= 6:
                 raise ApiError(400, "max_level must be 1-6")
-            fn = _optimize(gd, team, split, max_level)
+            total = body.get("total", team.budget_total)
+            if total is not None and (not isinstance(total, int) or isinstance(total, bool) or total < 0):
+                raise ApiError(400, "total must be a non-negative whole number or null")
+            fn = _optimize(gd, team, split, max_level, total)
         elif kind == "pinks":
             member = body.get("member")
             if member not in (0, 1, 2):

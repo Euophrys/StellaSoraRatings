@@ -1,5 +1,5 @@
 # A Moment in the Afternoon — all parts come from EffectIds; this pins down their triggers.
 overrides:
   # Shock: 35% chance when a Lux Trekker deals non-Auto DMG, 8 s. Teams land many such hits, so near-permanent.
-  - {part: melody, stat: 39, event: "hit:any:skill_dmg|hit:any:ult_dmg|hit:any:mark_dmg", every: 3}
+  - {part: melody, stat: 39, event: "hit:element5:skill_dmg|hit:element5:ult_dmg|hit:element5:mark_dmg", every: 3}
   - {part: harmony2, stat: 21, drop: true}   # needs kills on Shocked targets: none against a single boss

@@ -34,6 +34,7 @@ SLOT_TAKEN = {"auto": AUTO_TAKEN, "skill": SKILL_TAKEN, "ult": ULT_TAKEN, "other
               "mark": MARK_TAKEN}
 
 BASE_STATS = (ATK, DEF, HP)
+RES_BREAK_EFF = 43   # Resilience Break Efficiency: x (1 + value) on resilience damage dealt
 
 
 def elem_stat(base: int, element: int) -> int:
@@ -50,6 +51,8 @@ def _build_stat_names(gd: GameData) -> dict[int, str]:
 
 
 STAT_NAMES: dict[int, str] = _build_stat_names(GameData(DEFAULT_DATA_ROOT))
+CHARGE_EFF = 1037   # pseudo stat: Energy Charge Efficiency from EffectType 37 (x (1 + value) on energy gained)
+STAT_NAMES[CHARGE_EFF] = "Energy Charge Efficiency"
 
 
 def stat_name(stat: int, is_pct: bool = False) -> str:

@@ -1,0 +1,4 @@
+# Soda Shopping — all parts from EffectIds.
+overrides:
+  - {part: melody, index: 1, event: "cast:any:ult"}             # any ult -> +Skill DMG 16 s
+  - {part: harmony1, index: 0, uptime: 0.1}                     # when the main is hit: low uptime (user: can be hit on purpose) GUESS

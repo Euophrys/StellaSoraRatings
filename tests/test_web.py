@@ -12,7 +12,11 @@ from ssr.team import TEAMS
 from ssr.web import server
 from ssr.web.jobs import JobBusy, JobRunner
 
-AFC = yaml.safe_load((TEAMS / "amber_flora_chixia.yaml").read_text())
+from pathlib import Path
+
+FIXTURES = Path(__file__).parent / "fixtures"   # frozen team files: the build page saves over teams/
+
+AFC = yaml.safe_load((FIXTURES / "amber_flora_chixia.yaml").read_text())
 
 
 class Client:
@@ -79,7 +83,8 @@ def test_catalog_lists_spec_trekkers(client):
     assert [t["colour"] for t in atk["tiers"]] == ["green", "blue", "yellow", "purple"] and atk["slots"] == [1, 2, 3]
 
 
-def test_team_list_and_get(client):
+def test_team_list_and_get(client, monkeypatch):
+    monkeypatch.setattr(server, "TEAMS_DIR", FIXTURES)
     assert "amber_flora_chixia" in client.get("/api/teams")
     assert client.get("/api/teams/amber_flora_chixia") == AFC
     assert client.call("GET", "/api/teams/nope")[0] == 404
@@ -149,7 +154,7 @@ def test_recalc_job_completes(client):
     assert all(len(v) == 6 for v in res["grid"].values())
     assert set(res["emblems"]) == {"0", "1", "2"} and res["total"] > 0
     row = res["emblems"]["0"][0]
-    assert set(row) == {"name", "kind", "slots", "relevant", "tiers"}
+    assert set(row) == {"name", "kind", "slots", "relevant", "tiers", "by_slot"}
 
 
 def test_optimize_and_pinks_jobs(client):
@@ -159,6 +164,12 @@ def test_optimize_and_pinks_jobs(client):
     assert s["state"] == "done", s
     assert [sum(t.values()) for t in s["result"]["targets"]] == [2, 1, 1]
     assert s["result"]["method"].startswith("greedy")
+    s = client.wait(client.json("POST", "/api/jobs", {"kind": "optimize", "state": doc,
+                                                      "split": [2, 2, 2], "max_level": 2, "total": 3})["id"])
+    assert s["state"] == "done", s
+    sums = [sum(t.values()) for t in s["result"]["targets"]]
+    assert sum(sums) == 3 and max(sums) <= 2
+    client.json("POST", "/api/jobs", {"kind": "optimize", "state": doc, "split": [2, 2, 2], "total": -1}, expect=400)
     doc["members"][2]["pinks"] = []          # the searched member's own pinks don't matter
     s = client.wait(client.json("POST", "/api/jobs", {"kind": "pinks", "state": doc, "member": 2})["id"])
     assert s["state"] == "done", s
@@ -229,3 +240,15 @@ def test_rejects_foreign_host_and_non_json_posts(client):
     assert e.value.code == 415
     req = urllib.request.Request(client.base + "/api/teams", headers={"Host": f"localhost:{port}"})
     assert urllib.request.urlopen(req, timeout=10).status == 200
+
+
+def test_catalog_lists_enemies(gd):
+    from ssr.web.catalog import catalog
+    ids = [e["id"] for e in catalog(gd)["enemies"]]
+    assert ids == ["generic", "count_of_the_duloos", "lithe_beauty"]
+
+
+def test_team_doc_with_preset(gd):
+    from ssr.web.server import _team
+    doc = yaml.safe_load(open(TEAMS / "fl_noya_skill.yaml")); doc["enemy"] = {"preset": "lithe_beauty"}
+    assert _team(gd, doc).enemy.name == "lithe_beauty"

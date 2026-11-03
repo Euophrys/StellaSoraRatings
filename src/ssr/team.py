@@ -7,7 +7,8 @@ from pathlib import Path
 import yaml
 
 from .data import GameData, REPO_ROOT
-from .formula import Enemy
+from .formula import Enemy  # noqa: F401 (re-export)
+from .enemies import enemy_from_doc, _res_by_element, _ELEMENT_IDS  # noqa: F401 (re-export)
 from .kit import Kit, SPECS, load_kit, pink_ids
 from .emblems import (EmblemChargeEfficiency, EmblemLine, EmblemPotentialLevel, EmblemSkillLevel,  # noqa: F401 (re-export)
                       _SKILL_SLOTS, emblem_lines, find_emblem_option, find_emblem_tier)
@@ -29,6 +30,8 @@ class MemberConfig:
     talents: int = 0   # talent groups unlocked (dupes): T0 = 0, T1 = 1, ...
     targets: dict[int, int] = field(default_factory=dict)   # potential id -> target level (build guide page)
     emblem_slots: list = field(default_factory=list)        # 3 slots x [(line, tier)] as written; [] for flat lists
+    level: int = 90         # Trekker level (Attribute rows)
+    bonus_stats: list = field(default_factory=list)   # [(stat EAT, value, is_pct)]: flat extras, e.g. build-level ATK
 
 
 @dataclass
@@ -39,12 +42,15 @@ class TeamConfig:
     fight_length: float = 120.0
     tick: float = 0.05
     mark_icd: float = 1.0
+    hold: list = field(default_factory=list)   # [{member, action, until, max_wait}]: rotation timing (see specs/README.md)
     discs_main: list[tuple[int, int]] = field(default_factory=list)
     discs_support: list[tuple[int, int]] = field(default_factory=list)
     reference: dict = field(default_factory=lambda: dict(steps=2, main_picks=2, support_picks=1, level=6))
     assumptions: dict = field(default_factory=lambda: dict(unknown_trigger_uptime=1.0, disc_stats_target="team"))
     budget: list[int] = field(default_factory=lambda: [30, 15, 15])   # level budget per member (build guide page)
     max_level: int = 6
+    budget_total: int | None = None   # shared level budget; `budget` then holds per-member caps
+    disc_level: int = 90   # level of every disc (base stats), filler included
 
 
 @dataclass(frozen=True)
@@ -136,6 +142,9 @@ def team_from_doc(gd: GameData, doc: dict, name: str = "team", specs: Path = SPE
                 talents=int(m.get("talents", 0)),
                 targets=_member_targets(gd, cid, role, m.get("targets")),
                 emblem_slots=slots,
+                level=int(m.get("level", 90)),
+                bonus_stats=[(int(b["stat"]), float(b["value"]), bool(b.get("pct", False)))
+                             for b in m.get("bonus_stats") or []],
             ))
         except (KeyError, ValueError, TypeError, FileNotFoundError) as e:
             msg = e.args[0] if isinstance(e, KeyError) and e.args else str(e)
@@ -143,20 +152,22 @@ def team_from_doc(gd: GameData, doc: dict, name: str = "team", specs: Path = SPE
                 msg = "no kit spec for this trekker (can't be simulated)"
             raise TeamDocError(f"{who}: {msg}") from e
     try:
-        e = doc.get("enemy") or {}
+        enemy = enemy_from_doc(gd, doc.get("enemy") or {})
         discs = doc["discs"]
         return TeamConfig(
             name=doc.get("name", name), members=members,
-            enemy=Enemy(res=float(e.get("res", 250)), defense=float(e.get("defense", 0)),
-                        broken=float(e.get("broken", 1.0))),
-            fight_length=float(doc.get("fight_length", 120)), tick=float(doc.get("tick", 0.05)),
+            enemy=enemy,
+            fight_length=float(doc.get("fight_length") or enemy.fight_length or 120), tick=float(doc.get("tick", 0.05)),
             mark_icd=float(doc.get("mark_icd", 1.0)),
+            hold=[dict(h) for h in doc.get("hold") or []],
             discs_main=[_disc(gd, d) for d in discs["main"]],
             discs_support=[_disc(gd, d) for d in discs["support"]],
             reference={**dict(steps=2, main_picks=2, support_picks=1, level=6), **(doc.get("reference") or {})},
             assumptions={**dict(unknown_trigger_uptime=1.0, disc_stats_target="team"), **(doc.get("assumptions") or {})},
             budget=[int(x) for x in doc.get("budget", [30, 15, 15])],
             max_level=int(doc.get("max_level", 6)),
+            budget_total=int(doc["budget_total"]) if doc.get("budget_total") is not None else None,
+            disc_level=int(doc.get("disc_level", 90)),
         )
     except (KeyError, ValueError, TypeError) as e:
         msg = e.args[0] if isinstance(e, KeyError) and e.args else str(e)

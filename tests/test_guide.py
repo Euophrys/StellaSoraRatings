@@ -9,10 +9,14 @@ from ssr.rate import gain
 from ssr.sim import simulate
 from ssr.team import TEAMS, Build, load_team
 
+from pathlib import Path
+
+FIXTURES = Path(__file__).parent / "fixtures"   # frozen team files: the build page saves over teams/
+
 
 @pytest.fixture(scope="module")
 def short_team(gd):
-    return replace(load_team(gd, TEAMS / "amber_flora_chixia.yaml"), fight_length=20)
+    return replace(load_team(gd, FIXTURES / "amber_flora_chixia.yaml"), fight_length=20)
 
 
 def test_grid_current_level_is_zero_and_signs(gd, short_team):
@@ -72,3 +76,28 @@ def test_progress_reports_and_can_cancel(gd, short_team):
         raise RuntimeError("cancelled")
     with pytest.raises(RuntimeError):
         potential_grid(gd, short_team, Build(), members=[0], progress=boom)
+
+
+def test_emblem_table_stat_lines_stack_per_slot(gd, short_team):
+    from ssr.emblems import find_emblem_tier
+    from ssr.sim import simulate
+    from ssr.rate import gain
+    rows = emblem_table(gd, short_team, Build(), member=1)
+    atk = next(r for r in rows if r.name == "ATK%")
+    assert sorted(atk.by_slot) == [1, 2, 3] and [t[2] for t in atk.tiers] == atk.by_slot[1]
+    line = find_emblem_tier(gd, short_team.members[1].char_id, "ATK%", "purple").line
+    one = simulate(gd, short_team, Build(), extra=[(1, line)])
+    two = simulate(gd, short_team, Build(), extra=[(1, line)] * 2)
+    assert abs(atk.by_slot[2][-1] - gain(one, two)) < 1e-12   # Lv80 = 2nd copy on top of the Lv70 one
+    assert atk.by_slot[3][-1] > 0
+    skill = next(r for r in rows if r.kind == "skill")
+    assert list(skill.by_slot) == [2]
+
+
+def test_optimize_total_with_caps(gd, short_team):
+    r = optimize(gd, short_team, [3, 3, 3], max_level=2, total=4)
+    per = Counter()
+    for (cid, _p), lv in r.build.potentials.items():
+        per[cid] += lv
+    assert sum(per.values()) == 4 and all(v <= 3 for v in per.values())
+    assert r.total >= greedy_build(gd, short_team, max_level=2, split=[3, 3, 3], total=4).totals[-1]

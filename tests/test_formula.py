@@ -54,6 +54,6 @@ def test_hit_damage_uses_pen_and_taken(gd):
 def test_hit_damage_expected_crit(gd):
     me = char_base_stats(gd, 162)  # 5% crit, 150% crit dmg
     h = hit(gd, AUTO_HIT)
-    e = Enemy(res=0)
+    e = Enemy(res=0, defense=0)
     expected = me.final(h.base_stat) * 1.25 * (0.95 + 0.05 * 1.5) * 1.0  # hit_pct lvl10 = 1.25
     assert hit_damage(h, 10, me, e) == pytest.approx(expected)

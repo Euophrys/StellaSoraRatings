@@ -51,6 +51,7 @@ class Modifier:
     source: str = ""
     name: str = ""                  # names a status (e.g. "glimmer") other rules can refer to
     minions: bool | None = None     # also reaches the owner's minions (None = undecided -> no, unless a minion stat)
+    main_element: int = 0           # only works if the main Trekker has this element (EET): "the main Ignis Trekker"
 
     def label(self) -> str:
         return stat_name(self.stat, self.is_pct)
@@ -79,6 +80,25 @@ def text_reaches_minions(text: str, stat: int) -> bool:
 
 def with_minion_scope(mods: list["Modifier"], text: str) -> list["Modifier"]:
     return [m if m.minions is not None else m.with_(minions=text_reaches_minions(text, m.stat)) for m in mods]
+
+
+_ELEMENTS = {"Aqua": 1, "Ignis": 2, "Terra": 3, "Ventus": 4, "Lux": 5, "Umbra": 6}
+_MAIN_ELEMENT = re.compile(r"\bmain (Aqua|Ignis|Terra|Ventus|Lux|Umbra) Trekker|\b(Aqua|Ignis|Terra|Ventus|Lux|Umbra) main Trekker",
+                           re.I)
+
+
+def with_main_element(mods: list["Modifier"], text: str) -> list["Modifier"]:
+    """A disc text naming "the main <Element> Trekker": its effects tied to the main (a main-triggered event or
+    a main target) only work when the main has that element (e.g. Meowing Cat God in an Umbra-main team)."""
+    found = _MAIN_ELEMENT.search(re.sub(r"<[^>]+>|##|#\d+#", "", text or ""))
+    if not found:
+        return mods
+    el = _ELEMENTS[(found.group(1) or found.group(2)).capitalize()]
+
+    def tied(m: "Modifier") -> bool:
+        ev = m.trigger.event if m.trigger else ""
+        return m.target == "main" or any(p.split(":")[1:2] == ["main"] for p in ev.split("|") if ":" in p)
+    return [m.with_(main_element=el) if tied(m) else m for m in mods]
 
 
 def _is_pct(stat: int, second_subtype: int | None) -> bool:
@@ -148,6 +168,15 @@ def _interpret(gd: GameData, effect_row: dict | None, value_row: dict, source: s
         if not out:
             notes.append(f"{source}: buff {bid} has no damage effect")
         return out
+    if et == 37:   # Energy Charge Efficiency (same attribute as the emblem lines, AttrType 37)
+        from .stats import CHARGE_EFF
+        try:
+            v = float(value_row.get("EffectTypeParam1", 0))
+        except (TypeError, ValueError):
+            v = 0.0
+        return [Modifier(stat=CHARGE_EFF, value=v, target="self", trigger=trigger,
+                         assumed=trigger is not None and trigger.uptime is None and trigger.event == "unknown",
+                         source=source)]
     notes.append(f"{source}: EffectType {et} (effect {value_row.get('Id')}) has no damage model")
     return []
 
@@ -279,11 +308,15 @@ def _spec_modifiers(entries: list[dict], row: dict, source: str) -> list[Modifie
                            duration=math.inf if dur == "inf" else _spec_value(dur, row),
                            max_stacks=int(_spec_value(e.get("max_stacks", 1), row)),
                            uptime=e.get("uptime"), every=int(_spec_value(e.get("every", 1), row)),
-                           icd=float(_spec_value(e.get("icd", 0), row)))
+                           icd=float(_spec_value(e.get("icd", 0), row)),
+                           per_stack=bool(e.get("per_stack", False)), stacks_from=str(e.get("stacks_from", "")),
+                           add=int(_spec_value(e.get("add", 1), row)), reset_on=tuple(e.get("reset_on", ())))
+            if trig.event == "always":
+                trig = None
         out.append(Modifier(stat=int(e["stat"]), value=val, is_pct=bool(e.get("pct", False)),
                             target=e.get("target", "main"), hit_tags=tuple(e.get("hit_tags", ())),
                             trigger=trig, source=source + (f" [{e['note']}]" if e.get("note") else ""),
-                            minions=e.get("minions")))
+                            minions=e.get("minions"), name=str(e.get("name", ""))))
     return out
 
 
@@ -304,6 +337,8 @@ def _override_part(mods: list[Modifier], overrides: list[dict], row: dict) -> li
                 kw["hit_tags"] = tuple(o["hit_tags"])
             if "minions" in o:
                 kw["minions"] = bool(o["minions"])
+            if "main_element" in o:   # only works with a main of this element (EET)
+                kw["main_element"] = int(o["main_element"])
             if {"event", "duration", "max_stacks", "uptime", "every", "icd"} & set(o):
                 b = m.trigger or Trigger(event="unknown", duration=math.inf)
                 dur = o.get("duration", b.duration)
@@ -311,7 +346,8 @@ def _override_part(mods: list[Modifier], overrides: list[dict], row: dict) -> li
                                duration=math.inf if dur == "inf" else _spec_value(dur, row),
                                max_stacks=int(_spec_value(o.get("max_stacks", b.max_stacks), row)),
                                uptime=o.get("uptime", b.uptime), icd=float(_spec_value(o.get("icd", b.icd), row)),
-                               every=int(_spec_value(o.get("every", b.every), row)))
+                               every=int(_spec_value(o.get("every", b.every), row)),
+                               per_stack=bool(o.get("per_stack", b.per_stack)))
                 kw["trigger"] = None if trig.event == "always" else trig
                 kw["assumed"] = trig.event == "unknown" and trig.uptime is None
             m = m.with_(**kw)
@@ -347,9 +383,12 @@ def disc_modifiers(gd: GameData, disc_id: int, copies: int) -> tuple[list[Modifi
             for eid in row["EffectId"]:
                 part += effect_modifiers(gd, eid, label, notes)
             part = with_minion_scope(part, gd.text(row.get("Desc", "")) or "")
-            mods += _override_part(part, [o for o in spec.get("overrides", []) if o.get("part") == key], row)
+            part = _override_part(part, [o for o in spec.get("overrides", []) if o.get("part") == key], row)
+            mods += with_main_element(part, gd.text(row.get("Desc", "")) or "")
         if key in spec:
-            mods += with_minion_scope(_spec_modifiers(spec[key], row, label), gd.text(row.get("Desc", "")) or "")
+            mods += with_main_element(with_minion_scope(_spec_modifiers(spec[key], row, label),
+                                                        gd.text(row.get("Desc", "")) or ""),
+                                      gd.text(row.get("Desc", "")) or "")
         elif not row.get("EffectId"):
             notes.append(f"{label}: scripted effect, no spec in specs/discs/ (not modelled)")
     return mods, notes

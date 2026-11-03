@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 
 from .data import GameData, DEFAULT_DATA_ROOT
+from .enemies import enemy_summary
 from .rate import build_reference, rate_discs, rate_emblems, rate_potentials
 from .report import write_xlsx
 from .sim import simulate
@@ -40,6 +41,8 @@ def main(argv=None) -> None:
     print("rating potentials ...", flush=True)
     pots = rate_potentials(gd, team, ref)
     baseline = simulate(gd, team, base)
+    print(f"Enemy: {enemy_summary(team.enemy)}; fight {team.fight_length:g} s")
+    print(f"Baseline: {baseline.total / 1e6:,.1f}M, {len(baseline.breaks)} breaks ({baseline.broken_time:.0f} s broken)")
 
     out = a.out / f"{team.name}.xlsx"
     write_xlsx(out, gd, team, discs, emblems, pots, baseline)

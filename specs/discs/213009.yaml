@@ -1,0 +1,4 @@
+# Rainy Tune — all parts from EffectIds.
+overrides:
+  - {part: melody, index: 1, event: "cast:element1:skill"}      # Aqua skill cast -> Ult DMG 5 s
+  - {part: harmony1, index: 0, event: "mark:element1"}          # any Aqua Mark trigger (Marks are per element) -> ATK 4 s

@@ -4,39 +4,106 @@
 name: amber_flora_chixia
 fight_length: 120
 tick: 0.05
-mark_icd: 1.0
+mark_icd: 1
 enemy:
-  res: 145        # same calibration as the FL Noya team (docs/assumptions.md)
-  defense: 0
-  broken: 1.0
-
+  res: 145
+  defense: 500
+  broken: 1
 members:
-  - trekker: Amber
-    role: main
-    pinks: [Precise Temperature Control, Dominant Firepower]
-    skill_levels: {auto: 10, skill: 10, ult: 10}
-    emblems: []
-  - trekker: Flora
-    role: support
-    pinks: [Ashes of the Past, Ember of Tomorrow]
-    skill_levels: {skill: 10, ult: 10}
-    emblems: []
-  - trekker: Chixia
-    role: support
-    pinks: ["Crimson Dragon: Convergence", "Sigil Unleashed: Tiger of the East"]
-    skill_levels: {skill: 10, ult: 10}
-    emblems: []
-
-# Top 3 main discs from this team's own disc rating (C1, all-filler lineup, minion buff rule), 2026-11-01.
+- trekker: Amber
+  role: main
+  pinks:
+  - Precise Temperature Control
+  - Dominant Firepower
+  skill_levels:
+    auto: 10
+    skill: 10
+    ult: 10
+  emblems:
+  - slot: 1
+    lines:
+    - line: Skill Crit Rate
+      tier: yellow
+    - line: Auto Attack Crit Rate
+      tier: yellow
+    - line: Skill DMG
+      tier: blue
+    - line: Ignis DMG
+      tier: blue
+  - slot: 2
+    lines:
+    - line: Main Skill Level Up
+      tier: '+2'
+    - line: Auto Attack Crit Rate
+      tier: green
+    - line: Crit DMG
+      tier: blue
+    - line: Crit Rate
+      tier: blue
+  targets:
+    Grand Finale: 5
+    Fiery Rhythm: 1
+    Keen Accent: 6
+    Bursting Spark: 1
+    Overloaded Spark: 1
+    Soul-Hunting Spark: 6
+  talents: 1
+- trekker: Flora
+  role: support
+  pinks:
+  - Ashes of the Past
+  - Ember of Tomorrow
+  skill_levels:
+    skill: 10
+    ult: 10
+  emblems: []
+  targets:
+    Foreshadowing Verification: 1
+    Perfect Acting: 1
+    Visual Impact: 1
+    Reinforced Impression: 1
+    Guest Performer: 3
+    Lethal Inferno: 6
+    Weave of Annihilation: 1
+    Reincarnation of Fire: 1
+- trekker: Chixia
+  role: support
+  pinks:
+  - 'Crimson Dragon: Convergence'
+  - 'Sigil Unleashed: Tiger of the East'
+  skill_levels:
+    skill: 10
+    ult: 10
+  emblems: []
+  targets:
+    'Ink Sigil: Horn Call': 1
+    'Ink Sigil: Trail Seeker': 6
+    'Ink Sigil: Blood Fed': 6
+    'Ink Sigil: Ambush': 1
+    'Ink Sigil: Raid': 4
+    Prayer of Raging Flame: 6
+    Dragon Breath: 1
 discs:
   main:
-    - {name: Meowing Cat God, copies: 1}
-    - {name: Snowy Night Surprise, copies: 1}
-    - {name: Fireworks, copies: 1}
-  support: [filler, filler, filler]
-
-reference: {steps: 2, main_picks: 2, support_picks: 1, level: 6}
-
+  - name: A Gift for the Journey
+    copies: 6
+  - name: Fist of Courage
+    copies: 1
+  - name: Mystic Brushstrokes
+    copies: 1
+  support:
+  - filler
+  - filler
+  - filler
+reference:
+  steps: 2
+  main_picks: 2
+  support_picks: 1
+  level: 6
 assumptions:
-  unknown_trigger_uptime: 1.0
+  unknown_trigger_uptime: 1
   disc_stats_target: team
+budget:
+- 20
+- 15
+- 25

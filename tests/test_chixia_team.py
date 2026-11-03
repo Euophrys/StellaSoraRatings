@@ -10,13 +10,17 @@ from ssr.sim import simulate
 from ssr.stats import ATK
 from ssr.team import Build, load_team, TEAMS
 
+from pathlib import Path
+
+FIXTURES = Path(__file__).parent / "fixtures"   # frozen team files: the build page saves over teams/
+
 CHIXIA = 2
 CONVERGENCE, CHANT, TIGER, SCALES, HORN_CALL, TRAIL_SEEKER = 514121, 514122, 514123, 514124, 514125, 514126
 
 
 @pytest.fixture(scope="module")
 def team(gd):
-    return load_team(gd, TEAMS / "amber_flora_chixia.yaml")
+    return load_team(gd, FIXTURES / "amber_flora_chixia.yaml")
 
 
 def test_minion_statuses_track_summons(gd, team):
@@ -95,10 +99,11 @@ def test_minion_scope_from_text():
     assert not text_reaches_minions("Walnut deals 50% of ATK as Ignis Minion DMG. Increases Laru's ATK by 10%.", ATK)
 
 
-def test_trekker_buffs_skip_minions(gd, team):  # user: buffs scoped to "Trekkers" don't reach minions
+def test_trekker_buffs_skip_minions(gd, team):  # user: triggered buffs scoped to "Trekkers" don't reach minions
     import dataclasses
+    on_skill = Trigger(event="cast:self:skill", duration=math.inf)
     def atk(minions):
-        return Modifier(stat=ATK, value=1.0, is_pct=True, target="self", source="t", minions=minions)
+        return Modifier(stat=ATK, value=1.0, is_pct=True, target="self", source="t", minions=minions, trigger=on_skill)
     base = simulate(gd, team, Build())
     trekker = simulate(gd, team, Build(), extra=[(CHIXIA, atk(False))])
     units = simulate(gd, team, Build(), extra=[(CHIXIA, atk(True))])
@@ -106,4 +111,20 @@ def test_trekker_buffs_skip_minions(gd, team):  # user: buffs scoped to "Trekker
     assert trekker.by_slot[(CHIXIA, "ult")] > base.by_slot[(CHIXIA, "ult")]
     assert units.by_slot[(CHIXIA, "minion")] > base.by_slot[(CHIXIA, "minion")]
     everything = dataclasses.replace(team, assumptions={**team.assumptions, "minion_buffs": "all"})
-    assert simulate(gd, everything, Build()).by_slot[(CHIXIA, "minion")] > base.by_slot[(CHIXIA, "minion")]
+    assert simulate(gd, everything, Build(), extra=[(CHIXIA, atk(False))]).by_slot[(CHIXIA, "minion")] > base.by_slot[(CHIXIA, "minion")]
+
+
+def test_always_on_buffs_snapshot_into_minions(gd, team):  # user: minions use the battle-start stat sheet
+    base = simulate(gd, team, Build())
+    always = Modifier(stat=ATK, value=1.0, is_pct=True, target="self", source="t", minions=False)
+    r = simulate(gd, team, Build(), extra=[(CHIXIA, always)])
+    assert r.by_slot[(CHIXIA, "minion")] > base.by_slot[(CHIXIA, "minion")]
+
+
+def test_uptime_buffs_skip_minions(gd, team):  # averaged come-and-go buffs aren't in the battle-start snapshot
+    base = simulate(gd, team, Build())
+    part_time = Modifier(stat=ATK, value=1.0, is_pct=True, target="self", source="t", minions=False,
+                         trigger=Trigger(event="unknown", duration=math.inf, uptime=0.5))
+    r = simulate(gd, team, Build(), extra=[(CHIXIA, part_time)])
+    assert r.by_slot[(CHIXIA, "minion")] == pytest.approx(base.by_slot[(CHIXIA, "minion")])
+    assert r.by_slot[(CHIXIA, "ult")] > base.by_slot[(CHIXIA, "ult")]

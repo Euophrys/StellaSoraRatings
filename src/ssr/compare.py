@@ -29,8 +29,9 @@ class GreedyResult:
 
 
 def greedy_build(gd: GameData, team: TeamConfig, budget: int = 60, max_level: int = 6,
-                 progress=None, split: list[int] | None = None) -> GreedyResult:
-    """split: per-member level budgets in team order (e.g. [30, 15, 15]); budget is then their sum."""
+                 progress=None, split: list[int] | None = None, total: int | None = None) -> GreedyResult:
+    """split: per-member level caps in team order (e.g. [30, 15, 15]). The budget is their sum, or `total` when given
+    (a shared pool the members draw from up to their caps, e.g. total 60 with caps 30/20/20)."""
     cands = []
     owner = {}
     for i, m in enumerate(team.members):
@@ -39,7 +40,7 @@ def greedy_build(gd: GameData, team: TeamConfig, budget: int = 60, max_level: in
             cands.append((m.char_id, p))
             owner[(m.char_id, p)] = i
     if split:
-        budget = sum(split)
+        budget = min(total, sum(split)) if total is not None else sum(split)
     used = [0] * len(team.members)
     build = Build()
     cur = simulate(gd, team, build).total
@@ -73,6 +74,8 @@ def main(argv=None):
     ap.add_argument("--budget", type=int, default=60)
     ap.add_argument("--max-level", type=int, default=6)
     ap.add_argument("--split", default="", help="per-member level budgets in team order, e.g. 30,15,15 (main first)")
+    ap.add_argument("--total", type=int, default=None,
+                    help="with --split: a shared budget; the split values become per-member caps (e.g. --total 60 --split 30,20,20)")
     ap.add_argument("--quiet", action="store_true")
     a = ap.parse_args(argv)
     gd = GameData()
@@ -81,11 +84,14 @@ def main(argv=None):
         t0 = time.time()
         team = load_team(gd, path)
         split = [int(x) for x in a.split.split(",")] if a.split else None
-        r = greedy_build(gd, team, a.budget, a.max_level, None if a.quiet else (lambda s: print(s, flush=True)), split)
+        r = greedy_build(gd, team, a.budget, a.max_level, None if a.quiet else (lambda s: print(s, flush=True)), split,
+                         a.total)
         out.append(r)
         print(f"{team.name}: done in {time.time() - t0:.0f}s", flush=True)
     ref = out[0]
     total = sum(int(x) for x in a.split.split(",")) if a.split else a.budget
+    if a.split and a.total is not None:
+        total = min(total, a.total)
     checkpoints = [n for n in (0, 10, 20, 30, 40, 50, 60, 80, 100) if n <= total]
     print(f"\nTotal damage at N potential levels (vs {ref.team} at the same N):")
     print("  " + "team".ljust(28) + "".join(f"{('N=' + str(n)):>12}" for n in checkpoints))
@@ -100,7 +106,8 @@ def main(argv=None):
         lv = {}
         for who, name, l in r.picks:
             lv[(who, name)] = l
-        print(f"\n{r.team} build ({total} levels{', split ' + a.split if a.split else ''}, max Lv{a.max_level}):")
+        how = (f", caps {a.split}" if a.total is not None else f", split {a.split}") if a.split else ""
+        print(f"\n{r.team} build ({total} levels{how}, max Lv{a.max_level}):")
         for (who, name), l in sorted(lv.items(), key=lambda x: (x[0][0], -x[1])):
             print(f"  {who:14s} {name:38s} Lv{l}")
 

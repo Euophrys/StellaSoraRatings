@@ -1,0 +1,10 @@
+# Delivered by the Breeze — melody and harmony 2 are scripted. Thought Ripple comes from Versatile Trekkers' Skill DMG.
+# Stats: 17 Aqua DMG, 56 Auto DMG, 57 Skill DMG, 58 Ult DMG.
+melody:
+  - {stat: 0, value: 0, name: thought_ripple, target: main, event: "hit:class2:skill_dmg", duration: Param1, max_stacks: Param2}
+  - {stat: 17, value: Param4, target: team, event: "while:status:thought_ripple>=10"}
+  - {stat: 57, value: Param6, target: team, event: "while:status:thought_ripple>=20"}
+harmony1:
+  - {stat: 56, value: Param2, target: main, event: "while:status:thought_ripple", per_stack: true}
+harmony2:
+  - {stat: 58, value: Param1, target: main, event: "while:status:thought_ripple", per_stack: true}

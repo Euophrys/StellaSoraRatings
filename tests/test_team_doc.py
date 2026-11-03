@@ -8,7 +8,11 @@ from ssr.emblems import EmblemLine, EmblemPotentialLevel, EmblemSkillLevel
 from ssr.sim import simulate
 from ssr.team import TEAMS, Build, TeamDocError, load_team, save_team, team_build, team_from_doc
 
-AFC = TEAMS / "amber_flora_chixia.yaml"
+from pathlib import Path
+
+FIXTURES = Path(__file__).parent / "fixtures"   # frozen team files: the build page saves over teams/
+
+AFC = FIXTURES / "amber_flora_chixia.yaml"
 
 
 @pytest.fixture
@@ -95,3 +99,13 @@ def test_bad_names_raise_team_doc_error(gd, doc, edit, bad):
     edit(d)
     with pytest.raises(TeamDocError, match=bad):
         team_from_doc(gd, d)
+
+
+def test_level_and_bonus_stats(gd):
+    from ssr.team import load_team, TEAMS
+    from ssr.sim import simulate
+    from ssr.team import Build
+    t = load_team(gd, TEAMS / "bb_noya_shia_tilia_ingame.yaml")
+    assert t.members[0].level == 80 and t.members[1].level == 70 and t.disc_level == 80
+    assert (1, 2541.0, False) in t.members[0].bonus_stats
+    assert simulate(gd, t, Build()).breaks   # vs Lithe Beauty: breaks happen

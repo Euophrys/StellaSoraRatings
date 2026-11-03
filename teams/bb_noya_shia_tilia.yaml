@@ -1,0 +1,40 @@
+# Boss Blitz: FL Noya T0 / Shia / Tilia vs Lithe Beauty, 180 s (copy of fl_noya_t1_shia_tilia with talents 0; the user ran T0)
+name: bb_noya_shia_tilia
+fight_length: 180
+tick: 0.05
+mark_icd: 1.0
+enemy:
+  preset: lithe_beauty   # specs/enemies/lithe_beauty.yaml: RES per element, 250M resilience, boss ability
+
+members:
+  - trekker: Firstlight Noya
+    role: main
+    pinks: [Lucent Blitz, Dawnflare]
+    talents: 0
+    skill_levels: {auto: 10, skill: 10, ult: 10}
+    emblems: []   # chosen lines added to the baseline after emblem rating, e.g. ["HP%", "Crit Rate", "Skill +3"]
+  - trekker: Shia
+    role: support
+    pinks: [Bunny Torrent, Rabbit Flip]   # the user's build
+    skill_levels: {skill: 10, ult: 10}
+    emblems: []
+  - trekker: Tilia
+    role: support
+    pinks: [Perfect Spiral, Renewed Spectrum]
+    skill_levels: {skill: 10, ult: 10}
+    emblems: []
+
+# Plan's call: the top 3 of Maygi's skill-build disc table. Disc ratings are always computed
+# against an all-filler lineup; this lineup is the baseline for emblem and potential rating.
+discs:
+  main:
+    - {name: My Guiding Star, copies: 1}
+    - {name: Ripples of Nostalgia, copies: 1}
+    - {name: "A Moment in the Aft", prefix: true, copies: 1}
+  support: [filler, filler, filler]
+
+reference: {steps: 2, main_picks: 2, support_picks: 1, level: 6}
+
+assumptions:
+  unknown_trigger_uptime: 1.0   # modifiers whose trigger isn't known: constant uptime, full stacks
+  disc_stats_target: team       # disc base stats and melody/harmony effects apply to the whole squad

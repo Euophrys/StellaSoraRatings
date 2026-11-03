@@ -1,0 +1,7 @@
+# Sunlit Blossom — all parts from EffectIds; this pins their triggers.
+# Stats: 17 Aqua DMG, 56 Auto DMG, 57 Skill DMG.
+overrides:
+  - {part: melody, index: 1, event: "while:status:chill"}                       # +Aqua DMG vs Chill/Frozen targets
+  - {part: harmony1, index: 0, event: "cast:element1:ult"}                      # any Aqua ult -> Auto DMG 18 s
+  - {part: harmony1, index: 1, event: "cast:element1:ult"}                      # ... and Skill DMG 18 s
+  - {part: harmony2, index: 1, event: "while:on_field:support"}                 # Skill hits while an Aqua support is on the field

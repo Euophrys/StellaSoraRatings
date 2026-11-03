@@ -1,0 +1,128 @@
+# Cosette (142) — Umbra, Support. Hits scale with ATK (data). Support kit only.
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+#
+# User, frame-timed (2026-11-02, 30 fps; pinks Eclipse Imprint + Phantom Mark):
+#   Skill cast 26,12; 13 claw hits (9 base + 4 Phantom Mark) at 27,11 27,21 28,01 28,11 28,25 29,06 29,16 29,26
+#     30,10 30,21 31,01 31,11 31,25; leaves 33,23 (on the field 7.37 s).
+#   Each claw leaves a claw mark for ~0.85 s (27,21 -> 28,16).
+#   Ult cast 38,28; explosion 40,05 (+1.23 s); leaves 43,04 (4.2 s).
+# Skill and ult hits inflict Umbra Mark: Gloom (Word 2018), triggered by Mistique.
+char_id: 142
+
+main:
+  actions:
+    skill:
+      hits:
+        - {hit: 142300006, tags: [skill]}   # stub: main-role kit not authored
+    ult:
+      hits:
+        - {hit: 142400001, tags: [ult]}
+
+support:
+  energy_per_second: 2.0          # GUESS
+  on_field: {skill: 7.367, ult: 4.2}   # user-timed with Phantom Mark (GUESS: same without it)
+  wait_on_field: true             # the ult cancels a running skill (user): wait for it to end
+
+  actions:
+    skill:                         # Abyssal Hunter: 9 claws (text "x9"); Phantom Mark adds 4
+      hits:
+        - {hit: 142300006, offset: 0.967, tags: [claw], applies_mark: true}
+        - {hit: 142300006, offset: 1.3, tags: [claw], applies_mark: true}
+        - {hit: 142300006, offset: 1.633, tags: [claw], applies_mark: true}
+        - {hit: 142300006, offset: 1.967, tags: [claw], applies_mark: true}
+        - {hit: 142300006, offset: 2.433, tags: [claw], applies_mark: true}
+        - {hit: 142300006, offset: 2.8, tags: [claw], applies_mark: true}
+        - {hit: 142300006, offset: 3.133, tags: [claw], applies_mark: true}
+        - {hit: 142300006, offset: 3.467, tags: [claw], applies_mark: true}
+        - {hit: 142300006, offset: 3.933, tags: [claw], applies_mark: true}
+        - {hit: 142300006, offset: 4.3, tags: [claw], applies_mark: true, requires: [514223]}
+        - {hit: 142300006, offset: 4.633, tags: [claw], applies_mark: true, requires: [514223]}
+        - {hit: 142300006, offset: 4.967, tags: [claw], applies_mark: true, requires: [514223]}
+        - {hit: 142300006, offset: 5.433, tags: [claw], applies_mark: true, requires: [514223]}
+    ult:                           # Dark Apocalypse
+      hits:
+        - {hit: 142400001, offset: 1.233, tags: [ult], applies_mark: true}
+
+  buffs:
+    - effect: 14293005             # Abyssal Hunter DMG -> the target's Umbra DMG Taken, 6 s
+      level: skill
+      event: "hit:self:skill_dmg"
+      duration: {ref: "Buff,LevelUp,14293015,Time,10K"}
+      target: enemy
+
+  potentials:
+    514221:   # Abyssal Mark (pink): Umbra DMG Taken in the claw marks' range
+      overrides:
+        - {index: 0, event: "hit:self:claw"}
+      note: "Up from each claw for the data's 2 s (claw marks last ~0.85 s, user)."
+
+    514222:   # Eclipse Imprint (pink): pull; Umbra DMG Taken in the claw marks' range
+      overrides:
+        - {index: 0, event: "hit:self:claw"}
+      note: "Up from each claw for the data's 2 s (claw marks last ~0.85 s, user)."
+
+    514223:   # Phantom Mark (pink): +4 claws (hits above); every 4 claws, all friendly units' ATK
+      overrides:
+        - {index: 0, event: "hit:self:claw", every: 4, target: team, minions: true}
+
+    514224:   # Phantom Inscription (pink): finishing strike; every 4 claws, all friendly units' ATK
+      add_hits:
+        skill:
+          - {hit: 142300007, offset: 5.833, tags: [finisher], applies_mark: true, requires: [514223]}   # GUESS +0.4 s
+          - {hit: 142300007, offset: 4.333, tags: [finisher], applies_mark: true, excludes: [514223]}   # GUESS +0.4 s
+      overrides:
+        - {index: 0, event: "hit:self:claw", every: 4, target: team, minions: true}
+
+    514225:   # Dark: Demon Mark: skill DMG -> target's Umbra DMG Taken, 5 s
+      overrides:
+        - {index: 0, event: "hit:self:skill_dmg", target: enemy}
+
+    514226:   # Dark: Mirage: Gloom on a target without a Mark -> all friendly units' ATK, 5 s
+      overrides:
+        - {index: 0, event: "mark_new:self", target: team, minions: true}
+      note: "Fires when a Gloom lands while no Umbra Mark is up (e.g. right after Mistique triggered one)."
+
+    514227:   # Dark: Vitality: main's DEF
+      overrides:
+        - {index: 0, drop: true}
+      note: "DEF: no damage effect."
+
+    514228:   # Dark: Hallucination: skill DMG -> all friendly units' ATK, 5 s, once per 0.5 s
+      overrides:
+        - {index: 0, event: "hit:self:skill_dmg", icd: 0.5, target: team, minions: true}
+      note: "Stun chance not modelled."
+
+    514230:   # Dark: Afterglow: Gloom on a target that already has one -> Umbra squadmates' ATK, 5 s
+      overrides:
+        - {index: 0, event: "mark_refresh:self", target: "element:6"}
+
+    514231:   # Void Blessing: while Cosette is on the field, the main's ATK
+      overrides:
+        - {index: 0, event: "while:on_field:self", target: main}
+
+    514232:   # Phantom Shelter: main's DEF while casting
+      overrides:
+        - {index: 0, drop: true}
+      note: "DEF: no damage effect."
+
+    514229:   # Dark: Form Breaker: 30% per Abyssal Hunter hit, -Param1 of max resilience, once per 0.5 s
+      procs:
+        - {hit: 0, event: "hit:self:claw", chance: 0.3, icd: 0.5, resilience: {param: Param1}}
+
+    514233:   # Gift of Darkness: Umbra Trekkers' ATK
+      overrides:
+        - {index: 0, event: always, target: "element:6"}
+
+    514241:   # Spectral Ignition (common): ult DMG to targets at the center
+      overrides:
+        - {index: 0, hit_tags: [ult]}
+      note: "Single boss assumed at the center."
+
+    514242:   # Nether Blaze (common): ult DMG -> target's Umbra DMG Taken, 10 s
+      overrides:
+        - {index: 0, event: "hit:self:ult_dmg", target: enemy}
+
+    514243:   # Tainted Scar (common): enemy ATK down
+      overrides:
+        - {index: 0, drop: true}
+      note: "Enemy ATK down: no damage effect."

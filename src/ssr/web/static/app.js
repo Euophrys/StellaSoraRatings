@@ -76,7 +76,7 @@ async function runJob(kind, extra) {
 }
 
 // ---------------------------------------------------------------- state
-const calcKey = (s) => JSON.stringify({ ...s, name: undefined, budget: undefined, max_level: undefined });
+const calcKey = (s) => JSON.stringify({ ...s, name: undefined, budget: undefined, budget_total: undefined, max_level: undefined });
 
 function setState(mutator) {
   mutator(state);
@@ -99,7 +99,7 @@ function blankMember(i) {
 }
 
 function newDoc() {
-  return { name: "new_team", fight_length: 120, tick: 0.05, mark_icd: 1.0, enemy: { res: 145, defense: 0, broken: 1.0 },
+  return { name: "new_team", fight_length: 120, tick: 0.05, mark_icd: 1.0, enemy: { preset: "generic" },
     members: [0, 1, 2].map(blankMember), discs: { main: ["filler", "filler", "filler"], support: ["filler", "filler", "filler"] },
     budget: [30, 15, 15], max_level: 6 };
 }
@@ -116,7 +116,7 @@ function normalise(doc) {
   doc.discs = doc.discs || {};
   doc.discs.main = discDocsOf(doc.discs.main);
   doc.discs.support = discDocsOf(doc.discs.support);
-  doc.enemy = doc.enemy || { res: 145, defense: 0, broken: 1.0 };
+  doc.enemy = doc.enemy || { preset: "generic" };
   return doc;
 }
 const discDocsOf = (xs) => (xs || []).concat(["filler", "filler", "filler"]).slice(0, 3);
@@ -310,11 +310,21 @@ function discPanel(side) {
 function advanced() {
   const num = (label, get, set, step) => h("label", {}, label, h("input", { type: "number", step: step || "any", value: get(),
     onchange: (e) => { const v = Number(e.target.value); if (Number.isFinite(v)) setState((s) => set(s, v)); } }));
+  const enemies = catalog.enemies || [];
+  const presetId = state.enemy.preset || "generic";
+  const preset = enemies.find((x) => x.id === presetId) || {};
+  const enemy = h("label", {}, "Enemy",
+    select(presetId, enemies.map((x) => ({ value: x.id, label: x.label })), (v) => setState((s) => {
+      const p = enemies.find((x) => x.id === v);
+      s.enemy = { preset: v };   // drops RES/DEF overrides
+      if (p && p.fight_length != null) s.fight_length = p.fight_length;
+    })));
   const d = h("details", { ontoggle: (e) => { ui.open.advanced = e.target.open; } },
     h("summary", {}, "Advanced"),
     h("div", { class: "field" },
-      num("Enemy RES", () => state.enemy.res, (s, v) => { s.enemy.res = v; }),
-      num("Enemy DEF", () => state.enemy.defense, (s, v) => { s.enemy.defense = v; }),
+      enemy,
+      num("Enemy RES", () => state.enemy.res ?? preset.res, (s, v) => { s.enemy.res = v; }),
+      num("Enemy DEF", () => state.enemy.defense ?? preset.defense, (s, v) => { s.enemy.defense = v; }),
       num("Fight length (s)", () => state.fight_length ?? 120, (s, v) => { s.fight_length = v; }),
       num("Mark ICD (s)", () => state.mark_icd ?? 1, (s, v) => { s.mark_icd = v; })),
     h("div", { class: "small muted" }, "Other settings (reference build, assumptions) are kept from the team file."));
@@ -413,6 +423,8 @@ document.addEventListener("DOMContentLoaded", init);
 const MAX_TARGET = 6;
 const budgetOf = (i) => ((state.budget && state.budget[i] !== undefined) ? state.budget[i] : [30, 15, 15][i]);
 const used = (m) => Object.values(m.targets || {}).reduce((a, b) => a + (Number(b) || 0), 0);
+// shared budget: when set, the per-member budgets are caps on a pool of this size (null/0 = no shared total)
+const totalBudget = () => (Number.isInteger(state.budget_total) && state.budget_total > 0 ? state.budget_total : null);
 
 function setTarget(i, name, lv) {
   lv = Math.max(0, Math.min(MAX_TARGET, lv));
@@ -480,19 +492,23 @@ function potentialsSection() {
   const head = h("div", { class: "field" },
     h("button", { class: "primary", onclick: recalc, disabled: !!ui.job || !ready }, results ? "Recalculate" : "Calculate"),
     results ? h("span", { class: "small muted" },
-      `Team total ${(results.total / 1e6).toFixed(1)}M · calculated ${new Date(results.at).toLocaleString()}`)
+      `Team total ${(results.total / 1e6).toFixed(1)}M${results.breaks != null ? ` · ${results.breaks} break${results.breaks === 1 ? "" : "s"}` : ""} · calculated ${new Date(results.at).toLocaleString()}`)
       : h("span", { class: "small muted" }, "Each cell: total change in team damage if this potential's target were that level (current = 0). ~1 min."));
-  return h("section", {}, h("h2", {}, "Potentials"), head, [0, 1, 2].map(potentialsBlock));
+  const tb = totalBudget(), nAll = state.members.reduce((a, m) => a + used(m), 0);
+  const shared = tb ? h("div", { class: "small" }, "Team total ",
+    h("span", { class: `budget${nAll > tb ? " over" : ""}` }, `${nAll} / ${tb}`), " (per-Trekker numbers are caps)") : null;
+  return h("section", {}, h("h2", {}, "Potentials"), head, shared, [0, 1, 2].map(potentialsBlock));
 }
 
 // ================================================================ optimize
 async function runOptimize() {
   const split = [0, 1, 2].map(budgetOf);
   const maxLevel = state.max_level || MAX_TARGET;
+  const total = totalBudget();
   try {
-    const r = await runJob("optimize", { split, max_level: maxLevel });
+    const r = await runJob("optimize", { split, max_level: maxLevel, total });
     setState((s) => { s.members.forEach((m, i) => { m.targets = { ...r.targets[i] }; }); });
-    ui.optimizeNote = `method: ${r.method}, total ×${(r.total / r.base_total).toFixed(2)} vs pinks only (split ${split.join(" / ")}, max Lv${maxLevel})`;
+    ui.optimizeNote = `method: ${r.method}, total ×${(r.total / r.base_total).toFixed(2)} vs pinks only (${total ? `total ${total}, caps` : "split"} ${split.join(" / ")}, max Lv${maxLevel})`;
     await recalc();
   } catch (e) { /* shown */ }
 }
@@ -507,9 +523,10 @@ function optimizeSection() {
       h("div", { class: "field" },
         num(names[0], budgetOf(0), setBudget(0), 0, 200), num(names[1], budgetOf(1), setBudget(1), 0, 200),
         num(names[2], budgetOf(2), setBudget(2), 0, 200),
+        num("Total (0 = none)", totalBudget() || 0, (s, v) => { s.budget_total = v > 0 ? v : null; }, 0, 600),
         num("Max level", state.max_level || MAX_TARGET, (s, v) => { s.max_level = v; }, 1, MAX_TARGET),
         h("button", { class: "primary", onclick: runOptimize, disabled: !!ui.job || !state.members.every((m) => trekker(m.trekker)) }, "Optimize")),
-      h("div", { class: "small muted" }, "Fills target levels with the best found for this split (greedy +1 steps, then swaps between a trekker's potentials), then recalculates. Emblem +N levels are free. Takes minutes."),
+      h("div", { class: "small muted" }, "Fills target levels with the best found for this split (greedy +1 steps, then swaps between a trekker's potentials), then recalculates. With a total, the per-Trekker numbers are caps on a shared pool and swaps can also move levels between Trekkers. Emblem +N levels are free. Takes minutes."),
       ui.optimizeNote ? h("div", { class: "small" }, ui.optimizeNote) : null));
 }
 
@@ -520,7 +537,9 @@ function emblemTables(i) {
   const rows = results && results.emblems ? results.emblems[String(i)] : null;
   if (!t || !rows) return null;
   const tables = [1, 2, 3].map((slot) => {
-    const rs = rows.filter((r) => r.slots.includes(slot));
+    const gains = (r) => (r.by_slot && r.by_slot[slot]) || r.tiers.map((x) => x[2]);
+    const top = (r) => { const g = gains(r); return g[g.length - 1]; };
+    const rs = rows.filter((r) => r.slots.includes(slot)).sort((a, b) => top(b) - top(a));
     const ordered = rs.filter((r) => r.relevant).concat(rs.filter((r) => !r.relevant));
     return h("div", {}, h("div", { class: "small muted" }, SLOT_NAMES[slot]),
       h("div", { class: "scroll" }, h("table", { class: "em numbers" },
@@ -534,7 +553,7 @@ function emblemTables(i) {
           }
           const pad = Array.from({ length: 4 - r.tiers.length }, () => h("td", {}));
           return h("tr", { class: r.relevant ? null : "irrelevant" }, h("td", {}, r.name, sub), pad,
-            r.tiers.map(([label, colour, g]) => h("td", { title: `${colour}${label !== colour ? ` ${label}` : ""}` },
+            r.tiers.map(([label, colour], k) => [label, colour, gains(r)[k]]).map(([label, colour, g]) => h("td", { title: `${colour}${label !== colour ? ` ${label}` : ""}` },
               h("span", { class: `tier ${colour}` }, label !== colour ? `${label} ` : "", r.relevant ? pct(g) : "—"))));
         }))));
   });
@@ -543,7 +562,7 @@ function emblemTables(i) {
 
 function emblemSection() {
   return h("section", {}, h("h2", {}, "Emblem lines"),
-    results ? h("div", { class: "small muted" }, "Each line's team damage on top of the current build and owned emblems, per roll tier. Sorted by the best tier.",
+    results ? h("div", { class: "small muted" }, "Each line's team damage on top of the current build and owned emblems, per roll tier. Stat lines count as stacking: Lv80 is a 2nd copy on top of the same line on Lv70, Lv90 a 3rd. Sorted by the best tier.",
       h("span", { class: "legend" }, ["green", "blue", "yellow", "purple"].map((c) => h("span", { class: `tier ${c}` }, c))))
       : h("div", { class: "small muted" }, "Calculate to see emblem lines."),
     [0, 1, 2].map(emblemTables));

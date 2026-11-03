@@ -1,0 +1,8 @@
+# The Bud of Change (Umbra). Melody's Minion DMG comes from EffectIds; the rest is scripted.
+melody:
+  - {stat: 66, value: Param2, target: main, minions: true, event: "summon:main:any", duration: Param3, note: "per summoned Minion for 10 s; approximated as a buff on all the main's Minions"}
+harmony1:
+  - {stat: 66, value: Param1, target: main, minions: true, event: "mark:main", duration: Param2, note: "Mark with Dark Burn by the main (the only Umbra Mark trigger here)"}
+harmony2:
+  - {stat: 57, value: Param1, target: main, event: "while:status:dark_burn"}
+  - {stat: 66, value: Param2, target: main, minions: true, event: "while:status:dark_burn"}

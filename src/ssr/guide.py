@@ -76,29 +76,38 @@ class EmblemRow:
     kind: str
     slots: list[int]
     relevant: bool
-    tiers: list[tuple[str, str, float]]   # (label, colour, team gain)
+    tiers: list[tuple[str, str, float]]   # (label, colour, team gain) in the line's first slot
+    by_slot: dict[int, list[float]]       # slot -> team gain per tier; see emblem_table
 
 
 def emblem_table(gd: GameData, team: TeamConfig, build: Build, member: int,
                  progress: Progress = None) -> list[EmblemRow]:
-    """Every line this member can roll, each tier's team-damage gain on top of the build + owned emblems."""
+    """Every line this member can roll, each tier's team-damage gain on top of the build + owned emblems.
+
+    A line that rolls in several slots (stat lines: Lv70, Lv80, Lv90) is valued as the n-th copy in slot n:
+    slot 2 is the gain of a second line on top of the same line (same tier) on emblem 1, slot 3 the third."""
     m = team.members[member]
     element = gd.table("Character")[str(m.char_id)]["EET"]
     opts = emblem_options(gd, m.char_id)
     relevant = {o.name: line_relevant(o.tiers[0].line, element, m.role) for o in opts}
-    step = _tick(progress, "emblems", 1 + sum(len(o.tiers) for o in opts if relevant[o.name]))
+    step = _tick(progress, "emblems", 1 + sum(len(o.tiers) * len(o.slots) for o in opts if relevant[o.name]))
     base = simulate(gd, team, build)
     step()
     rows = []
     for o in opts:
-        tiers = []
+        slots = sorted(o.slots)
+        by_slot: dict[int, list[float]] = {s: [] for s in slots}
         for t in o.tiers:
-            g = 0.0
-            if relevant[o.name]:
-                g = gain(base, simulate(gd, team, build, extra=[(member, t.line)]))
-                step()
-            tiers.append((t.label, t.colour, g))
-        rows.append(EmblemRow(o.name, o.kind, sorted(o.slots), relevant[o.name], tiers))
+            prev = base
+            for n, s in enumerate(slots, 1):
+                g = 0.0
+                if relevant[o.name]:
+                    r = simulate(gd, team, build, extra=[(member, t.line)] * n)
+                    g, prev = gain(prev, r), r
+                    step()
+                by_slot[s].append(g)
+        tiers = [(t.label, t.colour, by_slot[slots[0]][k]) for k, t in enumerate(o.tiers)]
+        rows.append(EmblemRow(o.name, o.kind, slots, relevant[o.name], tiers, by_slot))
     rows.sort(key=lambda r: (-r.tiers[-1][2], not r.relevant))
     return rows
 
@@ -130,36 +139,41 @@ class OptimizeResult:
 
 
 def optimize(gd: GameData, team: TeamConfig, split: list[int], max_level: int = 6,
-             progress: Progress = None, max_passes: int = 5) -> OptimizeResult:
+             progress: Progress = None, max_passes: int = 5, total: int | None = None) -> OptimizeResult:
     """Greedy +1 steps within each member's budget, then swap polish: move one level between two potentials
-    of the same member while that raises team damage (the budget split stays satisfied)."""
-    steps = sum(split)
+    while that raises team damage. With `total`, `split` holds per-member caps on a shared budget, and levels may
+    also move between members (within the caps); otherwise only within a member (the split stays satisfied)."""
+    steps = min(total, sum(split)) if total is not None else sum(split)
     done = [0]
 
     def greedy_progress(_msg):
         done[0] += 1
         if progress:
             progress("optimize: greedy", done[0], steps)
-    g = greedy_build(gd, team, max_level=max_level, split=split, progress=greedy_progress)
+    g = greedy_build(gd, team, max_level=max_level, split=split, progress=greedy_progress, total=total)
     build = g.build
     best_total = g.totals[-1] if g.totals else g.base_total
     swaps = 0
     pools = [_pool(gd, team, i) for i in range(len(team.members))]
     for pass_no in range(max_passes):
         moves = []
+        used = [sum(build.potentials.get((m.char_id, p), 0) for p in pools[i]) for i, m in enumerate(team.members)]
         for i, m in enumerate(team.members):
             cid = m.char_id
             for a in pools[i]:
                 la = build.potentials.get((cid, a), 0)
                 if la < 1:
                     continue
-                for b in pools[i]:
-                    lb = build.potentials.get((cid, b), 0)
-                    if b != a and lb < max_level:
-                        moves.append((cid, a, la, b, lb))
+                for j, mj in enumerate(team.members):
+                    if j != i and (total is None or used[j] >= split[j]):
+                        continue   # across members only on a shared budget, within the receiver's cap
+                    for b in pools[j]:
+                        lb = build.potentials.get((mj.char_id, b), 0)
+                        if (j, b) != (i, a) and lb < max_level:
+                            moves.append((cid, a, la, mj.char_id, b, lb))
         best_move = None
-        for k, (cid, a, la, b, lb) in enumerate(moves):
-            cand = _set_level(_set_level(build, cid, a, la - 1), cid, b, lb + 1)
+        for k, (cid, a, la, cidb, b, lb) in enumerate(moves):
+            cand = _set_level(_set_level(build, cid, a, la - 1), cidb, b, lb + 1)
             tot = simulate(gd, team, cand).total
             if progress:
                 progress(f"optimize: swap pass {pass_no + 1}", k + 1, len(moves))

@@ -1,0 +1,10 @@
+# Petals of Blooming Mirage (Umbra). Melody's Umbra DMG comes from EffectIds; Dark Sakura and the harmonies are scripted.
+# Dark Sakura: 1 stack per Skill DMG hit by an Umbra Versatile Trekker, 5 s, max 20. Mistique's Skill DMG is 1-2 hits
+# per cast (Phantoms deal Minion DMG), so max stacks are out of reach.
+melody:
+  - {stat: 0, value: 0, name: dark_sakura, event: "hit:class2/element6:skill_dmg", duration: Param2, max_stacks: Param3}
+  - {stat: 61, value: Param4, target: enemy, event: "while:status:dark_sakura>=20", note: "Umbra Skill DMG Taken at max Dark Sakura (as Skill DMG Taken)"}
+harmony1:
+  - {stat: 8, value: Param1, target: "class:2", note: "Umbra Versatile Trekkers' Crit DMG"}
+  - {stat: 62, value: Param2, target: enemy, event: "while:status:dark_sakura", per_stack: true, note: "per Dark Sakura stack (as Ultimate DMG Taken)"}
+harmony2: []   # Flower Feast needs max Dark Sakura

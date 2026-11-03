@@ -53,6 +53,9 @@ def test_zero_value_potential_still_listed(gd, team):  # Review Focus 3
 
 
 def test_gains_monotone_for_pure_stat(gd, team):
+    # bar off: with breaks, a bigger stat can move a break so a weaker stretch lands in the window (real, discrete)
+    from dataclasses import replace
+    team = replace(team, enemy=replace(team.enemy, resilience=0))
     rows = rate_potentials(gd, team, Build(), only=[(162, 516213)])   # Veteran's Grit: flat HP
     g = rows[0].gains
     assert len(g) == 9 and all(b >= a - 1e-12 for a, b in zip(g, g[1:])) and g[0] > 0
@@ -76,6 +79,6 @@ def test_emblem_rows_include_second_pen_line(gd, team):
 
 
 def test_disc_row_carries_decode_notes(gd, team):  # Review Focus 2: undecodable/scripted parts reach the sheet
-    row = rate_discs(gd, team, disc_ids=[213021, 214062])   # Miraculous Anthem: EffectType 34
+    row = rate_discs(gd, team, disc_ids=[213021, 214015])   # Miraculous Anthem: EffectType 34; Deer's Song: scripted
     assert any("EffectType 34" in n for n in row[0].notes + row[1].notes)
     assert any("scripted" in n for r in row for n in r.notes)

@@ -1,0 +1,12 @@
+# All That Was Beautiful — all parts scripted.
+# Stats: 1 ATK, 57 Skill DMG, 64 Mark DMG.
+melody:
+  - {stat: 0, value: 0, name: hope, target: main, event: "mark:main", duration: Param1, max_stacks: 6,
+     note: "taking DMG ignored (Marks alone keep it up)"}
+  - {stat: 57, value: Param2, target: team, event: "while:status:hope>=3"}
+  - {stat: 64, value: Param3, target: main, event: "while:status:hope>=6"}
+harmony1:
+  - {stat: 1, pct: true, value: Param1, target: main, event: "while:status:hope>=6"}
+  - {stat: 57, value: Param3, target: team, event: "hit:main:any", duration: Param2, note: "vs Lingering Wish targets"}
+harmony2:
+  - {stat: 1, pct: true, value: Param1, target: team, event: "hit:main:any", duration: Param2}

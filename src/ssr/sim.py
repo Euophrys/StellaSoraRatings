@@ -9,9 +9,10 @@ from dataclasses import dataclass, field, replace
 from .data import GameData
 from .effects import MINION_STATS, Modifier, disc_modifiers, effect_modifiers
 from .formula import Enemy, hit_damage, slot_of
-from .game import char_base_stats, disc_base_stats, hit, hit_level, skill_cd, talent_nodes, ult_energy
-from .kit import ActionSpec, HitSpec, ResolvedPotential, kit_buffs, resolve_buffs, resolve_potential
-from .stats import StatBlock
+from .game import toughness_adjust, char_base_stats, disc_base_stats, hit, hit_level, skill_cd, talent_nodes, ult_energy
+from .kit import ActionSpec, HitSpec, MinionSpec, ResolvedPotential, kit_buffs, resolve_buffs, resolve_potential
+from .resilience import ExpectedICD, ResilienceBar
+from .stats import CHARGE_EFF, RES_BREAK_EFF, StatBlock
 from .emblems import EmblemChargeEfficiency, EmblemPotentialLevel, line_relevant
 from .team import FILLER, FILLER_SOURCE_DISC, Build, EmblemLine, EmblemSkillLevel, TeamConfig
 
@@ -28,6 +29,9 @@ class SimResult:
     unknown_modifiers: list[str]
     on_field_time: dict[int, float] = field(default_factory=dict)
     status_time: dict[str, float] = field(default_factory=dict)
+    breaks: list[float] = field(default_factory=list)              # break start times
+    broken_time: float = 0.0                                       # seconds broken within the fight
+    resilience_by_member: dict[int, float] = field(default_factory=dict)   # resilience damage dealt (bar on or off)
 
 
 # ---------------------------------------------------------------- caches
@@ -43,11 +47,11 @@ def _potential(gd, kit, pid, lv) -> ResolvedPotential:
     return _POT_CACHE[key]
 
 
-def _disc_stats(gd, disc_id, copies) -> StatBlock:
-    key = ("stats", id(gd), disc_id, copies)
+def _disc_stats(gd, disc_id, copies, level: int = 90) -> StatBlock:
+    key = ("stats", id(gd), disc_id, copies, level)
     if key not in _DISC_CACHE:
-        _DISC_CACHE[key] = disc_base_stats(gd, FILLER_SOURCE_DISC, copies=6) if disc_id == FILLER \
-            else disc_base_stats(gd, disc_id, copies=copies)
+        _DISC_CACHE[key] = disc_base_stats(gd, FILLER_SOURCE_DISC, level=level, copies=6) if disc_id == FILLER \
+            else disc_base_stats(gd, disc_id, level=level, copies=copies)
     return _DISC_CACHE[key]
 
 
@@ -88,10 +92,44 @@ def _event_matches(pattern: str, ev: str) -> bool:
     return all(a == b or a == "any" for a, b in zip(p, e))
 
 
-def _targets(target: str, owner: int, n: int, classes: list[int] | None = None) -> list[int | str]:
+def _expand_who(ev: str, n: int, classes: list[int], elements: list[int] | None = None) -> str:
+    """Who-tokens that depend on the team: `support` (members 1..n-1), `class<N>` (members of Character.Class N),
+    `element<N>` (Trekkers of EET N), and intersections joined with `/` (`support/element6`: an Umbra support).
+    E.g. `hit:class2:skill_dmg` = Skill DMG dealt by a Versatile Trekker. Expanded into `|` alternatives."""
+    if "|" in ev:
+        return "|".join(_expand_who(e, n, classes, elements) for e in ev.split("|"))
+    base, amp, rest = ev.partition("&")
+    parts = base.split(":")
+    if len(parts) < 2:
+        return ev
+
+    def members_of(tok: str):
+        if tok == "support":
+            return set(range(1, n))
+        if tok.startswith("class") and tok[5:].isdigit():
+            return {i for i, c in enumerate(classes) if c == int(tok[5:])}
+        if tok.startswith("element") and tok[7:].isdigit():
+            return {i for i, e in enumerate(elements or []) if e == int(tok[7:])}
+        return None
+    sets = [members_of(tok) for tok in parts[1].split("/")]
+    if any(x is None for x in sets):
+        return ev
+    idx = sorted(set.intersection(*sets))
+    if not idx:
+        return f"never:{parts[0]}"
+    return "|".join(":".join([parts[0], str(i)] + parts[2:]) + amp + rest for i in idx)
+
+
+def _targets(target: str, owner: int, n: int, classes: list[int] | None = None,
+             elements: list[int] | None = None) -> list[int | str]:
+    if target == "support":
+        return list(range(1, n))
     if target.startswith("class:"):
         want = int(target.split(":")[1])
         return [i for i, c in enumerate(classes or []) if c == want]
+    if target.startswith("element:"):   # Trekkers of one element (EET), e.g. "element:6" = Umbra Trekkers
+        want = int(target.split(":")[1])
+        return [i for i, e in enumerate(elements or []) if e == want]
     if target == "team":
         return list(range(n))
     if target == "main":
@@ -135,7 +173,13 @@ class _Member:
     ult_cost: float = 0.0
     energy_cap: dict = field(default_factory=dict)
     charge: float = 1.0   # Charge Efficiency emblem multiplier on energy gained
+    max_charges: dict = field(default_factory=dict)    # action -> stored uses (only actions with > 1)
+    charges: dict = field(default_factory=dict)        # action -> uses ready now
+    recharge: dict = field(default_factory=dict)       # action -> completion times of charges recharging
+    use_interval: dict = field(default_factory=dict)   # action -> min seconds between stored uses
+    last_use: dict = field(default_factory=dict)
     cast_count: dict = field(default_factory=lambda: defaultdict(int))
+    minions: dict = field(default_factory=dict)        # pool name -> MinionSpec (potential rules applied)
 
 
 def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
@@ -161,8 +205,10 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     mods: list[_Mod] = []
 
     def add_mod(m: Modifier, owner: int, src_target: str | None = None, element: int = 0):
+        if m.main_element and elements[0] != m.main_element:
+            return   # "the main <Element> Trekker": the main isn't that element
         tgt = src_target or m.target
-        rec = _targets(tgt, owner, n, classes)
+        rec = _targets(tgt, owner, n, classes, elements)
         if element:   # element-locked disc: only that element's Trekkers (or the enemy, if any are in the team)
             if element not in elements:
                 return
@@ -179,7 +225,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                 unknown.add(f"{m.source}: {m.label()} (uptime {up:g} x {t.max_stacks} stacks assumed)")
             mods.append(_Mod(m, owner, rec, constant=up * t.max_stacks))
             return
-        mods.append(_Mod(m, owner, rec, event=_norm_event(t.event, owner)))
+        mods.append(_Mod(m, owner, rec, event=_norm_event(_expand_who(t.event, n, classes, elements), owner)))
 
     for i, mc in enumerate(team.members):
         kit = mc.kit
@@ -230,14 +276,41 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             extra_casts={k: v for rp in resolved for k, v in rp.extra_casts.items()},
             reset_cd={**kit.reset_cd, **{k: v for rp in resolved for k, v in rp.reset_cd.items()}},
             cd_reduce=[rp.cd_reduce for rp in resolved if rp.cd_reduce],
-            procs=[(_norm_event(p.event, i), p) for rp in resolved for p in rp.procs if keep(p)],
+            procs=[(_norm_event(_expand_who(p.event, n, classes, elements), i), p)
+                   for p in [*kit.procs, *(p for rp in resolved for p in rp.procs)] if keep(p)],
         )
+        for _, p in m.procs:
+            if p.chance < 1 and p.restart:
+                raise ValueError(f"{gd.char_name(mc.char_id)}: proc {p.hit_id} on {p.event!r}: `chance` with `restart` "
+                                 "isn't supported (an expected-value refreshed DoT isn't modelled)")
         for name, a in actions.items():
             if a.skill_id:
                 m.cd[name] = skill_cd(gd, a.skill_id)
                 sk = gd.table("Skill").get(str(a.skill_id), {})
                 if sk.get("GetEnergyLimit"):
                     m.energy_cap[name] = sk["GetEnergyLimit"] / 10000
+                n_ch = (a.charges or sk.get("SectionAmount", 1) or 1) + sum(rp.add_charges.get(name, 0) for rp in resolved)
+                if n_ch > 1:
+                    m.max_charges[name] = n_ch
+                    m.charges[name] = n_ch
+                    m.recharge[name] = []
+                    m.use_interval[name] = a.use_interval if a.use_interval is not None \
+                        else sk.get("UseInterval", 0) / 10000
+                    m.last_use[name] = -1e9
+            for rp in resolved:
+                if name in rp.cd_scale and name in m.cd:
+                    m.cd[name] *= rp.cd_scale[name]
+        for pool, ms in kit.minions.items():
+            rules = {}
+            for rp in resolved:
+                rules.update(rp.minion_rules.get(pool, {}))
+            ms = replace(ms, **rules)
+            m.minions[pool] = replace(ms, summon=_norm_event(ms.summon, i),
+                                      sacrifice_on=_norm_event(ms.sacrifice_on, i) if ms.sacrifice_on else "",
+                                      resummon_on=_norm_event(ms.resummon_on, i) if ms.resummon_on else "",
+                                      attacks=[h for h in ms.attacks if keep(h)],
+                                      reactions=[replace(h, event=_norm_event(_expand_who(h.event, n, classes, elements), i))
+                                                 for h in ms.reactions if keep(h)])
         if "ult" in actions and actions["ult"].skill_id:
             m.ult_cost = ult_energy(gd, actions["ult"].skill_id)
         m.charge = charge
@@ -262,13 +335,15 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     # ---- static stats: base + discs + emblems
     disc_stats = StatBlock()
     for d, c in list(discs_main) + list(discs_support):
-        disc_stats.add(_disc_stats(gd, d, c))
+        disc_stats.add(_disc_stats(gd, d, c, team.disc_level))
     for d, c in discs_main:
         el = _disc_element(gd, d)
         for md in _disc_mods(gd, d, c):
             add_mod(md, 0, "team" if (disc_team and md.target == "self") else None, el)
+    for md in team.enemy.ability:   # the boss's ability (enemy preset)
+        add_mod(md, 0)
     for i, m in enumerate(members):
-        s = char_base_stats(gd, m.cfg.char_id)
+        s = char_base_stats(gd, m.cfg.char_id, m.cfg.level)
         if disc_team or i == 0:
             s.add(disc_stats)
         lines = list(m.cfg.emblems) if emblems else []
@@ -276,6 +351,8 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         for e in lines:
             if isinstance(e, EmblemLine):
                 s.add_stat(e.stat, e.value, e.is_pct)
+        for stat, v, pct in m.cfg.bonus_stats:   # team-file flat extras (build-level stats)
+            s.add_stat(stat, v, pct)
         m.static = s
         m.minion_static = s.copy()
     enemy_static = team.enemy.taken.copy()
@@ -284,13 +361,19 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     def reaches_minions(mod: Modifier) -> bool:
         return all_reach or bool(mod.minions) or mod.stat in MINION_STATS
 
+    def const_reaches_minions(mod: Modifier) -> bool:
+        """Minions summon with a snapshot of the summoner's sheet at battle start (user, in-game), so truly
+        always-on buffs (no trigger) reach them whatever their wording. Buffs that come and go, including those
+        averaged as `uptime x stacks`, reach minions only if they name minions / friendly units."""
+        return mod.trigger is None or reaches_minions(mod)
+
     # Fold unscoped always-on mods into static blocks.
     dynamic: list[_Mod] = []
     for md in mods:
         if md.event == "" and not md.mod.hit_tags:
             for r in md.receivers:
                 blks = [enemy_static] if r == "enemy" else (
-                    [members[r].static] + ([members[r].minion_static] if reaches_minions(md.mod) else []))
+                    [members[r].static] + ([members[r].minion_static] if const_reaches_minions(md.mod) else []))
                 for blk in blks:
                     blk.add_stat(md.mod.stat, md.mod.value * md.constant, md.mod.is_pct)
         else:
@@ -312,13 +395,20 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     named = {md.mod.name: md for md in by_event if md.mod.name}
     status_time: dict = defaultdict(float)
 
+    last_cast: dict = {}   # (member, action) -> time of its last cast
+    alive: dict = defaultdict(list)   # (member, pool) -> [{"uid", "expire", "k"}] minions out, oldest first
+    pools = {name for m in members for name in m.minions}
+
     def status_stacks(name: str, t: float) -> int:
-        """Stacks of a status; "a+b" sums several statuses, "a>=N" is 0 below N stacks."""
+        """Stacks of a status; "a+b" sums several statuses, "a>=N" is 0 below N stacks.
+        A minion pool's name counts its minions out."""
         name, _, least = name.partition(">=")
         k = 0
         for nm in name.split("+"):
             md = named.get(nm)
             k += sum(1 for x in md.stacks if x > t) if md else 0
+            if nm in pools:
+                k += sum(len(v) for (mi, p), v in alive.items() if p == nm)
         return k if k >= int(least or 1) else 0
 
     def condition(ev: str, t: float) -> int:
@@ -326,12 +416,32 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         parts = ev.split(":")   # while:on_field:<who> | while:status:<name>
         if parts[1] == "status":
             return status_stacks(parts[2], t)
+        if parts[1] == "cd_within":   # while:cd_within:<member>:<action>:<seconds>: cooldown left <= N s
+            mm = members[int(parts[2])]
+            left = mm.cd_ready.get(parts[3], 0.0) - t
+            return int(left <= float(parts[4]) + 1e-9)
+        if parts[1] == "cast_within":   # while:cast_within:<who>:<action>:<seconds>: cast that recently
+            last = last_cast.get((int(parts[2]), parts[3]))
+            return int(last is not None and t - last <= float(parts[4]) + 1e-9)
+        if parts[1] == "broken":   # while:broken: the enemy's resilience bar is broken
+            if bar is None:   # no bar: today's behaviour, the unknown_trigger_uptime assumption (on if > 0)
+                return int(uptime_default > 0)
+            return int(bar.broken(t))
+        if parts[1] == "mark":   # while:mark:<element>: a Mark of that element is on the enemy
+            return int(mark_up[int(parts[2])])
         if parts[1] == "on_field":
             who = parts[2]
             idx = [i for i in range(n) if (who == "any" or (who == "support" and roles[i] == "support")
                                             or who == str(i))]
             return any(on_field_until[i] > t for i in idx)
         return False
+
+    # ---- resilience bar
+    en = team.enemy
+    bar = (ResilienceBar(max=en.resilience, break_time=en.break_time, break_ratio=en.break_ratio,
+                         lock_delay=en.lock_delay, lock_time=en.lock_time) if en.resilience > 0 else None)
+    adjust = [toughness_adjust(gd, m.char_id) for m in team.members]
+    resilience_by_member: dict = defaultdict(float)
 
     # ---- timeline
     dt = team.tick
@@ -341,9 +451,12 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     first_cast: dict = {}
     queue: list = []   # (time, seq, member, HitSpec, action_name, cast_id)
     seq = [0]
-    mark_up = [False]
-    next_mark = [0.0]
+    mark_up: dict = defaultdict(bool)      # element -> a Mark of that element is on the enemy
+    next_mark: dict = defaultdict(float)   # element -> mark ICD end
+    restart_gen: dict = defaultdict(int)   # proc / minion-schedule key -> current generation
+    minion_uid = [0]
     proc_ready: dict = defaultdict(float)
+    proc_expected: dict = {}   # (member, proc) -> ExpectedICD for chance procs
     proc_count: dict = defaultdict(int)
     followup_count: dict = defaultdict(int)
     main_event_followups = [(n, _norm_event(a.followup.event, 0), a.followup.every)
@@ -401,12 +514,26 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                 return True
         return False
 
+    def while_ok(pattern: str, ev: str, t: float) -> bool:
+        """`<event>&while:<condition>`: the alternative only counts while the condition holds
+        (e.g. `cast:self:skill&while:status:berserk`: casting the skill while in Berserk)."""
+        if "&while:" not in pattern:
+            return True
+        for alt in pattern.split("|"):
+            if not _event_matches(alt, ev):
+                continue
+            conds = [c[len("while:"):] for c in alt.split("&")[1:] if c.startswith("while:")]
+            if all(condition("while:" + c, t) for c in conds):
+                return True
+        return False
+
     def emit(ev: str, t: float):
         for md in by_event:
             rs = md.mod.trigger.reset_on
             if rs and md.stacks and any(_event_matches(_norm_event(r, md.owner), ev) for r in rs):
                 md.stacks = []
-            if _event_matches(md.event, ev) and recent_ok(md.event, ev, t) and once_ok(md, ev):
+            if _event_matches(md.event, ev) and recent_ok(md.event, ev, t) and once_ok(md, ev) \
+                    and while_ok(md.event, ev, t):
                 trig = md.mod.trigger
                 if trig.every > 1:
                     md.count += 1
@@ -433,29 +560,145 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                     pending.append((max(t, lock_until[0]), fname, False))
         for m in members:
             for pev, p in m.procs:
-                if _event_matches(pev, ev) and t >= proc_ready[(m.idx, p)]:
+                chancy = p.chance < 1
+                if _event_matches(pev, ev) and (chancy or t >= proc_ready[(m.idx, p)]):
                     if p.when and not condition(p.when, t):
                         continue
                     if p.every > 1:
                         proc_count[(m.idx, p)] += 1
                         if proc_count[(m.idx, p)] % p.every:
                             continue
-                    proc_ready[(m.idx, p)] = t + (p.icd or 0.0)
-                    schedule(m, p, "proc", t, f"proc#{seq[0]}")
+                    mass = 1.0
+                    if chancy:   # expected value: the proc's share of this event, with its ICD in expectation
+                        eicd = proc_expected.get((m.idx, p))
+                        if eicd is None:
+                            eicd = proc_expected[(m.idx, p)] = ExpectedICD(p.chance, p.icd or 0.0)
+                        mass = eicd.fire(t)
+                        if mass <= 0:
+                            continue
+                    else:
+                        proc_ready[(m.idx, p)] = t + (p.icd or 0.0)
+                    if p.resilience:
+                        amount = float(p.resilience) * mass * team.enemy.resilience
+                        resilience_by_member[m.idx] += amount
+                        if bar:
+                            bar.damage(t, amount)
+                    if chancy:
+                        if not p.hit_id:
+                            continue
+                        p = replace(p, mult=p.mult * mass)
+                    if p.restart:   # e.g. a refreshed DoT: the previous firing's pending ticks are dropped
+                        key = f"rproc#{m.idx}#{id(p)}"
+                        restart_gen[key] += 1
+                        schedule(m, p, "proc", t, f"{key}#{restart_gen[key]}")
+                    else:
+                        schedule(m, p, "proc", t, f"proc#{seq[0]}")
+            for pool, ms in m.minions.items():
+                for ri, h in enumerate(ms.reactions):   # each minion out reacts, with its own ICD
+                    if not _event_matches(h.event, ev):
+                        continue
+                    for mn in list(alive[(m.idx, pool)]):
+                        if t >= mn["ready"].get(ri, -1e9) - 1e-9:
+                            mn["ready"][ri] = t + (h.icd or 0.0)
+                            schedule(m, h, "minion_react", t, f"react#{mn['uid']}")
+                if ms.sacrifice_on and _event_matches(ms.sacrifice_on, ev):
+                    for mn in list(alive[(m.idx, pool)]):
+                        vanish(m, pool, mn, t, sacrifice=True)
+                if ms.resummon_on and _event_matches(ms.resummon_on, ev):
+                    k = len(alive[(m.idx, pool)])
+                    for mn in list(alive[(m.idx, pool)]):
+                        vanish(m, pool, mn, t)
+                    for _ in range(k):
+                        summon(m, pool, t)
+                if ms.summon and _event_matches(ms.summon, ev):
+                    key = f"summon#{m.idx}#{pool}"
+                    if ms.restart:
+                        restart_gen[key] += 1
+                    for k in range(ms.count):
+                        seq[0] += 1
+                        heapq.heappush(queue, (t + ms.offset + k * ms.every, seq[0], m.idx, None, "summon",
+                                               f"{key}#{restart_gen[key]}"))
+
+    def summon(m: _Member, pool: str, t: float):
+        ms = m.minions[pool]
+        minion_uid[0] += 1
+        mn = {"uid": minion_uid[0], "expire": t + ms.duration, "k": 0,
+              "ready": {ri: t + (h.icd or 0.0) for ri, h in enumerate(ms.reactions)}}   # ICD starts at the summon
+        alive[(m.idx, pool)].append(mn)
+        if ms.attacks:
+            seq[0] += 1
+            heapq.heappush(queue, (t + ms.windup, seq[0], m.idx, None, "minion", f"{pool}#{mn['uid']}"))
+        emit(f"summon:{m.idx}:{pool}", t)
+
+    def vanish(m: _Member, pool: str, mn: dict, t: float, sacrifice: bool = False):
+        lst = alive[(m.idx, pool)]
+        if mn not in lst:
+            return
+        lst.remove(mn)
+        emit(f"vanish:{m.idx}:{pool}", t)
+        if sacrifice:
+            emit(f"sacrifice:{m.idx}:{pool}", t)
+
+    def summon_tick(m: _Member, pool: str, t: float):
+        """One summon tick: a new minion, unless `max` are out: then the oldest is replaced or all are refreshed."""
+        ms = m.minions[pool]
+        lst = alive[(m.idx, pool)]
+        emit(f"minion_tick:{m.idx}:{pool}", t)
+        if len(lst) >= ms.max:
+            if ms.at_max == "refresh":
+                for mn in lst:
+                    mn["expire"] = t + ms.duration
+                return
+            vanish(m, pool, lst[0], t)
+        summon(m, pool, t)
 
     def schedule(m: _Member, h: HitSpec, action: str, t: float, cid: str):
         for k in range(h.count):
             seq[0] += 1
             heapq.heappush(queue, (t + h.offset + k * h.interval, seq[0], m.idx, h, action, cid))
 
+    def refill(m: _Member, name: str, t: float):
+        q = m.recharge[name]
+        while q and q[0] <= t + 1e-9:
+            q.pop(0)
+            m.charges[name] += 1
+
+    def ready(m: _Member, name: str, t: float) -> bool:
+        if name in m.max_charges:   # stored uses: recharged one at a time, UseInterval between uses
+            refill(m, name, t)
+            return m.charges[name] > 0 and t >= m.last_use[name] + m.use_interval[name] - 1e-9
+        return t >= m.cd_ready[name] - 1e-9
+
+    def give_charge(m: _Member, name: str, t: float):
+        """A cooldown reset on a charged action: the use recharging now is ready; the rest move up."""
+        q = m.recharge[name]
+        if q:
+            shift = q[0] - t
+            q.pop(0)
+            m.recharge[name] = [x - shift for x in q]
+            m.charges[name] += 1
+
     def cast(m: _Member, name: str, t: float, from_cd: bool = True):
         a = m.actions[name]
         m.cast_count[name] += 1
         first_cast.setdefault((m.idx, name), round(t, 6))
+        last_cast[(m.idx, name)] = t
         cid = f"{name}#{m.cast_count[name]}"
+        c = m.cast_count[name]
         for h in a.hits:
+            if h.cycle and (c - 1) % h.cycle[0] != h.cycle[1] - 1:
+                continue
+            if (h.from_cast and c < h.from_cast) or (h.upto_cast and c > h.upto_cast):
+                continue
             schedule(m, h, name, t, cid)
-        if from_cd:
+        if from_cd and name in m.max_charges:
+            refill(m, name, t)
+            m.charges[name] -= 1
+            m.last_use[name] = t
+            q = m.recharge[name]
+            cd = m.cd.get(name, 0.0) - sum(cr["seconds"] * cr["times"] for cr in m.cd_reduce if cr["action"] == name)
+            q.append(max(t, q[-1] if q else t) + cd)   # one recharge timer, progress kept across casts (user)
+        elif from_cd:
             m.cd_ready[name] = t + m.cd.get(name, 0.0)
             for cr in m.cd_reduce:
                 if cr["action"] == name:
@@ -468,7 +711,10 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             on_field_until[m.idx] = max(on_field_until[m.idx], t + m.kit.on_field[name])
         tgt = m.reset_cd.get(name)
         if tgt:
-            m.cd_ready[tgt] = t
+            if tgt in m.max_charges:
+                give_charge(m, tgt, t)
+            else:
+                m.cd_ready[tgt] = t
         if m.idx == 0:
             lock_until[0] = max(lock_until[0], t + a.lock)
             busy_until[0] = t + min(DEFAULT_BUSY, a.lock) if a.lock else t
@@ -488,8 +734,9 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     def stat_for(receiver_block: StatBlock, receiver, tags: set, t: float, minion: bool = False) -> StatBlock:
         s = receiver_block.copy()
         ok = (lambda md: reaches_minions(md.mod)) if minion else (lambda md: True)
-        for md in scoped_const:
-            if receiver in md.receivers and (not md.mod.hit_tags or tags & set(md.mod.hit_tags)) and ok(md):
+        for md in scoped_const:   # always on (snapshot) or averaged uptime (minion check)
+            if receiver in md.receivers and (not md.mod.hit_tags or tags & set(md.mod.hit_tags)) \
+                    and (not minion or const_reaches_minions(md.mod)):
                 s.add_stat(md.mod.stat, md.mod.value * md.constant, md.mod.is_pct)
         for md in by_event:
             if md.stacks and receiver in md.receivers and (not md.mod.hit_tags or tags & set(md.mod.hit_tags)) and ok(md):
@@ -505,6 +752,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         return s
 
     energy_used: dict = defaultdict(float)
+    has_charge_mods = any(md.mod.stat == CHARGE_EFF for md in mods)
 
     def land(t: float, mi: int, h: HitSpec, action: str, cid: str):
         m = members[mi]
@@ -519,9 +767,15 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         minion = slot_of(hd) == "minion"
         attacker = stat_for(m.minion_static if minion else m.static, mi, tags, t, minion)
         taken = stat_for(enemy_static, "enemy", tags, t)
-        e = Enemy(res=team.enemy.res, defense=team.enemy.defense, broken=team.enemy.broken,
+        e = Enemy(res=team.enemy.res, res_by_element=team.enemy.res_by_element,
+                  defense=team.enemy.defense, broken=team.enemy.broken,
                   vul=team.enemy.vul, taken=taken)
-        dmg = hit_damage(hd, lv, attacker, e)
+        dmg_unbroken = hit_damage(hd, lv, attacker, e) * h.mult
+        dmg = dmg_unbroken * (bar.ratio(t) if bar else 1.0)   # read before this hit lowers the bar
+        res = dmg_unbroken * adjust[mi] * (1 + attacker.get(RES_BREAK_EFF))
+        resilience_by_member[mi] += res
+        if bar:
+            bar.damage(t, res)
         slot = slot_of(hd)
         by_slot[(mi, slot)] += dmg
         for tag in (*tags, f"{slot}_dmg"):
@@ -534,14 +788,19 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             gain = max(0.0, min(hd.energy, cap - energy_used[key]))
             energy_used[key] += gain
             for mm in members:
-                mm.energy += gain * (1.0 if mm.idx == 0 else mm.kit.energy_conv) * mm.charge
+                eff = mm.charge + (stat_for(mm.static, mm.idx, set(), t).get(CHARGE_EFF) if has_charge_mods else 0.0)
+                mm.energy += gain * (1.0 if mm.idx == 0 else mm.kit.energy_conv) * eff
+        el = elements[mi]   # Marks are per element: a Trekker applies and triggers Marks of their own element
         if h.applies_mark:
-            mark_up[0] = True
+            was_up = mark_up[el]
+            mark_up[el] = True
+            emit(f"mark_applied:{mi}", t)
+            emit(f"mark_refresh:{mi}" if was_up else f"mark_new:{mi}", t)
         triggers = h.triggers_mark or bool(tags & m.mark_tags)
         # Any member whose kit has a mark hit can trigger (consume) the Mark: supports like Shia compete with the main.
-        if triggers and mark_up[0] and t >= next_mark[0] and m.kit.mark_hit:
-            mark_up[0] = False
-            next_mark[0] = t + team.mark_icd
+        if triggers and mark_up[el] and t >= next_mark[el] and m.kit.mark_hit:
+            mark_up[el] = False
+            next_mark[el] = t + team.mark_icd
             mh = HitSpec(hit_id=m.kit.mark_hit, tags=("mark",))
             seq[0] += 1
             heapq.heappush(queue, (t, seq[0], mi, mh, "mark", "mark"))
@@ -549,6 +808,28 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         for tag in tags:
             emit(f"hit:{mi}:{tag}", t)
         emit(f"hit:{mi}:{slot}_dmg", t)
+
+    holds = {(int(h["member"]), h["action"]): (h["until"], float(h.get("max_wait", math.inf)), h.get("only_if", ""))
+             for h in team.hold}
+    hold_since: dict = {}
+
+    def held(m: _Member, name: str, t: float) -> bool:
+        """Team-file rotation timing: a ready action waits until `until` holds (at most `max_wait` s). With `only_if`,
+        it only starts waiting if that holds when the action becomes ready (e.g. "wait if Cosette's skill shows <= 3 s")."""
+        rule = holds.get((m.idx, name))
+        if not rule:
+            return False
+        until, max_wait, only_if = rule
+        if condition(until, t):
+            hold_since.pop((m.idx, name), None)
+            return False
+        if (m.idx, name) not in hold_since and only_if and not condition(only_if, t):
+            return False
+        start = hold_since.setdefault((m.idx, name), t)
+        if t - start >= max_wait:
+            hold_since.pop((m.idx, name), None)
+            return False
+        return True
 
     steps = int(round(T / dt))
     auto = main.actions.get("auto")
@@ -564,14 +845,25 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         for m in members:
             m.energy += m.kit.energy_per_second * dt
             if on_field_until[m.idx] > t:
+                before = on_field_time[m.idx]
                 on_field_time[m.idx] += dt
+                if int((on_field_time[m.idx] + 1e-9) // 5.0) > int((before + 1e-9) // 5.0):
+                    emit(f"on_field_5s:{m.idx}", t)   # "every 5 s they are on the field"
         for name in named:
             if status_stacks(name, t) > 0:
                 status_time[name] += dt
+        for pool in pools:
+            if status_stacks(pool, t) > 0:
+                status_time[pool] += dt
+        for (mi, pool), lst in list(alive.items()):   # minion lifetimes
+            for mn in [x for x in lst if x["expire"] <= t + 1e-9]:
+                vanish(members[mi], pool, mn, t)
         # supports first, then main
         for m in members[1:] + [main]:
             is_main = m.idx == 0
             if is_main and t < busy_until[0] - 1e-9:
+                continue
+            if not is_main and m.kit.wait_on_field and on_field_until[m.idx] > t + 1e-9:
                 continue
             if is_main and pending:
                 pending.sort()
@@ -579,11 +871,14 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                     _, name, _ = pending.pop(0)
                     cast(m, name, t, from_cd=False)
                     continue
-            if "ult" in m.actions and m.ult_cost and m.energy >= m.ult_cost and t >= m.cd_ready["ult"] - 1e-9:
+            if "ult" in m.actions and m.ult_cost and m.energy >= m.ult_cost and ready(m, "ult", t) \
+                    and not held(m, "ult", t):
                 cast(m, "ult", t)
                 continue
-            if "skill" in m.actions and t >= m.cd_ready["skill"] - 1e-9:
+            if "skill" in m.actions and ready(m, "skill", t):
                 if is_main and t < 1.0 - 1e-9:
+                    continue
+                if held(m, "skill", t):
                     continue
                 cast(m, "skill", t)
         # main autos: a string that restarts after every cast
@@ -602,6 +897,27 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             ht, _, mi, h, action, cid = heapq.heappop(queue)
             if ht > T:
                 continue
+            if cid.startswith(("rproc#", "summon#")):
+                key, _, gen = cid.rpartition("#")
+                if int(gen) != restart_gen[key]:
+                    continue   # superseded by a newer firing / schedule
+            if action == "summon":
+                summon_tick(members[mi], cid.split("#")[2], ht)
+                continue
+            if action == "minion":
+                pool, _, uid = cid.partition("#")
+                m = members[mi]
+                mn = next((x for x in alive[(mi, pool)] if x["uid"] == int(uid)), None)
+                if mn is None or mn["expire"] < ht - 1e-9:
+                    continue
+                ms = m.minions[pool]
+                h = ms.attacks[mn["k"] % len(ms.attacks)]
+                mn["k"] += 1
+                seq[0] += 1
+                heapq.heappush(queue, (ht + ms.interval / (1.0 + ms.speed), seq[0], mi, None, "minion", cid))
+                for k in range(h.count):
+                    land(ht + k * h.interval, mi, h, "minion", cid)
+                continue
             land(ht, mi, h, action, cid)
 
     casts = {(m.idx, a): c for m in members for a, c in m.cast_count.items()}
@@ -610,4 +926,6 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             casts.setdefault((m.idx, a), 0)
     return SimResult(total=sum(by_member.values()), by_member=dict(by_member), by_slot=dict(by_slot),
                      casts=casts, first_cast=first_cast, unknown_modifiers=sorted(unknown),
-                     on_field_time=dict(enumerate(on_field_time)), status_time=dict(status_time))
+                     on_field_time=dict(enumerate(on_field_time)), status_time=dict(status_time),
+                     breaks=list(bar.breaks) if bar else [], broken_time=bar.broken_time(T) if bar else 0.0,
+                     resilience_by_member=dict(resilience_by_member))

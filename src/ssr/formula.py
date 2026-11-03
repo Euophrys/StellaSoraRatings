@@ -37,10 +37,19 @@ def er_amend(res: float, pen: float, vul: float = 0.0, ignore: float = 0.0) -> f
 @dataclass
 class Enemy:
     res: float = 250.0
-    defense: float = 0.0
+    defense: float = 500.0
     broken: float = 1.0
     vul: float = 0.0
     taken: StatBlock = field(default_factory=StatBlock)
+    res_by_element: dict = field(default_factory=dict)   # element (EET) -> RES, overriding `res` (non-weak elements)
+    name: str = "generic"           # enemy preset (specs/enemies/<name>.yaml)
+    resilience: float = 0.0         # resilience bar; 0 = no bar (never broken except via `broken`)
+    break_time: float = 10.0        # seconds broken per break
+    break_ratio: float = 1.5        # damage x while broken (unverified)
+    lock_delay: float = 1.3         # GUESS: seconds from refill to the resilience lock
+    lock_time: float = 4.7          # GUESS: seconds the bar can't be lowered
+    ability: tuple = ()             # the boss's ability, as Modifiers
+    fight_length: float | None = None
 
 
 def slot_of(h: Hit) -> str:
@@ -59,7 +68,7 @@ def hit_damage(h: Hit, skill_level: int, attacker: StatBlock, enemy: Enemy, inte
     if h.element:
         pen = attacker.get(elem_stat(ELEM_PEN_BASE, h.element))
         ign = attacker.get(elem_stat(ELEM_IGNORE_RES_BASE, h.element))
-        er = er_amend(enemy.res, pen, enemy.vul + attacker.get(VUL), ign)
+        er = er_amend(enemy.res_by_element.get(h.element, enemy.res), pen, enemy.vul + attacker.get(VUL), ign)
         elem_taken = 1 + enemy.taken.get(elem_stat(ELEM_TAKEN_BASE, h.element))
     else:
         er, elem_taken = 1.0, 1.0

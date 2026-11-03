@@ -95,3 +95,14 @@ Order: ours HP% > Lux PEN > Crit Rate > Skill DMG > Lux DMG > Crit DMG > Skill C
 - `on_field` seconds per support cast (4 s).
 - `energy_per_second` (2/s for everyone) and supports' 75% share of the main's energy. These set ult frequency: Noya 3 ults, Firefly 2, Tilia 3.
 - Firefly Sword Form cadence and blade counts (`specs/trekkers/115.yaml`).
+
+## Resilience bar (2026-11-03)
+
+The sim now models resilience breaks (`docs/validation/2026-11-03-boss-blitz-breaks.md`). With the bar off (`enemy.resilience: 0`), every number above reproduces exactly (pinks-only total 239,320,242.148, tested). The new baseline is Generic, with a 250M bar, a 10 s ×1.5 break and the lock defaults:
+
+| Run (120 s) | Bar off | Bar on | Breaks (start, s) |
+| --- | --: | --: | --- |
+| pinks only | 239.3M | 252.1M (+5.3%) | 1 (85.2) |
+| reference build | 1,078.8M | 1,258.0M (+16.6%) | 3 (24.5, 58.6, 92.9) |
+
+The reference build's picks are unchanged by the bar.

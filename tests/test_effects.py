@@ -81,7 +81,7 @@ def test_scripted_disc_from_spec(gd):  # My Guiding Star: no EffectIds, values f
 
 
 def test_scripted_disc_without_spec_is_noted(gd):  # Review Focus 2: never silently dropped
-    mods, notes = disc_modifiers(gd, 214062, copies=1)   # All That Was Beautiful: all parts scripted, no spec
+    mods, notes = disc_modifiers(gd, 214015, copies=1)   # Deer's Song: scripted, no spec
     assert any("scripted" in n for n in notes)
 
 

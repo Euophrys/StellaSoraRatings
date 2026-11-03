@@ -4,6 +4,7 @@ from __future__ import annotations
 from ..data import GameData
 from ..effects import disc_modifiers
 from ..emblems import emblem_options
+from ..enemies import preset_catalog
 from ..game import potential_pools, talent_groups
 from ..kit import SPECS
 from ..stats import ELEMENTS
@@ -56,4 +57,4 @@ def catalog(gd: GameData) -> dict:
                       "modelled": not any("not modelled" in n for n in notes)})
     discs.sort(key=lambda d: d["name"])
     trekkers.sort(key=lambda t: t["name"])
-    return {"trekkers": trekkers, "discs": discs, "emblems": emblems}
+    return {"trekkers": trekkers, "discs": discs, "emblems": emblems, "enemies": preset_catalog(gd)}

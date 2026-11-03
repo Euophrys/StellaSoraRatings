@@ -8,6 +8,7 @@ from openpyxl.formatting.rule import ColorScaleRule
 from openpyxl.styles import Alignment, Font, PatternFill
 
 from .data import GameData, REPO_ROOT
+from .enemies import enemy_summary
 from .rate import DiscRow, EmblemRow, PotRow
 from .sim import SimResult
 from .team import TeamConfig
@@ -99,8 +100,7 @@ def write_xlsx(path: Path, gd: GameData, team: TeamConfig, discs: list[DiscRow],
     for u in baseline.unknown_modifiers:
         ws.append([u])
     ws.append([])
-    ws.append([f"Enemy: RES {team.enemy.res:g}, DEF {team.enemy.defense:g}, break x{team.enemy.broken:g}; "
-               f"fight {team.fight_length:g} s"])
+    ws.append([f"Enemy: {enemy_summary(team.enemy, len(baseline.breaks))}; fight {team.fight_length:g} s"])
     ws.append([])
     doc = REPO_ROOT / "docs" / "assumptions.md"
     if doc.exists():

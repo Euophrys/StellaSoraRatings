@@ -30,11 +30,18 @@ class HitSpec:
     requires: tuple[int, ...] = ()
     excludes: tuple[int, ...] = ()
     requires_all: tuple[int, ...] = ()   # lands only if all of these potentials are in the build
+    mult: float = 1.0      # damage multiplier on the hit (e.g. a Mirror Image with 50% of the DMG Multiplier)
+    cycle: tuple[int, ...] = ()   # (n, i): lands only on the i-th of every n casts of its action (1-based)
+    from_cast: int = 0     # lands only from the Nth cast of its action on
+    upto_cast: int = 0     # lands only up to the Nth cast of its action
     # procs only
     event: str = ""
     icd: float = 0.0
     every: object = 1      # fire on every Nth matching event (number or {ref: ...})
     when: str = ""         # only fires while this condition holds, e.g. "while:status:butterfly"
+    restart: bool = False  # a new firing cancels this proc's hits still pending (a refreshed DoT)
+    chance: float = 1.0    # probability per matching event (expected value; `icd` is then an expected-value ICD)
+    resilience: object = 0.0   # fraction of the enemy's max resilience bar removed per proc (number or {param/ref})
 
 
 @dataclass
@@ -55,6 +62,30 @@ class ActionSpec:
     skill_id: int | None = None
     followup: Followup | None = None
     starts_cd: str = ""    # casting this (re)starts that action's cooldown from the end of this one's lock
+    charges: int = 0       # uses that can be stored (0 = Skill.SectionAmount from data, else 1)
+    use_interval: float | None = None   # min seconds between uses of stored charges (None = Skill.UseInterval)
+
+
+@dataclass
+class MinionSpec:
+    """A pool of summoned minions with their own lifetimes and attack loops (e.g. Mistique's Pumpka Phantoms)."""
+    name: str
+    summon: str = ""           # event that starts a summon schedule, e.g. "cast:self:skill"
+    offset: float = 0.0        # first summon tick after the event
+    every: float = 3.0         # seconds between summon ticks
+    count: int = 1             # summon ticks per schedule
+    restart: bool = True       # a new schedule cancels the ticks still pending from the previous one
+    max: int = 1               # minions out at once
+    duration: float = math.inf  # each minion's lifetime from its summon
+    at_max: str = "replace"    # a tick with `max` out: "replace" (the oldest vanishes) | "refresh" (all lifetimes reset)
+    windup: float = 0.0        # first attack after the summon
+    interval: float = 1.0      # seconds between attacks
+    attacks: list = field(default_factory=list)   # HitSpecs, cycled
+    sacrifice_on: str = ""     # event: all minions are sacrificed (vanish)
+    resummon_on: str = ""      # event: all minions vanish and as many are summoned again
+    speed: float = 0.0         # ATK SPD: attack interval / (1 + speed)
+    reactions: list = field(default_factory=list)   # HitSpecs with `event` / `icd`: each minion attacks on the event,
+                                                    # with its own ICD that starts on cooldown at its summon
 
 
 @dataclass
@@ -75,6 +106,9 @@ class PotentialSpec:
     reset_cd: dict[str, str] = field(default_factory=dict)
     cd_reduce: dict | None = None
     procs: list[HitSpec] = field(default_factory=list)
+    add_charges: dict[str, int] = field(default_factory=dict)   # {action: N} more stored uses
+    cd_scale: dict[str, float] = field(default_factory=dict)    # {action: x} cooldown multiplied by x
+    minion_rules: dict[str, dict] = field(default_factory=dict)  # {pool: {MinionSpec field: value}}
     note: str = ""
 
 
@@ -118,6 +152,9 @@ class Kit:
     reset_cd: dict[str, str] = field(default_factory=dict)
     on_field: dict[str, float] = field(default_factory=dict)   # support: seconds on the battlefield per cast
     talents: dict[int, TalentSpec] = field(default_factory=dict)
+    minions: dict[str, MinionSpec] = field(default_factory=dict)
+    procs: list[HitSpec] = field(default_factory=list)   # base-kit procs (e.g. a DoT after each Mark trigger)
+    wait_on_field: bool = False   # support: no new cast while still on the field (an ult would cancel the skill)
 
 
 @dataclass
@@ -134,6 +171,9 @@ class ResolvedPotential:
     reset_cd: dict[str, str]
     cd_reduce: dict | None
     procs: list[HitSpec]
+    add_charges: dict[str, int] = field(default_factory=dict)
+    cd_scale: dict[str, float] = field(default_factory=dict)
+    minion_rules: dict[str, dict] = field(default_factory=dict)
 
 
 def _hitspec(d: dict) -> HitSpec:
@@ -142,8 +182,11 @@ def _hitspec(d: dict) -> HitSpec:
         interval=float(d.get("interval", 0.1)), tags=tuple(d.get("tags", ())),
         triggers_mark=bool(d.get("triggers_mark", False)), applies_mark=bool(d.get("applies_mark", False)),
         requires=tuple(int(x) for x in d.get("requires", ())), excludes=tuple(int(x) for x in d.get("excludes", ())),
-        requires_all=tuple(int(x) for x in d.get("requires_all", ())),
+        requires_all=tuple(int(x) for x in d.get("requires_all", ())), mult=float(d.get("mult", 1.0)),
+        cycle=tuple(int(x) for x in d.get("cycle", ())), from_cast=int(d.get("from_cast", 0)),
+        upto_cast=int(d.get("upto_cast", 0)),
         event=str(d.get("event", "")), icd=d.get("icd", 0.0), every=d.get("every", 1), when=str(d.get("when", "")),
+        restart=bool(d.get("restart", False)), chance=float(d.get("chance", 1.0)), resilience=d.get("resilience", 0.0),
     )
 
 
@@ -154,7 +197,8 @@ def _action(name: str, d: dict, skill_id: int | None) -> ActionSpec:
         lock=float(d.get("lock", DEFAULT_LOCKS.get(name, 0.0))), duration=float(d.get("duration", 0.0)),
         skill_id=d.get("skill_id", skill_id),
         followup=Followup(fu.get("after", ""), fu.get("every", 1), fu.get("event", ""), float(fu.get("delay", 0.0)), bool(fu.get("autos", False))) if fu else None,
-        starts_cd=str(d.get("starts_cd", "")),
+        starts_cd=str(d.get("starts_cd", "")), charges=int(d.get("charges", 0)),
+        use_interval=float(d["use_interval"]) if "use_interval" in d else None,
     )
 
 
@@ -172,7 +216,24 @@ def _potential(d: dict) -> PotentialSpec:
         reset_cd=dict(d.get("reset_cd", {})),
         cd_reduce=d.get("cd_reduce"),
         procs=[_hitspec(p) for p in d.get("procs", [])],
+        add_charges={k: int(v) for k, v in (d.get("add_charges") or {}).items()},
+        cd_scale={k: float(v) for k, v in (d.get("cd_scale") or {}).items()},
+        minion_rules={k: dict(v) for k, v in (d.get("minion_rules") or {}).items()},
         note=d.get("note", ""),
+    )
+
+
+def _minion(name: str, d: dict) -> MinionSpec:
+    s = d.get("summon") or {}
+    dur = d.get("duration", "inf")
+    return MinionSpec(
+        name=name, summon=str(s.get("event", "")), offset=float(s.get("offset", 0.0)),
+        every=float(s.get("every", 3.0)), count=int(s.get("count", 1)), restart=bool(s.get("restart", True)),
+        max=int(d.get("max", 1)), duration=math.inf if dur in ("inf", None) else float(dur),
+        at_max=str(d.get("at_max", "replace")), windup=float(d.get("windup", 0.0)),
+        interval=float(d.get("interval", 1.0)), attacks=[_hitspec(h) for h in d.get("attacks", [])],
+        sacrifice_on=str(d.get("sacrifice_on", "")), resummon_on=str(d.get("resummon_on", "")),
+        speed=float(d.get("speed", 0.0)), reactions=[_hitspec(h) for h in d.get("reactions", [])],
     )
 
 
@@ -213,6 +274,9 @@ def load_kit(gd: GameData, path: Path, role: str) -> Kit:
         reset_cd=dict((sec.get("base_rules") or {}).get("reset_cd", {})),
         on_field={k: float(v) for k, v in (sec.get("on_field") or DEFAULT_ON_FIELD).items()} if role == "support" else {},
         talents=talents,
+        minions={k: _minion(k, v) for k, v in (sec.get("minions") or {}).items()},
+        procs=[_hitspec(p) for p in sec.get("procs", [])],
+        wait_on_field=bool(sec.get("wait_on_field", False)),
     )
 
 
@@ -260,7 +324,7 @@ def _apply_override(gd, m: Modifier, s: dict, level: int, pot: dict) -> Modifier
         kw["value"] = m.value * n
     if "value" in s:
         kw["value"] = value(gd, s["value"], level, pot)
-    trig_keys = {"event", "duration", "max_stacks", "uptime", "icd", "per_stack", "stacks_from", "reset_on"}
+    trig_keys = {"event", "duration", "max_stacks", "uptime", "icd", "per_stack", "stacks_from", "reset_on", "every"}
     if trig_keys & set(s):
         base = m.trigger or Trigger(event="unknown", duration=math.inf)
         dur = s.get("duration", base.duration)
@@ -270,7 +334,7 @@ def _apply_override(gd, m: Modifier, s: dict, level: int, pot: dict) -> Modifier
             max_stacks=int(value(gd, s.get("max_stacks", base.max_stacks), level, pot)),
             uptime=s.get("uptime", base.uptime),
             icd=value(gd, s.get("icd", base.icd), level, pot),
-            every=base.every,
+            every=int(value(gd, s.get("every", base.every), level, pot)),
             per_stack=bool(s.get("per_stack", base.per_stack)),
             stacks_from=s.get("stacks_from", base.stacks_from),
             add=base.add,
@@ -308,16 +372,23 @@ def resolve_potential(gd: GameData, kit: Kit, potential_id: int, level: int) -> 
                      "seconds": value(gd, spec.cd_reduce["seconds"], level, pot),
                      "times": value(gd, spec.cd_reduce.get("times", 1), level, pot)}
     procs = [HitSpec(**{**p.__dict__, "icd": value(gd, p.icd, level, pot),
+                        "resilience": value(gd, p.resilience, level, pot),
                         "every": max(1, int(round(value(gd, p.every, level, pot))))}) for p in spec.procs]
     add_actions = {n: replace(a, followup=replace(a.followup, every=max(1, int(round(value(gd, a.followup.every, level, pot))))))
                    if a.followup else a for n, a in spec.add_actions.items()}
+    def rule(k, v):
+        if k == "reactions":
+            return [replace(h, icd=value(gd, h.icd, level, pot)) for h in (_hitspec(x) for x in v)]
+        return value(gd, v, level, pot) if isinstance(v, dict) else v
+    minion_rules = {pool: {k: rule(k, v) for k, v in r.items()} for pool, r in spec.minion_rules.items()}
     if spec.note:
         notes = notes + [spec.note]
     return ResolvedPotential(
         potential_id=potential_id, level=level, modifiers=out, notes=notes,
         add_hits=spec.add_hits, replace_hits=spec.replace_hits, add_actions=add_actions,
         mark_tags=spec.mark_tags, extra_casts=spec.extra_casts, reset_cd=spec.reset_cd,
-        cd_reduce=cd_reduce, procs=procs,
+        cd_reduce=cd_reduce, procs=procs, add_charges=spec.add_charges, cd_scale=spec.cd_scale,
+        minion_rules=minion_rules,
     )
 
 

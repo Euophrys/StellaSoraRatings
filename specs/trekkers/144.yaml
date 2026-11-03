@@ -1,0 +1,171 @@
+# Chitose (144) — Aqua, Vanguard. Hits scale with ATK (data).
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+#
+# User, frame-timed (2026-11-01, 30 fps):
+#   Auto string starts 3,01; hits 3,13 3,16 | 4,00 | 4,23 5,06 | 5,22 6,01 | 6,09 6,13 7,00 | 7,19 7,22;
+#     the next string's first hit lands at 8,14 -> one string = 5.033 s (offsets below are from the string start).
+#   Torrent Flash: cast -> hit 0.1-0.3 s (0.3 s from range); stored uses recast 0.4-0.6 s apart
+#     (Skill.UseInterval 0.5 s, SectionAmount 2 charges; one recharge timer, progress kept across casts).
+#     Cast 44,24 -> next auto hits 45,17 (auto string restarts 0.37 s after the cast).
+#   Scale replaces a Torrent Flash cast and costs a charge (user). With Returning Tide: first cast normal, then
+#     every cast a Scale (43,24 no serpent, next three serpents; a miss at 1:02,26 broke the chain).
+#   Ult: 27,11 cast; small hits from 28,05 every ~0.25 s, last small hit 30,20; big hit 32,00; control 33,00.
+char_id: 144
+
+main:
+  energy_per_second: 2.0          # GUESS passive ult energy regen
+  mark: {hit: 144000001}          # Aqua Mark DMG; also inflicts Chill (status below)
+
+  actions:
+    auto:                          # Aeroflow: S1 x2, S2, S3 x2, S4 x2, S5 x3, S6 x2 (text) = 12 hits (user count)
+      duration: 5.033
+      hits:
+        - {hit: 144100001, count: 2, offset: 0.4, interval: 0.1, tags: [auto, s1]}
+        - {hit: 144100002, offset: 0.967, tags: [auto, s2]}
+        - {hit: 144100003, offset: 1.733, tags: [auto, s3]}
+        - {hit: 144100008, offset: 2.167, tags: [auto, s3]}
+        - {hit: 144100004, count: 2, offset: 2.7, interval: 0.3, tags: [auto, s4]}
+        - {hit: 144100005, count: 2, offset: 3.267, interval: 0.133, tags: [auto, s5]}
+        - {hit: 144100009, offset: 3.967, tags: [auto, s5]}
+        - {hit: 144100006, offset: 4.6, tags: [auto, s6, last_strike]}
+        - {hit: 144100007, offset: 4.7, tags: [auto, s6, last_strike]}
+
+    skill:                         # Torrent Flash x2 (text); every 3rd cast is Torrent Flash: Scale (Coiling Serpent x3)
+      lock: 0.367                  # user: cast 44,24 -> next auto hit 45,17 (first auto hit is 0.4 s into the string)
+      hits:
+        # no Returning Tide: TF, TF, Scale (Cascade of Ruin: TF, Scale)
+        - {hit: 144310001, count: 2, offset: 0.2, interval: 0.1, tags: [tf], triggers_mark: true, cycle: [3, 1], excludes: [514409, 514403]}
+        - {hit: 144310001, count: 2, offset: 0.2, interval: 0.1, tags: [tf], triggers_mark: true, cycle: [3, 2], excludes: [514409, 514403]}
+        - {hit: 144310002, count: 3, offset: 0.2, interval: 0.1, tags: [scale, serpent], triggers_mark: true, cycle: [3, 3], excludes: [514409, 514403]}
+        - {hit: 144310001, count: 2, offset: 0.2, interval: 0.1, tags: [tf], triggers_mark: true, cycle: [2, 1], requires: [514403], excludes: [514409]}
+        - {hit: 144310301, count: 4, offset: 0.2, interval: 0.1, tags: [scale, serpent], triggers_mark: true, cycle: [2, 2], requires: [514403], excludes: [514409]}
+        # Returning Tide (boss): first cast TF, every later cast a Scale
+        - {hit: 144310001, count: 2, offset: 0.2, interval: 0.1, tags: [tf], triggers_mark: true, upto_cast: 1, requires: [514409]}
+        - {hit: 144310002, count: 3, offset: 0.2, interval: 0.1, tags: [scale, serpent], triggers_mark: true, from_cast: 2, requires: [514409], excludes: [514403]}
+        - {hit: 144310301, count: 4, offset: 0.2, interval: 0.1, tags: [scale, serpent], triggers_mark: true, from_cast: 2, requires_all: [514409, 514403]}
+
+    ult:                           # Waves of Naraka: x11 small, then the Coiling Serpent big hit (text, user-timed)
+      lock: 5.633
+      hits:
+        - {hit: 144400001, count: 11, offset: 0.8, interval: 0.25, tags: [chitose_ult], triggers_mark: true}
+        - {hit: 144400002, offset: 4.633, tags: [chitose_ult], triggers_mark: true}
+
+  buffs:
+    # Chill (Word 1027): every Aqua Mark Chitose triggers inflicts a stack (10 s, 3 stacks; at 3 converts to Freeze).
+    - {name: chill, event: "mark:self", target: enemy,
+       duration: {ref: "BuffValue,NoLevel,4021,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,4021,LaminatedNum,Fixed"}}
+
+  potentials:
+    514401:   # Serpent's Glide (pink): after Torrent Flash, every auto strike summons a Coiling Serpent (Param1)
+      add_hits:
+        auto:
+          - {hit: 144311101, offset: 0.567, tags: [serpent, glide], triggers_mark: true}
+          - {hit: 144311101, offset: 1.133, tags: [serpent, glide], triggers_mark: true}
+          - {hit: 144311101, offset: 1.9, tags: [serpent, glide], triggers_mark: true}
+          - {hit: 144311101, offset: 2.867, tags: [serpent, glide], triggers_mark: true}
+          - {hit: 144311101, offset: 3.433, tags: [serpent, glide], triggers_mark: true}
+          - {hit: 144311101, offset: 4.767, tags: [serpent, glide], triggers_mark: true}
+      note: "A Serpent with every auto strike (user: lasts 10+ s, longer than the skill CD, so always on); 0.17 s after the strike's first hit (user clip: with strike 1's second hit; 7949 vs 4811 auto = 52.9%/32.0%). Serpent potentials (Dance of Elegance, Aqueous Phantasm) trigger on them. Params 3-8 name missing hit rows: Param1 used for every strike."
+
+    514402:   # Mirror Blade (pink): after Torrent Flash, a Mirror Image auto attacks with 60% of the multiplier
+      add_hits:
+        auto:
+          - {hit: 144310201, count: 2, offset: 0.4, interval: 0.1, tags: [mirror], mult: 0.6}
+          - {hit: 144310202, offset: 0.967, tags: [mirror], mult: 0.6}
+          - {hit: 144310203, offset: 1.733, tags: [mirror], mult: 0.6}
+          - {hit: 144310208, offset: 2.167, tags: [mirror], mult: 0.6}
+          - {hit: 144310204, count: 2, offset: 2.7, interval: 0.3, tags: [mirror], mult: 0.6}
+          - {hit: 144310205, count: 2, offset: 3.267, interval: 0.133, tags: [mirror], mult: 0.6}
+          - {hit: 144310209, offset: 3.967, tags: [mirror], mult: 0.6}
+          - {hit: 144310206, offset: 4.6, tags: [mirror], mult: 0.6}
+          - {hit: 144310207, offset: 4.7, tags: [mirror], mult: 0.6}
+      note: "Mirror Image copies Chitose's auto string in step (GUESS) at 60%. Doesn't trigger Marks (text doesn't say it can)."
+
+    514403:   # Cascade of Ruin (pink): Scale every 2nd cast instead of every 3rd; Scale deals Param1 x4 (skill hits above)
+      note: "Scale replaces every 2nd Torrent Flash and costs a charge (user)."
+
+    514404:   # Against the Flow (pink): skill CD -50%; a Mirror Image (50% multiplier) casts the Main Skill too
+      cd_scale: {skill: 0.5}
+      add_hits:
+        skill:
+          - {hit: 144310401, count: 2, offset: 0.3, interval: 0.1, tags: [tf, mirror], triggers_mark: true, mult: 0.5, cycle: [3, 1], excludes: [514409, 514403]}
+          - {hit: 144310401, count: 2, offset: 0.3, interval: 0.1, tags: [tf, mirror], triggers_mark: true, mult: 0.5, cycle: [3, 2], excludes: [514409, 514403]}
+          - {hit: 144310402, count: 3, offset: 0.3, interval: 0.1, tags: [scale, mirror], triggers_mark: true, mult: 0.5, cycle: [3, 3], excludes: [514409, 514403]}
+          - {hit: 144310401, count: 2, offset: 0.3, interval: 0.1, tags: [tf, mirror], triggers_mark: true, mult: 0.5, cycle: [2, 1], requires: [514403], excludes: [514409]}
+          - {hit: 144310403, count: 4, offset: 0.3, interval: 0.1, tags: [scale, mirror], triggers_mark: true, mult: 0.5, cycle: [2, 2], requires: [514403], excludes: [514409]}
+          - {hit: 144310401, count: 2, offset: 0.3, interval: 0.1, tags: [tf, mirror], triggers_mark: true, mult: 0.5, upto_cast: 1, requires: [514409]}
+          - {hit: 144310402, count: 3, offset: 0.3, interval: 0.1, tags: [scale, mirror], triggers_mark: true, mult: 0.5, from_cast: 2, requires: [514409], excludes: [514403]}
+          - {hit: 144310403, count: 4, offset: 0.3, interval: 0.1, tags: [scale, mirror], triggers_mark: true, mult: 0.5, from_cast: 2, requires_all: [514409, 514403]}
+      note: "Mirror Image casts each Torrent Flash / Scale 0.1 s after Chitose (GUESS) at 50%. Its Mark triggers deal the full Mark hit (GUESS)."
+
+    514405:   # Tremble and Fall: Auto DMG; after Torrent Flash, the last strike at once -> 5 Edge (first 5 autos' Aqua DMG)
+      add_hits:
+        skill:
+          - {hit: 144100006, offset: 0.55, tags: [auto, last_strike, edge_trigger]}
+          - {hit: 144100007, offset: 0.65, tags: [auto, last_strike, edge_trigger]}
+      overrides:
+        - {index: 1, event: "hit:self:edge_trigger", icd: 1.0, duration: 3.0, hit_tags: [s1, s2, s3, s4, s5]}
+        - {index: 2, drop: true}   # Param7/8 row (not in the text): duplicate
+      note: "Assumes the last strike is used after every Torrent Flash (GUESS). Edge modelled as the next ~3 s of strikes 1-5 (the first 5 strikes) rather than consumed per strike."
+
+    514406:   # Dance of Elegance: Serpent DMG -> Auto DMG stacks; and stacks on the last strike, 1/0.4 s, consumed by it
+      overrides:
+        - {index: 0, event: "hit:self:serpent"}
+        - {index: 1, event: "hit:self:serpent", icd: 0.4, duration: inf, max_stacks: 8, hit_tags: [last_strike],
+           reset_on: ["hit:self:last_strike"]}
+      note: "Last-strike stacks assumed to come from Coiling Serpent hits (the text doesn't name the trigger)."
+
+    514407:   # Aqueous Phantasm: Serpent hit -> another Serpent x2, 3 times per 3 s
+      procs:
+        - {event: "hit:self:serpent", hit: 144310701, count: 2, offset: 0.1, interval: 0.233, icd: 1.0, tags: [serpent, phantasm], triggers_mark: true}
+      note: "3 per 3 s modelled as once per second. User clip: hits 0.1 s and 0.33 s after the Serpent; 12183 vs Serpent 7949 = 81% (Lv3 row), 21551 = the same hit crit."
+
+    514408:   # Serpent in Tide: Torrent Flash cast -> Skill DMG, 3 stacks
+      overrides:
+        - {index: 0, hit_tags: [], event: "cast:self:skill"}
+
+    514409:   # Returning Tide: Skill DMG; after Scale hits a boss, the next Torrent Flash is a Scale (skill hits above)
+      overrides:
+        - {index: 0, hit_tags: []}
+      note: "Against a boss every Torrent Flash after the first becomes a Scale (user-observed). Misses breaking the chain aren't modelled."
+
+    514410:   # Flowing Circle: Skill DMG; +1 stored use of Torrent Flash
+      add_charges: {skill: 1}
+      overrides:
+        - {index: 0, hit_tags: []}
+
+    514411:   # Waltz of Ripples: ATK after dodging
+      overrides:
+        - {index: 0, uptime: 0.5}   # GUESS: dodges keep it up half the fight
+      note: "Dodge frequency is a guess (50% uptime)."
+
+    514412:   # Adamant Scales: ATK; extra ATK when hit or casting Torrent Flash
+      overrides:
+        - {index: 1, event: "cast:self:skill"}
+
+    514413:   # Azure Embrace: ATK while an Aqua squadmate is on the battlefield
+      overrides:
+        - {index: 0, event: "while:on_field:support"}
+
+    514441:   # Serpent's Saliva: Ultimate DMG; Chill conversion ignored
+      overrides:
+        - {index: 0, hit_tags: []}
+      note: "The 50% Chill conversion on ult Mark triggers isn't modelled."
+
+    514442:   # Serpent Dance: ult cast -> ATK 20 s
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+
+    514443:   # Tide of Serpent Bones: Ultimate DMG vs Chill/Frozen targets
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:chill"}
+
+support:
+  energy_per_second: 2.0
+  actions:
+    skill:
+      hits:
+        - {hit: 144320001, count: 1, offset: 0.3, tags: [skill]}   # stub: support kit not authored
+    ult:
+      hits:
+        - {hit: 144400001, count: 1, offset: 0.8, tags: [ult]}

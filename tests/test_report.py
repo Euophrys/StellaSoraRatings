@@ -21,3 +21,5 @@ def test_report_sheets_and_rows(gd, team, tmp_path):
             assert gd.item_name(p) in names, gd.item_name(p)
     disc_names = {c.value for c in wb["Discs"]["A"]}
     assert "My Guiding Star" in disc_names
+    assumptions = " ".join(str(c.value) for c in wb["Assumptions"]["A"] if c.value)
+    assert "resilience 250M" in assumptions

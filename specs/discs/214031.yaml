@@ -1,0 +1,7 @@
+# The Clash of Blade and Axe — all parts from EffectIds.
+# Stats: 1 ATK, 17 Aqua DMG, 57 Skill DMG.
+overrides:
+  - {part: melody, index: 1, event: "cast:main:skill"}                          # main skill cast -> Skill DMG 8 s
+  - {part: melody, index: 2, drop: true}                                        # Bless: DMG taken reduction (defensive)
+  - {part: harmony1, index: 0, event: "cast:main:skill", duration: 8}           # while the main has Bless (8 s from a skill cast)
+  - {part: harmony2, index: 0, drop: true}                                      # on kill: nothing vs a single boss

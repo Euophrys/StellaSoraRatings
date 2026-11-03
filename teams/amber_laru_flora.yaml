@@ -6,7 +6,7 @@ tick: 0.05
 mark_icd: 1.0
 enemy:
   res: 145        # same calibration as the FL Noya team (docs/assumptions.md)
-  defense: 0
+  defense: 500
   broken: 1.0
 
 members:

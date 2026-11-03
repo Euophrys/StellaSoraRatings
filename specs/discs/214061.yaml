@@ -1,0 +1,11 @@
+# Bedtime Story — melody and harmony 2 are scripted; harmony 1's Reverie too.
+# Stats: 17 Aqua DMG, 57 Skill DMG, 61 Skill DMG Taken, 64 Mark DMG, 65 Mark DMG Taken, 78 Skill Crit DMG.
+melody:
+  - {stat: 57, value: Param1, name: storybook, target: main, event: "cast:main:skill|cast:main:ult", duration: Param2, max_stacks: 3}
+  - {stat: 61, value: Param3, target: enemy, event: "hit:main:any&while:status:storybook", duration: Param4}
+  - {stat: 65, value: Param3, target: enemy, event: "hit:main:any&while:status:storybook", duration: Param4}
+harmony1:
+  - {stat: 64, value: Param2, name: reverie, target: main, event: "mark:main", stacks_from: storybook, duration: Param3, max_stacks: 10}
+harmony2:
+  - {stat: 17, value: Param1, target: team, event: "mark:main&while:status:storybook", duration: Param2}
+  - {stat: 78, value: Param3, target: main, event: "while:status:reverie>=10"}

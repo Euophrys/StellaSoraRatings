@@ -60,7 +60,8 @@ All are documented in `specs/README.md`:
 - **Buff timing:** `icd`, `every`, `reset_on` (Ardent Trigger resets on reload).
 - **Gating:** `requires` / `excludes` / `requires_all` on hits and buffs, for potential-dependent variants. Amber's auto string has one variant per magazine pink.
 - **Actions:** `add_actions` with a `followup` (after an action, or every N events). `starts_cd` sets when a cooldown begins. `reset_cd` and `cd_reduce` also exist.
-- **Procs:** with `icd`, `every` and `when` (only while a status holds).
+- **Procs:** with `icd`, `every` and `when` (only while a status holds); `chance` (expected value) and `resilience` (removes a fraction of the enemy's bar).
+- **Enemy:** for a Boss Blitz team, set `enemy: {preset: <boss>}` (`specs/enemies/`), which brings the boss's RES, resilience bar and ability, and a 180 s fight. Use `while:broken` for "against a broken / stunned target" effects.
 - **Supports:** an `on_field` window per action; `while:on_field:<who>` effects use it.
 - **Disc specs:** entries for scripted parts and `overrides` for data parts: `event`, `duration`, `max_stacks`, `every`, `icd`, `uptime`, `event: always`, `drop`.
 
@@ -79,6 +80,8 @@ If the team needs something new, add it generally (not team-specific), document 
 - **Minions only get some buffs:** buffs scoped to "Trekkers" or "squad" skip minions; "minions" or "friendly/all units" reach them (read from text, see `specs/README.md` → Minions). For a summoner, check the `minions` flag of each of their potentials (`resolve_potential(...).modifiers`) and override where the text names the summon instead of saying "minions" (Laru's "their Crit DMG").
 - **Per-Trekker statuses:** "Ode can only be converted by that Trekker's minion"-style rules need `&recent:` on the event, not `hit:any:...`.
 - **Summon timelines:** use marker hits (`hit: 0`) for summon-ready / periodic-stack moments and pure statuses for minion counts (`specs/trekkers/141.yaml`). Ask the user for damage numbers from one clip: ratios between hits in the same clip cancel the account's stats and pin down stack timings and hit rows.
+- **Mixed-element teams:** disc specs written for single-element teams may use `hit:any:` / `cast:any:` where the text says "any Ignis Trekker". Use `element<N>` (`hit:element2:skill_dmg`), and intersections like `support/element6` ("an Umbra support"). "The main Ignis Trekker" effects are gated on the main's element automatically. Marks are per element.
+- **Dynamic summons** (minions that are replaced, refreshed, sacrificed or re-summoned): use a `minions:` pool, not per-cast hit lists (`specs/trekkers/135.yaml`).
 - **Timing:** hits outside `fight_length` are dropped, and an auto string restarts after every cast. Make the auto `duration` longer than any gap between casts when the first magazine differs (Dominant Firepower, Bullet Storm).
 
 ## Comparing teams

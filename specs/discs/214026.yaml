@@ -1,0 +1,8 @@
+# Sword Against Stream — harmony 1 is scripted.
+# Stats: 1 ATK, 17 Aqua DMG, 57 Skill DMG.
+harmony1:
+  - {stat: 1, pct: true, value: Param2, target: team, event: "hit:main:any", every: Param1, duration: Param3, icd: Param4,
+     note: "after every 20 main hits, once per 15 s"}
+overrides:
+  - {part: melody, index: 1, event: "mark:any"}                                 # any Aqua Mark trigger -> Aqua DMG 4 s
+  - {part: harmony2, index: 0, event: always}                                   # vs elite or higher (boss)

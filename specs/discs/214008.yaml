@@ -1,0 +1,10 @@
+# Soaring Blue — melody and harmony 2 are scripted. Bright Tide comes from Versatile Trekkers' Skill DMG only.
+# Stats: 8 Crit DMG, 57 Skill DMG, 60 Auto DMG Taken, 61 Skill DMG Taken (Aqua-only team).
+melody:
+  - {stat: 0, value: 0, name: bright_tide, target: enemy, event: "hit:class2:skill_dmg", duration: Param1, max_stacks: Param2}
+  - {stat: 60, value: Param4, target: enemy, event: "while:status:bright_tide>=10"}
+  - {stat: 61, value: Param6, target: enemy, event: "while:status:bright_tide>=20"}
+harmony1:
+  - {stat: 8, value: Param2, target: main, event: "while:status:bright_tide", per_stack: true}
+harmony2:
+  - {stat: 57, value: Param1, target: team, event: "while:status:bright_tide", per_stack: true}

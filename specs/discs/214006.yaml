@@ -1,0 +1,7 @@
+# Witch's Swing (Umbra) — all parts come from EffectIds; this pins down their triggers.
+overrides:
+  - {part: melody, index: 1, event: "cast:support/element6:skill"}                 # an Umbra support's skill -> +Umbra DMG, 8 s
+  - {part: harmony1, index: 0, event: "cast:support/element6:skill", minions: true}  # Umbra Trekkers and their Minions' ATK, 8 s
+  - {part: harmony1, index: 1, event: "summon:element6:any", minions: true}         # per Minion summoned by an Umbra Trekker, 10 s, 10 stacks
+  - {part: harmony2, index: 1, event: "mark:element6"}                              # Umbra Mark triggered -> +Ult DMG, 4 s
+  - {part: harmony2, index: 2, event: "mark:element6", minions: true}               # and Umbra minions' DMG, 4 s

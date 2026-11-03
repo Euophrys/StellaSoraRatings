@@ -10,5 +10,5 @@ harmony1:
   - {stat: 57, value: Param3, times: 3, target: main, note: "3 Starwish stacks (melody + both harmonies) GUESS"}
   - {stat: 56, value: Param3, times: 3, target: main, note: "3 Starwish stacks GUESS"}
 harmony2:
-  - {stat: 8, value: Param1, target: main, event: "cast:any:skill", duration: Param2}
+  - {stat: 8, value: Param1, target: main, event: "cast:element5:skill", duration: Param2}
   - {stat: 78, value: Param3, times: 3, target: main, note: "3 Starwish stacks GUESS"}

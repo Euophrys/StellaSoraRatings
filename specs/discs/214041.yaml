@@ -1,4 +1,4 @@
 # A Gift for the Journey — harmony 2 is scripted. Melody and harmony 1 come from EffectIds.
 # Stats: 58 Ult DMG.
 harmony2:
-  - {stat: 58, value: Param1, target: team, event: "hit:any:minion", duration: 1.5, note: "while Ignis minions are present (approximated by recent Minion DMG hits; the 2-minion condition isn't checked)"}
+  - {stat: 58, value: Param1, target: team, event: "hit:element2:minion", duration: 1.5, note: "while Ignis minions are present (approximated by recent Minion DMG hits; the 2-minion condition isn't checked)"}

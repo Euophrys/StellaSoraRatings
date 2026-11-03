@@ -1,0 +1,9 @@
+# Dream Factory of ☆Truth (Umbra). Corrosion: a 35% chance per non-Auto Umbra hit; with Phantoms hitting
+# every ~0.7 s it's treated as refreshed by every such hit.
+melody:
+  - {stat: 40, value: Param3, target: enemy, event: "hit:element6:skill_dmg|hit:element6:ult_dmg|hit:element6:minion_dmg|hit:element6:mark_dmg", duration: Param4, note: "Corrosion: 35% chance per hit, near-permanent with frequent hits"}
+harmony1:
+  - {stat: 1, pct: true, value: Param1, target: team, event: "hit:element6:skill_dmg|hit:element6:ult_dmg|hit:element6:minion_dmg|hit:element6:mark_dmg", duration: Param2, note: "on inflicting Corrosion"}
+overrides:
+  - {part: melody, stat: 53, drop: true}     # damage reduction for the main: defensive
+  - {part: harmony2, stat: 22, drop: true}   # needs kills: none against a single boss

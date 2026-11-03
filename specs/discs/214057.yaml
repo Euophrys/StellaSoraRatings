@@ -1,0 +1,11 @@
+# Ride the Waves With Me (Umbra) — all scripted.
+# Dark Tide: the Umbra main gains a stack per Ultimate DMG hit, 15 s, max 3 (Mistique's ult: 9 hits).
+melody:
+  - {stat: 0, value: 0, name: dark_tide, event: "hit:main:ult_dmg", duration: 15, max_stacks: 3}
+  - {stat: 60, value: Param1, target: enemy, event: "while:status:dark_tide", per_stack: true, note: "Umbra Auto DMG Taken 5/10/15% (as Auto DMG Taken), approximated as while Dark Tide is up"}
+  - {stat: 62, value: Param4, target: enemy, event: "while:status:dark_tide", per_stack: true, note: "Umbra Ultimate DMG Taken 3/6/9% (as Ultimate DMG Taken)"}
+harmony1:
+  - {stat: 79, value: Param1, target: team, event: "while:status:dark_burn", note: "vs targets with Dark Burn"}
+  - {stat: 58, value: Param2, target: main, event: "while:status:dark_tide", per_stack: true}
+harmony2:
+  - {stat: 56, value: Param1, target: team, note: "vs elite or higher (a boss)"}

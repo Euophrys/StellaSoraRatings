@@ -1,0 +1,22 @@
+# Boss Blitz, ScoreBossControl 13 (2026-11-01..12-01), ScoreBossLevel 29.
+label: "Lithe Beauty (Boss Blitz)"
+monster: 6310280 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100026 "Withered Blossom Unveiled"; disc-spec entry syntax, values may be {ref}
+  # Data EffectType subtype is 53 (DMG Taken) on both lines; the ability text names Mark / Skill DMG Taken.
+  - {
+      stat: 65,
+      value: { ref: "EffectValue,NoLevel,631028010,EffectTypeParam1,HdPct" },
+      target: enemy,
+      event: "hit:any:ult_dmg",
+      duration: { ref: "BuffValue,NoLevel,631028010,Time,10K" },
+      max_stacks: { ref: "BuffValue,NoLevel,631028010,LaminatedNum,Fixed" },
+    }
+  - {
+      stat: 61,
+      value: { ref: "EffectValue,NoLevel,631028020,EffectTypeParam1,HdPct" },
+      target: enemy,
+      event: "hit:any:skill_dmg",
+      duration: { ref: "BuffValue,NoLevel,631028020,Time,10K" },
+      max_stacks: { ref: "BuffValue,NoLevel,631028020,LaminatedNum,Fixed" },
+    }

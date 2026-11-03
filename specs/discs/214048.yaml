@@ -4,9 +4,9 @@
 # (Ode only converts on that Trekker's own minions). Chixia as a support deals no Skill DMG, so her minions make no Hymn.
 # Stats: 36 Ignis DMG Taken, 61 Skill DMG Taken, 57 Skill DMG, 58 Ult DMG.
 melody:
-  - {stat: 36, value: Param3, target: enemy, event: "hit:any:minion&recent:skill_dmg:12.25", duration: Param4, max_stacks: Param5, note: "Hymn per minion hit while the summoner's Ode is up"}
+  - {stat: 36, value: Param3, target: enemy, event: "hit:element2:minion&recent:skill_dmg:12.25", duration: Param4, max_stacks: Param5, note: "Hymn per minion hit while the summoner's Ode is up"}
 harmony1:
-  - {stat: 61, value: Param1, target: enemy, event: "hit:any:minion&recent:skill_dmg:12.25", duration: 18, max_stacks: 15, note: "per Hymn stack; Ignis Skill DMG Taken as Skill DMG Taken (all-Ignis team)"}
-  - {stat: 57, value: Param2, target: team, event: "hit:any:minion&recent:skill_dmg:12.25", duration: Param3, max_stacks: Param4, note: "per Ode->Hymn conversion"}
+  - {stat: 61, value: Param1, target: enemy, event: "hit:element2:minion&recent:skill_dmg:12.25", duration: 18, max_stacks: 15, note: "per Hymn stack; Ignis Skill DMG Taken as Skill DMG Taken (all-Ignis team)"}
+  - {stat: 57, value: Param2, target: team, event: "hit:element2:minion&recent:skill_dmg:12.25", duration: Param3, max_stacks: Param4, note: "per Ode->Hymn conversion"}
 harmony2:
-  - {stat: 58, value: Param2, target: team, event: "hit:any:skill_dmg", duration: 12.25, note: "vs targets with Ode (applied by any Ignis Skill DMG). Enemy ATK cut ignored"}
+  - {stat: 58, value: Param2, target: team, event: "hit:element2:skill_dmg", duration: 12.25, note: "vs targets with Ode (applied by any Ignis Skill DMG). Enemy ATK cut ignored"}

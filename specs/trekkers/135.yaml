@@ -1,0 +1,166 @@
+# Mistique (135) — Umbra, Versatile. Hits scale with ATK (data).
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+# Pumpka Phantom hits (Swipe 135900001, Headbutt 135900002, Whirlwind Slash 135900003, Self-Destruct 135900004)
+# are HitDamage DamageType 7 = Minion DMG. Phantom: 100% of Mistique's ATK, 15 s, up to 4 (Word 4007).
+#
+# User, frame-timed (2026-11-02, 30 fps):
+#   Auto: string start 35,12; hits 35,16 / 35,29 / 36,19 / 37,01 / 38,09; next string's first hit 38,21 (3.17 s period).
+#   Skill (Pumpka Pummel): photo hits +0.17 s (43,13 -> 43,18). CD starts at cast.
+#     Exposure 15 s: a summon tick +0.7 s after the cast (02,27 -> 03,18), then every 3 s: 5 ticks.
+#     A Phantom lives 15 s from its summon (06,01 -> death 21,01). A tick with 4 out replaces the oldest
+#     (its death animation starts 14,19, the 5th appears 15,03), and that counts as vanishing (explosions etc.).
+#     Extended Exposure: a tick with 4 out refreshes them all instead; they then last indefinitely (user).
+#     Defiance explosion: death animation 30,22 -> explosion 31,18 (+0.87 s).
+#   Phantom attacks: appears 44,03, Swipe 45,16 (+1.43 s), Headbutt 46,05; then Swipe / Headbutt alternate ~0.7 s apart
+#     (47,18 / 48,10 / 49,02 / 49,21) once it reaches the boss.
+#   Ult: cast 49,10; control back 50,22 (+1.4 s); 8 small hits 50,13 .. 52,05, the big explosion 54,10 (+5.0 s).
+#   Mark: 1709 Mark hit, then Dark Burn ticks of 30 (49,14, 50,00): 135000001 is the 5 s total (text "in total"),
+#     10 ticks of 1/10 every 0.5 s (30/1709 = 0.0176 = 0.17/10; data ratio 0.17).
+#   A Mark a Phantom triggers deals damage with Mistique's stats (user). The engine does this already: Mark hits
+#     (DamageType 5) use the summoner's sheet and buffs, not the minion's, and don't get Phantom-only bonuses.
+char_id: 135
+
+main:
+  energy_per_second: 2.0          # GUESS passive ult energy regen (same as the other kits)
+  mark: {hit: 135000000}          # Umbra Mark trigger (Main Skill and Phantoms can trigger it)
+
+  actions:
+    auto:
+      duration: 3.167
+      hits:
+        - {hit: 135100001, offset: 0.133, tags: [auto]}
+        - {hit: 135100002, offset: 0.567, tags: [auto]}
+        - {hit: 135100003, count: 2, offset: 1.233, interval: 0.4, tags: [auto]}
+        - {hit: 135100004, offset: 2.9, tags: [auto]}
+    skill:
+      lock: 0.867                 # user: skill 03,25 -> next auto hit 04,25 (first auto hit is +0.13 s into the string)
+      hits:
+        - {hit: 135900007, offset: 0.167, tags: [skill, photo], triggers_mark: true}
+    ult:
+      lock: 1.4
+      hits:
+        - {hit: 135400001, offset: 1.1, tags: [ult]}
+        - {hit: 135400001, offset: 1.5, tags: [ult]}
+        - {hit: 135400001, offset: 1.633, tags: [ult]}
+        - {hit: 135400001, offset: 1.733, tags: [ult]}
+        - {hit: 135400001, offset: 1.833, tags: [ult]}
+        - {hit: 135400001, offset: 1.9, tags: [ult]}
+        - {hit: 135400001, offset: 2.0, tags: [ult]}
+        - {hit: 135400001, offset: 2.833, tags: [ult]}
+        - {hit: 135400002, offset: 5.0, tags: [ult, explosion]}
+
+  minions:
+    phantom:
+      summon: {event: "cast:self:skill", offset: 0.7, every: 3.0, count: 5}   # Exposure: a recast restarts it (GUESS)
+      max: 4
+      duration: 15.0
+      at_max: replace
+      windup: 1.433
+      interval: 0.7
+      attacks:
+        - {hit: 135900001, tags: [phantom, minion], triggers_mark: true}   # Swipe
+        - {hit: 135900002, tags: [phantom, minion], triggers_mark: true}   # Headbutt
+
+  buffs:
+    # Dark Burn on the enemy (pure status) for discs' "targets inflicted with Dark Burn": 5 s from each Mark trigger
+    - {name: dark_burn, level: skill, event: "mark:self", duration: {ref: "Buff,LevelUp,13590000,Time,10K"}}
+
+  procs:
+    # Dark Burn (Word 4009): every Mark trigger; a new one replaces the running one (GUESS: refresh, not stack)
+    - {event: "mark:self", hit: 135000001, count: 10, offset: 0.067, interval: 0.5, mult: 0.1, tags: [dark_burn], restart: true}
+
+  potentials:
+    513501:   # Defiance Before Deletion (pink): skill CD -2 s; Phantoms explode when they vanish
+      cd_reduce: {action: skill, seconds: 2}
+      procs:
+        - {event: "vanish:self:phantom", hit: 135900004, offset: 0.867, tags: [phantom, minion, explosion], triggers_mark: true}
+      note: "Explosion can trigger Umbra Marks (GUESS)."
+
+    513502:   # Burst Shooting (pink): extra skill hit; each cast re-summons the Phantoms out
+      add_hits:
+        skill: [{hit: 135900008, offset: 0.433, tags: [skill, burst], triggers_mark: true}]   # user: 04,08 after a 03,25 cast (11285 vs photo 5595 = data 185/91.6)
+      minion_rules:
+        phantom: {resummon_on: "cast:self:skill"}
+      note: "Re-summoned Phantoms appear at the cast and wind up again (user: swipe +1.4 s). The removed ones count as vanishing (user: they all explode)."
+
+    513503:   # Extended Exposure (pink): Phantoms refresh at max instead of being replaced; Minion DMG every 3 s
+      minion_rules:
+        phantom: {at_max: refresh}
+      overrides:
+        - {index: 0, event: "minion_tick:self:phantom", duration: inf, hit_tags: [phantom], reset_on: ["vanish:self:phantom"]}
+      note: "Phantoms last indefinitely while she keeps casting (user). Minion DMG stacks on each 3 s Exposure tick."
+
+    513504:   # Thread the Needle (pink): Mistique's DMG -> each Phantom casts Whirlwind Slash x2, once per 2.5 s
+      # User: Mistique's hit 07,19 -> one Phantom's spin hits 07,27; her hit 10,26 -> all four spin, hits 11,05.
+      # Each Phantom has its own ICD, on cooldown from its summon; about one spin per auto string.
+      minion_rules:
+        phantom:
+          reactions:
+            - {event: "hit:self:auto_dmg|hit:self:skill_dmg|hit:self:ult_dmg|hit:self:mark_dmg", icd: 2.5, hit: 135900003, count: 2, offset: 0.283, interval: 0.1, tags: [phantom, minion, whirlwind], triggers_mark: true}
+      note: "Every Phantom out spins, each with its own 2.5 s ICD from its summon (user). The 2nd hit's timing is a GUESS."
+
+    513505:   # Cursed Screech: Phantom vanishes -> enemy Umbra DMG Taken, 4 s, 4 stacks
+      overrides:
+        - {index: 0, event: "vanish:self:phantom"}
+
+    513506:   # Lingering Grudge: Demon Barrier: shield only
+      note: "Shield: no damage effect."
+
+    513507:   # Lingering Grudge: Onslaught: Phantom vanishes -> Mistique's ATK, 8 s, 4 stacks
+      overrides:
+        - {index: 0, event: "vanish:self:phantom"}
+
+    513508:   # Abominable Fester: 20% of Phantom hits get +Minion DMG
+      overrides:
+        - {index: 0, hit_tags: [phantom], uptime: 0.2}
+      note: "20% chance per Phantom hit, as an average (x0.2)."
+
+    513509:   # Spotlight Craving: Phantoms near Mistique: ATK
+      overrides:
+        - {index: 0, event: always, hit_tags: [phantom], minions: true}
+      note: "Phantoms assumed near Mistique (single boss, melee range)."
+
+    513511:   # Shadow Brightening: heals Phantoms; Mistique's Minion DMG
+      overrides:
+        - {index: 0, hit_tags: [phantom]}
+
+    513513:   # Full Frame Focus: the ult can trigger Umbra Marks; then Mistique's ATK, 15 s
+      mark_tags: [ult]
+      overrides:
+        - {index: 0, event: "hit:self:mark&recent:ult_dmg:0.05"}
+      note: "Counts Mark triggers within 0.05 s of an ult hit."
+
+    513510:   # Night Dash: Phantom ATK SPD and Minion DMG
+      minion_rules:
+        phantom: {speed: {param: Param2}}
+      overrides:
+        - {index: 0, drop: true}   # ATK SPD: applied to the Phantom attack interval instead
+        - {index: 1, event: always, hit_tags: [phantom], minions: true}
+      note: "ATK SPD shortens the Phantom attack interval (0.7 s / (1 + x)); the wind-up is unchanged (GUESS)."
+
+    513512:   # Decisive Moment: dodge -> ATK
+      overrides:
+        - {index: 0, drop: true}
+      note: "Dodges not modelled (0)."
+
+    513541:   # Darkness Devourer (common): the ult sacrifices all minions, each +Ultimate DMG for 10 s
+      minion_rules:
+        phantom: {sacrifice_on: "cast:self:ult"}
+      overrides:
+        - {index: 0, event: "sacrifice:self:phantom"}
+      note: "Sacrificed Phantoms count as vanishing (Defiance explosions, user) and are re-summoned by later Exposure ticks."
+
+    513542:   # Quick Nightfall (common): Energy Charge Efficiency for 10 s when she casts her skill
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+
+    513543:   # Chaos Frenzy (common): ult DMG -> Ultimate DMG, 2 s, 9 stacks
+      overrides:
+        - {index: 0, event: "hit:self:ult_dmg"}
+
+support:
+  energy_per_second: 2.0          # GUESS
+  actions:
+    skill:
+      hits:
+        - {hit: 135900007, tags: [skill]}   # stub: support-role kit not authored

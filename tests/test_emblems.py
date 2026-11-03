@@ -6,10 +6,14 @@ from ssr.emblems import EmblemChargeEfficiency, EmblemPotentialLevel, emblem_opt
 from ssr.sim import simulate
 from ssr.team import TEAMS, Build, load_team
 
+from pathlib import Path
+
+FIXTURES = Path(__file__).parent / "fixtures"   # frozen team files: the build page saves over teams/
+
 
 @pytest.fixture(scope="module")
 def afc(gd):
-    return load_team(gd, TEAMS / "amber_flora_chixia.yaml")
+    return load_team(gd, FIXTURES / "amber_flora_chixia.yaml")
 
 
 def test_stat_line_has_four_coloured_tiers(gd):

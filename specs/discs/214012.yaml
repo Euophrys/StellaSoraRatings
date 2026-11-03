@@ -1,0 +1,8 @@
+# Those with Ambition (Umbra). Melody ATK and harmonies come from EffectIds; the shield is scripted.
+# Shield: an Umbra support (Cosette) inflicting an Umbra Mark, 20 s, once per 20 s. Assumed not broken (single boss).
+melody:
+  - {stat: 0, value: 0, name: ambition_shield, event: "mark_applied:support/element6", duration: Param3, icd: Param4}
+overrides:
+  - {part: harmony1, stat: 22, event: "mark_applied:support/element6", icd: 20, duration: 12}   # main gains the shield -> Umbra DMG, 12 s
+  - {part: harmony2, stat: 57, event: "mark:any&while:status:ambition_shield", duration: 4}
+  - {part: harmony2, stat: 58, event: "mark:any&while:status:ambition_shield", duration: 4}

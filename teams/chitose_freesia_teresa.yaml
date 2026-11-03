@@ -1,0 +1,38 @@
+# Chitose (main) + Freesia + Teresa, all Aqua. User timings (2026-11-01): see specs/trekkers/144.yaml, 125.yaml, 127.yaml.
+name: chitose_freesia_teresa
+fight_length: 180   # Boss Blitz (user's run vs Count of the Duloos, 2026-11-02)
+tick: 0.05
+mark_icd: 1.0
+enemy:
+  preset: count_of_the_duloos   # specs/enemies/: weak to Aqua (RES 145 after baseline PEN), 250M resilience, boss ability
+
+members:
+  - trekker: Chitose
+    role: main
+    pinks: [Cascade of Ruin, Against the Flow]
+    skill_levels: {auto: 10, skill: 10, ult: 10}
+    emblems: []
+  - trekker: Freesia
+    role: support
+    pinks: [Chill Forecast, Frost Warning]
+    skill_levels: {skill: 10, ult: 10}
+    emblems: []
+  - trekker: Teresa
+    role: support
+    pinks: ["Surge: Infinite", "Surge: Ripple"]
+    skill_levels: {skill: 10, ult: 10}
+    emblems: []
+
+# Top 3 main discs from this team's own disc rating (C1, all-filler lineup; best trio checked), 2026-11-01.
+discs:
+  main:
+    - {name: Sword Against Stream, copies: 1}
+    - {name: Sunlit Blossom, copies: 1}
+    - {name: Fleeting Glimmers, copies: 1}
+  support: [filler, filler, filler]
+
+reference: {steps: 2, main_picks: 2, support_picks: 1, level: 6}
+
+assumptions:
+  unknown_trigger_uptime: 1.0
+  disc_stats_target: team

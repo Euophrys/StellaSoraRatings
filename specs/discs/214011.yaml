@@ -1,0 +1,8 @@
+# Summer Afternoon Rain — melody's shield is EffectType 42 (no damage model); it's tracked as a status here.
+# Teresa's Surging Shield counts as the main's shield (user). Stats: 17 Aqua DMG, 57 Skill DMG.
+melody:
+  - {stat: 0, value: 0, name: rain_shield, target: main, event: "cast:any:ult", duration: Param3}
+overrides:
+  - {part: harmony1, index: 0, event: "cast:any:ult|marker:any:shield_up"}      # main gains a shield -> Aqua DMG 12 s
+  - {part: harmony2, index: 0, event: "while:status:rain_shield+surging_shield"} # Skill hits while the main is shielded
+  - {part: harmony2, index: 1, event: always}                                   # vs elite or higher (boss)

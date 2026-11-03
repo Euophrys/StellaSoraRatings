@@ -1,0 +1,23 @@
+# Boss Blitz, ScoreBossControl 13 (2026-11-01..12-01), ScoreBossLevel 28.
+label: "Count of the Duloos (Boss Blitz)"
+monster: 6310270 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100025 "Gurgling Fracture"
+  # When the main deals DMG and triggers a Mark: Skill DMG Taken +8% for 3 s, up to 5 stacks.
+  - {
+      stat: 61,
+      value: { ref: "EffectValue,NoLevel,631027010,EffectTypeParam1,HdPct" },
+      target: enemy,
+      event: "mark:main",
+      duration: { ref: "BuffValue,NoLevel,631027010,Time,10K" },
+      max_stacks: { ref: "BuffValue,NoLevel,631027010,LaminatedNum,Fixed" },
+    }
+  # The main's Max HP +20% (matters for HP-scaling kits).
+  - {
+      stat: 3,
+      pct: true,
+      value: { ref: "EffectValue,NoLevel,631027020,EffectTypeParam1,HdPct" },
+      target: main,
+      event: always,
+    }
+  # 631027030 (the main takes +10% DMG) is defensive: not modelled.

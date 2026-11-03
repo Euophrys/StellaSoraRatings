@@ -1,0 +1,9 @@
+# Wisteria Dream (Umbra). Melody's Umbra DMG comes from EffectIds; Reverence and the harmonies are scripted.
+melody:
+  - {stat: 0, value: 0, name: reverence, event: "summon:element6:any", duration: Param2, max_stacks: Param3}
+  - {stat: 66, value: Param4, target: main, minions: true, event: "while:status:reverence", per_stack: true, note: "per Reverence stack on the main's Minions (applied at summon for 10 s; approximated as while Reverence is up)"}
+  - {stat: 40, value: Param6, target: enemy, hit_tags: [minion], event: "while:status:reverence", note: "Umbra Minion DMG Taken (as Umbra DMG Taken on minion hits); refreshed by every minion hit"}
+harmony1:
+  - {stat: 58, value: Param1, target: team, event: "while:status:reverence"}
+harmony2:
+  - {stat: 57, value: Param1, target: main, event: "while:status:reverence", per_stack: true}

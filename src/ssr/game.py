@@ -28,6 +28,13 @@ def char_base_stats(gd: GameData, char_id: int, level: int = 90) -> StatBlock:
     return s
 
 
+def toughness_adjust(gd: GameData, char_id: int) -> float:
+    """The Trekker's resilience-damage multiplier (`Attribute.ToughnessDamageAdjust`/10000), 1.0 if absent."""
+    vals = [r["ToughnessDamageAdjust"] for r in gd.table("Attribute").values()
+            if r.get("GroupId") == char_id and r.get("ToughnessDamageAdjust")]
+    return max(vals) / 10000 if vals else 1.0
+
+
 def skill_ids(gd: GameData, char_id: int, role: str) -> dict[str, int]:
     c = gd.table("Character")[str(char_id)]
     return {k: c[f] for k, f in _ROLE_SKILL_FIELDS[role].items()}

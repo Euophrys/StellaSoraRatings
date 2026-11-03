@@ -1,0 +1,12 @@
+# Fleeting Glimmers — Tide Weave (a buff unique to this disc, user) isn't in the EffectIds; harmony 2 is scripted.
+# Stats: 1 ATK, 17 Aqua DMG, 60 Auto DMG Taken, 61 Skill DMG Taken (Aqua-only team: Aqua X Taken as X Taken).
+melody:
+  - {stat: 0, value: 0, name: tide_weave, target: team, event: "cast:support:skill|on_field_5s:support",
+     duration: Param2, max_stacks: Param3, note: "Tide Weave: support skill cast or every 5 s on the field"}
+  - {stat: 61, value: Param4, target: enemy, event: "mark_applied:any&while:status:tide_weave", duration: Param5}
+harmony1:
+  - {stat: 60, value: Param2, target: enemy, event: "mark:any&while:status:tide_weave", duration: Param3}
+harmony2:
+  - {stat: 17, value: Param1, target: team, event: "while:status:tide_weave", per_stack: true}
+  - {stat: 1, pct: true, value: Param2, target: support, event: "while:status:tide_weave", per_stack: true,
+     note: "the Energy refund on support ults isn't modelled"}

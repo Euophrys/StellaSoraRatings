@@ -1,0 +1,10 @@
+# Summer March (Umbra). Melody's Auto / Ult DMG come from EffectIds; Surging Wave and the harmonies are scripted.
+# Surging Wave: the Umbra main gains a stack per skill cast, 15 s, max 2.
+melody:
+  - {stat: 0, value: 0, name: surging_wave, event: "cast:main:skill", duration: Param2, max_stacks: Param3}
+  - {stat: 22, value: Param4, target: team, minions: true, event: "hit:main:ult_dmg&while:status:surging_wave", duration: Param5}
+harmony1:
+  - {stat: 56, value: Param1, target: main, event: "mark:main", duration: Param2, note: "Mark with Dark Burn"}
+  - {stat: 22, value: Param3, target: team, minions: true, event: "while:status:surging_wave>=2"}
+harmony2:
+  - {stat: 1, pct: true, value: Param1, target: main, event: "while:status:surging_wave", per_stack: true}
