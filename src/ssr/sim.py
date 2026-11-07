@@ -6,6 +6,7 @@ import math
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field, replace
+from functools import lru_cache
 
 from .data import GameData
 from .effects import (MINION_STATS, Modifier, disc_modifiers, effect_modifiers, harmony_note_counts,
@@ -80,6 +81,7 @@ DODGE_CD = 1.0   # user: seconds between dodges (the dodge cooldown)
 
 # ---------------------------------------------------------------- helpers
 
+@lru_cache(maxsize=None)
 def _norm_event(ev: str, owner: int) -> str:
     if "|" in ev:
         return "|".join(_norm_event(e, owner) for e in ev.split("|"))
@@ -88,6 +90,7 @@ def _norm_event(ev: str, owner: int) -> str:
     return ":".join([parts[0]] + [{"self": str(owner), "main": "0"}.get(p, p) for p in parts[1:]]) + amp + rest
 
 
+@lru_cache(maxsize=None)
 def _event_matches(pattern: str, ev: str) -> bool:
     if "|" in pattern:
         return any(_event_matches(x, ev) for x in pattern.split("|"))
@@ -557,8 +560,28 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                 return True
         return False
 
+    emit_plans: dict = {}   # event -> what it can touch: emit is the hot path, and most events match very little
+
+    def emit_plan(ev: str) -> tuple[list, list, list]:
+        def pool_listens(ms: MinionSpec) -> bool:
+            return any(_event_matches(h.event, ev) for h in ms.reactions) or any(
+                e and _event_matches(e, ev) for e in (ms.sacrifice_on, ms.resummon_on, ms.summon))
+
+        plan_mods = [md for md in by_event if _event_matches(md.event, ev) or any(
+            _event_matches(_norm_event(r, md.owner), ev) for r in md.mod.trigger.reset_on or ())]
+        plan_followups = [f for f in main_event_followups if _event_matches(f[1], ev)]
+        plan_members = []
+        for m in members:
+            procs = [(pev, p) for pev, p in m.procs if _event_matches(pev, ev)]
+            pools = [(pool, ms) for pool, ms in m.minions.items() if pool_listens(ms)]
+            if procs or pools:
+                plan_members.append((m, procs, pools))
+        emit_plans[ev] = plan = (plan_mods, plan_followups, plan_members)
+        return plan
+
     def emit(ev: str, t: float):
-        for md in by_event:
+        plan_mods, plan_followups, plan_members = emit_plans.get(ev) or emit_plan(ev)
+        for md in plan_mods:
             rs = md.mod.trigger.reset_on
             if rs and md.stacks and any(_event_matches(_norm_event(r, md.owner), ev) for r in rs):
                 md.stacks = []
@@ -583,15 +606,14 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                 if len(md.stacks) > trig.max_stacks:
                     md.stacks.sort()
                     md.stacks = md.stacks[-trig.max_stacks:]
-        for fname, fev, every in main_event_followups:
-            if _event_matches(fev, ev):
-                followup_count[fname] += 1
-                if followup_count[fname] % every == 0:
-                    pending.append((max(t, lock_until[0]), fname, False))
-        for m in members:
-            for pev, p in m.procs:
+        for fname, _, every in plan_followups:
+            followup_count[fname] += 1
+            if followup_count[fname] % every == 0:
+                pending.append((max(t, lock_until[0]), fname, False))
+        for m, procs, pools_ in plan_members:
+            for _, p in procs:
                 chancy = p.chance < 1
-                if _event_matches(pev, ev) and (chancy or t >= proc_ready[(m.idx, p)]):
+                if chancy or t >= proc_ready[(m.idx, p)]:
                     if p.when and not condition(p.when, t):
                         continue
                     if p.every > 1:
@@ -623,7 +645,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                         schedule(m, p, "proc", t, f"{key}#{restart_gen[key]}")
                     else:
                         schedule(m, p, "proc", t, f"proc#{seq[0]}")
-            for pool, ms in m.minions.items():
+            for pool, ms in pools_:
                 for ri, h in enumerate(ms.reactions):   # each minion out reacts, with its own ICD
                     if not _event_matches(h.event, ev):
                         continue
