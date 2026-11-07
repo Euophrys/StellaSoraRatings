@@ -43,6 +43,7 @@ main:
 
     skill:                         # Sentry Deployment x2, then Vigil for 10 s (GUESS: a hit every 2 s)
       lock: 1.5                    # GUESS
+      cd_start: 1.5               # GUESS: the CD starts when the cast ends
       hits:
         - {hit: 137300001, count: 2, offset: 0.5, interval: 0.4, tags: [spin], triggers_mark: true}
         - {hit: 137300002, count: 5, offset: 2.0, interval: 2.0, tags: [vigil], triggers_mark: true}

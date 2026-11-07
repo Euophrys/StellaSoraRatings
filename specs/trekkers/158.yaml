@@ -21,18 +21,88 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
       - {effect: 15896311, event: "cast:self:ult", target: "element:2", duration: {ref: "BuffValue,NoLevel,15896311,Time,10K"}}
 
 main:
-  stub: true   # placeholder hits only: not timed in game, potentials not modelled
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"
+  # Colonel Walnut, General Curly and the Clockwork Queen (minions) are skipped, and they're most of her main-role damage:
+  # expect a very low total until they're modelled. Dame Laru deals Ultimate DMG, so she's modelled.
+  mark: {hit: 158000001}
+
   actions:
-    skill:
+    auto:
+      duration: 5.4                # GUESS: 1 s per strike
       hits:
-        - {hit: 158310001, count: 1, tags: [skill]}   # stub: main-role kit not authored
-    ult:
+        - {hit: 158100001, offset: 0.4}
+        - {hit: 158100002, offset: 1.4}
+        - {hit: 158100003, offset: 2.4}
+        - {hit: 158100004, count: 5, offset: 3.4, interval: 0.12}
+        - {hit: 158100005, count: 3, offset: 4.4, interval: 0.15}
+
+    skill:                         # Whip Assault
+      lock: 2.0                    # GUESS
+      cd_start: 2.0               # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 158400002, count: 1, tags: [ult]}
+        - {hit: 158310001, offset: 0.6, tags: [whip], triggers_mark: true}
+
+    ult:                           # Sweet Dream Waltz: Dame Laru for 12 s; GUESS: a shot per second; Candy Barrage x5 every 4 s (text)
+      lock: 12.0                   # text
+      hits:
+        - {hit: 158400002, count: 12, offset: 0.5, interval: 1.0, tags: [shot]}
+        - {hit: 158400003, count: 5, offset: 1.0, interval: 0.2, tags: [barrage]}
+        - {hit: 158400003, count: 5, offset: 5.0, interval: 0.2, tags: [barrage]}
+        - {hit: 158400003, count: 5, offset: 9.0, interval: 0.2, tags: [barrage]}
+
+  potentials:
+    515801:   # Solemn Look (pink): the toys
+      note: "The toys aren't modelled."
+    515802:   # Here Comes the Queen (pink): the toys
+      note: "The toys aren't modelled."
+    515803:   # Whipping Gale (pink): a multi-hit whip
+      replace_hits:
+        skill: [{hit: 158503001, count: 5, offset: 0.6, interval: 0.2, tags: [whip], triggers_mark: true}]
+    515804:   # Crossing Welts (pink): the mark comes from the toys
+      note: "The toys aren't modelled."
+    515805:   # Burning Whip: the toys
+      overrides:
+        - {index: 0, drop: true}
+    515806:   # Starchain Blade: the toys
+      note: "The toys aren't modelled."
+    515807:   # Fiery Rainbow: the toys
+      overrides:
+        - {index: 0, drop: true}
+        - {index: 1, drop: true}
+    515808:   # All-Out Whiplash: crits as every 2nd hit (GUESS: 50% Crit Rate)
+      overrides:
+        - {index: 0, event: "hit:self:whip|hit:self:barrage", every: 2}
+    515809:   # Wild Whip Waltz
+      overrides:
+        - {index: 0, drop: true}   # duplicate Lv1 row
+        - {index: 1, hit_tags: [whip, barrage]}
+    515810:   # Non-Stop Victory: crits as every 2nd hit
+      overrides:
+        - {index: 0, event: "hit:self:auto_dmg", every: 2}
+    515811:   # Cannon Ensemble: the Sled Turret
+      overrides:
+        - {index: 0, drop: true}
+    515812:   # Jazz of Rage
+      mark_tags: [shot, barrage]
+      overrides:
+        - {index: 0, event: always}
+    515813:   # Elegant Moves: DEF
+      overrides:
+        - {index: 0, drop: true}
+    515841:   # Silver Bullet
+      overrides:
+        - {index: 0, event: "hit:self:barrage"}
+    515842:   # Untouched King
+      overrides:
+        - {index: 0, event: "hit:self:barrage"}
+    515843:   # Toy Army: GUESS: a stack per shot; gone with the 12 s form
+      overrides:
+        - {index: 0, event: "hit:self:shot", duration: 12, target: "element:2"}
 
 support:
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
-  on_field: {skill: 15.3}         # user (YouTube, 23 fps): appears 2:11,10, leaves 2:26,17; CD keeps ticking
+  ult_only_with: [134]            # the community only uses her ult with Fuyuka as main (user)
+  on_field: {skill: 15.3, ult: 12.0}         # skill: user; ult: the 12 s form (text). user (YouTube, 23 fps): appears 2:11,10, leaves 2:26,17; CD keeps ticking
   actions:
     skill:                         # Courtesy Before Aggression: Gift Box Shells, each impact + explosion; CD 18 s (data)
       # User (YouTube; build Fire Downpour, Special Ammo, Two-Gun Salute 6, Fairy Tale Rule 6, Uplifting Shot 6, Ammo Rain 2;
@@ -90,7 +160,12 @@ support:
         - {hit: 158523001, count: 21, offset: 7.2, interval: 1, tags: [curly, minion], requires_all: [515825, 515829, 515823]}
         - {hit: 158320003, count: 20, offset: 9.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
         - {hit: 158320003, count: 20, offset: 11.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
-    # No ult: the reference video never uses Sweet Dream Waltz, and the community only uses it with Fuyuka as main (user). Fuyuka has no kit yet.
+    ult:                           # Sweet Dream Waltz: only with Fuyuka (user; ult_only_with). UNTIMED, GUESS: as the main role's
+      hits:
+        - {hit: 158400002, count: 12, offset: 0.5, interval: 1.0, tags: [shot]}
+        - {hit: 158400003, count: 5, offset: 1.0, interval: 0.2, tags: [barrage]}
+        - {hit: 158400003, count: 5, offset: 5.0, interval: 0.2, tags: [barrage]}
+        - {hit: 158400003, count: 5, offset: 9.0, interval: 0.2, tags: [barrage]}
 
   potentials:
     515821:   # Fire Downpour (pink): each explosion leaves a field, every 0.3 s for 2 s
@@ -248,20 +323,20 @@ support:
 
     515832:   # Ammo Rain: Dame Laru (ult) only
       overrides:
-        - {index: 0, drop: true}
-      note: "Ult form only; the ult isn't used."
+        - {index: 0, event: "cast:self:ult", duration: 12}
+      note: "Ult form only: only with Fuyuka. Her Ignis Mark from it isn't modelled."
 
     515841:   # Silver Bullet: Dame Laru (ult) only
-      overrides: [{index: 0, drop: true}]
-      note: "Ult form only; the ult isn't used."
+      overrides: [{index: 0, event: "hit:self:barrage"}]
+      note: "Ult form only: only with Fuyuka."
 
     515842:   # Untouched King: Dame Laru (ult) only
-      overrides: [{index: 0, drop: true}]
-      note: "Ult form only; the ult isn't used."
+      overrides: [{index: 0, event: "hit:self:barrage"}]
+      note: "Ult form only: only with Fuyuka."
 
     515843:   # Toy Army: Dame Laru (ult) only
-      overrides: [{index: 0, drop: true}]
-      note: "Ult form only; the ult isn't used."
+      overrides: [{index: 0, event: "hit:self:shot", duration: 12, target: "element:2"}]
+      note: "Ult form only: only with Fuyuka."
 
     515833:   # Fairy Tale Rule: all-Ignis squad -> shells raise Ignis DMG Taken
       overrides:

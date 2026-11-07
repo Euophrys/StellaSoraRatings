@@ -176,9 +176,63 @@ main:
         - {index: 0, event: "hit:self:ult_dmg"}
 
 support:
-  stub: true   # placeholder hits only: not timed in game, potentials not modelled
-  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (main role)
+  # Lanterna Phantoms (minions) are skipped, and with them the skill's damage and Marks: expect a very low total.
+  on_field: {skill: 3.0, ult: 1.4}   # GUESS
   actions:
-    skill:
+    skill:                         # Summoning Circle
+      hits: []
+    ult:                           # Midnight Terror x8 and the explosion
       hits:
-        - {hit: 135900007, tags: [skill]}   # stub: support-role kit not authored
+        - {hit: 135400001, count: 8, offset: 1.1, interval: 0.25, tags: [ult], excludes: [513532]}
+        - {hit: 135400001, count: 8, offset: 1.1, interval: 0.25, tags: [ult], applies_mark: true, requires: [513532]}
+        - {hit: 135400002, offset: 5.0, tags: [ult, explosion]}
+
+  potentials:
+    513521:   # Happy Face (pink): the circle's 3 s longer; the Phantoms
+      add_hits:
+        skill: [{hit: 135900006, count: 3, offset: 7.0, interval: 1.0, tags: [circle], requires: [513528]}]
+      overrides:
+        - {index: 0, drop: true}
+    513522:   # Reality Erosion (pink): the Phantoms
+      overrides:
+        - {index: 0, drop: true}
+    513523:   # Slumber Invitation (pink): the Phantoms
+      overrides:
+        - {index: 0, drop: true}
+    513524:   # Lucky Constitution (pink): the Phantoms
+      overrides:
+        - {index: 0, drop: true}
+    513525:   # The Conjuring: the Phantoms
+      note: "The Phantoms aren't modelled."
+    513526:   # Wraith Haunting: the Phantoms
+      overrides:
+        - {index: 0, drop: true}
+    513527:   # Twin Born: the Phantoms
+      note: "The Phantoms aren't modelled."
+    513528:   # Malice: per second for the circle's 6 s
+      add_hits:
+        skill: [{hit: 135900006, count: 6, offset: 1.0, interval: 1.0, tags: [circle]}]
+    513529:   # Shadow Shackle: the Phantoms
+      overrides:
+        - {index: 0, drop: true}
+    513530:   # Solar Absorption: while the circle is up
+      overrides:
+        - {index: 0, event: "cast:self:skill", duration: 7}
+    513531:   # Extra Perk: a shield
+      note: "A shield: no damage value."
+    513532:   # Trending Lock
+      overrides:
+        - {index: 0, hit_tags: [ult]}
+    513533:   # Behind the Scenes: DEF
+      overrides:
+        - {index: 0, drop: true}
+    513541:   # Darkness Devourer: sacrifices the main role's minions
+      overrides:
+        - {index: 0, drop: true}
+    513542:   # Quick Nightfall
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    513543:   # Chaos Frenzy
+      overrides:
+        - {index: 0, event: "hit:self:ult_dmg"}

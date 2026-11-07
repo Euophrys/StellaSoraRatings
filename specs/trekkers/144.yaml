@@ -192,12 +192,72 @@ main:
         - {index: 0, hit_tags: [], event: "while:status:chill"}
 
 support:
-  stub: true   # placeholder hits only: not timed in game, potentials not modelled
-  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (main role)
+  on_field: {skill: 3.0, ult: 5.633}   # skill: GUESS; ult: the main role's lock
+  mark: {hit: 144000001}             # text: Water Surge can trigger Aqua Mark
   actions:
-    skill:
+    skill:                         # Water Surge: 3 rounds x4 and 3 Mirror Images (text)
       hits:
-        - {hit: 144320001, count: 1, offset: 0.3, tags: [skill]}   # stub: support kit not authored
+        - {hit: 144320001, count: 12, offset: 0.8, interval: 0.15, tags: [slash], triggers_mark: true}
+        - {hit: 144320002, count: 3, offset: 1.0, interval: 0.4, tags: [mirror]}
     ult:
       hits:
-        - {hit: 144400001, count: 1, offset: 0.8, tags: [ult]}
+        - {hit: 144400001, count: 11, offset: 0.8, interval: 0.25, tags: [chitose_ult], triggers_mark: true}
+        - {hit: 144400002, offset: 4.633, tags: [chitose_ult], triggers_mark: true}
+        - {hit: 0, offset: 4.65, tags: [ult_done]}
+
+  buffs:
+    - {name: chill, event: "mark:self", target: enemy, duration: {ref: "BuffValue,NoLevel,4021,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,4021,LaminatedNum,Fixed"}}
+
+  potentials:
+    514421:   # Submerged Fang (pink): 2 more rounds
+      add_hits:
+        skill: [{hit: 144320001, count: 8, offset: 2.6, interval: 0.15, tags: [slash], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [slash]}
+    514422:   # Whirl Blade (pink): GUESS: a crit in each of the 3 rounds
+      add_hits:
+        skill: [{hit: 144322201, count: 12, offset: 0.9, interval: 0.15, tags: [whirl]}]
+      overrides:
+        - {index: 0, hit_tags: [slash]}
+    514423:   # Blade of the Deep (pink): up to 6 Mirror Images
+      add_hits:
+        skill: [{hit: 144322301, count: 6, offset: 1.0, interval: 0.2, tags: [mirror]}]
+    514424:   # Where Shadows Drown (pink)
+      procs:
+        - {event: "hit:self:mirror", hit: 144322401, offset: 0.1, tags: [mirror_blast], triggers_mark: true}
+    514425:   # Blink Combo Slash: crits as every 2nd hit (GUESS: 50% Crit Rate)
+      overrides:
+        - {index: 0, hit_tags: [slash], event: "hit:self:slash", every: 2, icd: 0.5, duration: 3, max_stacks: 10}
+    514426:   # Sing with Steel: per round
+      overrides:
+        - {index: 0, hit_tags: [slash], event: "hit:self:slash", every: 4, duration: inf, max_stacks: 6, reset_on: ["cast:self:skill"]}
+    514427:   # Luminous Blade Song: 1 more round
+      add_hits:
+        skill: [{hit: 144320001, count: 4, offset: 2.6, interval: 0.15, tags: [slash], triggers_mark: true}]
+    514428:   # Shadow Cutter: kills don't happen
+      overrides:
+        - {index: 0, hit_tags: [mirror]}
+        - {index: 1, drop: true}
+    514429:   # Mirror Tide: kills
+      overrides:
+        - {index: 0, drop: true}
+    514430:   # Shattered Breath: below 70% HP (GUESS: 70% of the fight)
+      overrides:
+        - {index: 0, hit_tags: [mirror], event: unknown, uptime: 0.7, duration: inf, max_stacks: 1}
+    514431:   # Water Edge
+      overrides:
+        - {index: 0, hit_tags: []}
+    514432: {}   # Waterflow Blade
+    514433:   # Unseen Aquatic Blade
+      overrides:
+        - {index: 0, max_stacks: 1, copies: [{event: "while:squad:1:1"}, {event: "while:squad:1:2"}, {event: "while:squad:1:3"}]}
+    514441:   # Serpent's Saliva
+      overrides:
+        - {index: 0, hit_tags: []}
+    514442:   # Serpent Dance
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+    514443:   # Tide of Serpent Bones
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:chill"}

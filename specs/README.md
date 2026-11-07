@@ -58,9 +58,9 @@ A hit with `hit: 0` is a **marker**: it deals no damage and only emits `marker:<
 - { hit: 0, count: 3, offset: 2.8, interval: 2.0, tags: [tiger_tick] } # a stack every 2 s
 ```
 
-Cooldown and ult energy cost come from `Skill.json`. **Stored uses:** a skill whose row has `SectionAmount` > 1 (Chitose's Torrent Flash: 2) stores that many uses; a cast spends one and the cooldown recharges them one at a time, keeping its progress across casts (user, in game: at 2.5 uses, a cast leaves 1.5). Stored uses are cast at least `UseInterval` apart (data). An action can set `charges: N` / `use_interval: <s>` to override. `cd_start: <s>`: the action's cooldown starts that many seconds after its cast (Noya's skill: 2.0 s, user-timed). Energy gained per hit is `HitDamage.EnergyCharge`, capped per cast by `Skill.GetEnergyLimit`.
+Cooldown and ult energy cost come from `Skill.json`. **Stored uses:** a skill whose row has `SectionAmount` > 1 (Chitose's Torrent Flash: 2) stores that many uses; a cast spends one and the cooldown recharges them one at a time, keeping its progress across casts (user, in game: at 2.5 uses, a cast leaves 1.5). Stored uses are cast at least `UseInterval` apart (data). An action can set `charges: N` / `use_interval: <s>` to override. `cd_start: <s>`: the action's cooldown starts that many seconds after its cast (Noya's skill: 2.0 s, user-timed); stored uses ignore it, as their one timer keeps running. Energy gained per hit is `HitDamage.EnergyCharge`, capped per cast by `Skill.GetEnergyLimit`.
 
-A support kit can leave out `ult` (the support never casts it).
+A support kit can leave out `ult` (the support never casts it), or set `ult_only_with: [<char ids>]` to use it only in a squad with one of those Trekkers (Snowish Laru's ult, only with Fuyuka).
 
 ## On the battlefield (supports)
 

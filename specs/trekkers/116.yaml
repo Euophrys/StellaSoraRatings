@@ -1,4 +1,4 @@
-# Ridge (116) — Terra, Versatile. Hits scale with ATK (data). Support kit only.
+# Ridge (116) — Terra, Versatile. Hits scale with ATK (data).
 # Schema: specs/README.md. Every guessed number is marked GUESS.
 #
 # User, frame-timed 2026-11-03 (30 fps, ss,ff; Reblossom + Sense the Stir):
@@ -118,5 +118,74 @@ support:
         - {index: 0, hit_tags: [ult], stacks: 3}   # GUESS: damage-weighted average (the big final hit at 5)
 
     511643:   # Sow and Reap: ult cast -> ATK 15 s
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+
+main:
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (support role)
+  mark: {hit: 116000001}
+
+  actions:
+    auto:                          # the faster, free fire after a skill isn't modelled
+      duration: 8.7                # GUESS: 24 rounds, 0.3 s each, 1.5 s reload
+      hits:
+        - {hit: 116100001, count: 24, offset: 0.3, interval: 0.3, tags: [round]}
+
+    skill:                         # Bean Cyclone: the swing and a seed
+      lock: 2.0                    # GUESS
+      cd_start: 2.0               # GUESS: the CD starts when the cast ends
+      hits:
+        - {hit: 116310001, offset: 0.5, tags: [swing], triggers_mark: true}
+        - {hit: 116310002, offset: 1.0, tags: [seed], triggers_mark: true}
+
+    ult:                           # Harvest Rhapsody x5 and a big hit
+      lock: 5.0                    # user-timed in the support role: she leaves at +5.07
+      hits:
+        - {hit: 116400001, count: 5, offset: 0.033, interval: 0.44, tags: [ult]}
+        - {hit: 116400002, offset: 2.933, tags: [ult, ult_final]}
+        - {hit: 0, offset: 3.0, tags: [ult_done]}
+
+  potentials:
+    511601:   # Let Nature Thrive (pink): one more seed
+      add_hits:
+        skill: [{hit: 116310002, offset: 1.2, tags: [seed], triggers_mark: true}]
+    511602:   # Nature's Guard (pink): GUESS: a seed per second for 8 s
+      procs:
+        - {event: "hit:self:seed", hit: 116502001, count: 8, offset: 1.0, interval: 1.0, tags: [shooter]}
+    511603:   # A Fortunate Yield (pink)
+      procs:
+        - {event: "hit:self:round", every: 12, hit: 116503001, offset: 0.3, tags: [giant]}
+    511604:   # Tangled Mess (pink): 2 more rounds per shot
+      add_hits:
+        auto: [{hit: 116100001, count: 48, offset: 0.35, interval: 0.15, tags: [round]}]
+    511605: {}   # Overgrowth
+    511606:   # Vine Snare: 3 stacks of a 3 s slow on a 10 s cooldown never happens
+      overrides:
+        - {index: 0, drop: true}
+    511607:   # Twin Sprouts: 50% chance of one more seed
+      procs:
+        - {event: "hit:self:seed", hit: 116310002, chance: 0.5, offset: 0.2, tags: [seed_extra]}
+    511608: {}   # Bursting Pod
+    511609:   # Hardened Cone
+      overrides:
+        - {index: 1, hit_tags: [round, giant]}
+    511610: {}   # Wild Growth
+    511611:   # Power Slide
+      overrides:
+        - {index: 0, event: "dodge:main"}
+    511612:   # Full Bloom: she fights from range
+      overrides:
+        - {index: 0, hit_tags: []}
+    511613:   # Verdant Vigor
+      mark_tags: [ult]
+      overrides:
+        - {index: 0, event: "mark:self"}
+    511641:   # Seed to Harvest
+      overrides:
+        - {index: 1, hit_tags: [ult_final]}
+    511642:   # Spring's Embrace
+      overrides:
+        - {index: 0, hit_tags: [ult], event: "hit:self:ult", duration: inf, max_stacks: 5, reset_on: ["marker:self:ult_done"]}
+    511643:   # Sow and Reap
       overrides:
         - {index: 0, event: "cast:self:ult"}

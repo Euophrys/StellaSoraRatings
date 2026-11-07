@@ -31,6 +31,7 @@ main:
 
     skill:                         # Jade of Vitality; the Auspice's beam every 0.6 s for 8 s (text)
       lock: 1.5                    # GUESS
+      cd_start: 1.5               # GUESS: the CD starts when the cast ends
       hits:
         - {hit: 159310001, offset: 0.6, tags: [jade], triggers_mark: true}
         - {hit: 159310002, count: 13, offset: 1.2, interval: 0.6, tags: [beam], triggers_mark: true}

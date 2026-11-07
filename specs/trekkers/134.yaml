@@ -36,6 +36,7 @@ main:
 
     skill:                         # Ignis Infusion, then the 3 Fiery Punches
       lock: 5.5                    # GUESS
+      cd_start: 5.5               # GUESS: the CD starts when the cast ends
       hits:
         - {hit: 134310001, offset: 0.5, tags: [infusion], triggers_mark: true}
         - {hit: 134310002, offset: 1.4, tags: [infusion], triggers_mark: true}

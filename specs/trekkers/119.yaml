@@ -171,9 +171,79 @@ main:
         clone: {duration_add: {param: Param1}}
 
 support:
-  stub: true   # placeholder hits only: not timed in game, potentials not modelled
-  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the clones are user-timed (main role)
+  on_field: {skill: 3.0, ult: 1.0}   # GUESS
+  mark: {hit: 119000001, tags: [blossom]}   # text: Flowers Bloom and the clones can trigger Ventus Mark
   actions:
-    skill:
+    skill:                         # Flowers Bloom: 12 shurikens (text)
       hits:
-        - {hit: 119320001, count: 1, offset: 0.3, tags: [skill]}   # stub: support kit not authored
+        - {hit: 119320001, count: 12, offset: 0.8, interval: 0.15, tags: [shuriken, projectile], triggers_mark: true}
+    ult:                           # Flowers Thrice: the clones below
+      hits: []
+
+  minions:
+    clone:                         # As in the main role: Ult DMG rows and Nanoha's stats, not Minion DMG
+      summon: {event: "cast:self:ult", offset: 0.067, every: 0.0, count: 2}
+      max: 2
+      duration: 26.53
+      at_max: replace
+      windup: 2.0
+      interval: 0.767
+      attacks:
+        - {hit: 119900001, count: 2, interval: 0.033, tags: [clone, projectile], triggers_mark: true}
+        - {hit: 119900002, count: 2, interval: 0.033, tags: [clone, projectile], triggers_mark: true}
+        - {hit: 119900003, count: 3, interval: 0.033, tags: [clone, projectile], triggers_mark: true}
+
+  potentials:
+    511921:   # Revitalizing Nourishment (pink): needs 3 targets
+      note: "Needs 3 targets."
+    511922:   # Gentle Thaw (pink): once per cast
+      cd_reduce: {action: skill, seconds: 3}
+      procs:
+        - {event: "mark:self", hit: 119503001, icd: 9, tags: [thaw]}
+    511923:   # Floral Nexus (pink)
+      overrides:
+        - {index: 0, hit_tags: [shuriken]}
+    511924:   # Unfulfilled Enthusiasm (pink): 12 stacks, detonated as the sunflower goes
+      add_hits:
+        skill:
+          - {hit: 119504001, offset: 3.0, tags: [detonation]}
+          - {hit: 0, offset: 3.1, tags: [detonated]}
+      overrides:
+        - {index: 0, hit_tags: [detonation], event: "hit:self:shuriken", duration: inf, max_stacks: 12, reset_on: ["marker:self:detonated"]}
+    511925:   # Tender Nurture: above 50% HP, half of the fight (GUESS)
+      overrides:
+        - {index: 0, hit_tags: [shuriken], event: unknown, uptime: 0.5, duration: inf, max_stacks: 1}
+    511926:   # Troubleshooting
+      overrides:
+        - {index: 0, hit_tags: [], event: "cast:self:skill", duration: 5, max_stacks: 5}
+    511927:   # Shift Duty: while the clones are out
+      procs:
+        - {event: "cast:self:skill", when: "while:status:clone", hit: 119527001, count: 12, offset: 0.8, interval: 0.15, tags: [clone_shuriken]}
+    511928:   # VIP Focus
+      overrides:
+        - {index: 0, hit_tags: [shuriken]}
+    511929:   # Regular Trim
+      overrides:
+        - {index: 0, hit_tags: [shuriken]}
+    511930:   # Tender Care: while the clones are out
+      procs:
+        - {event: "cast:self:skill", when: "while:status:clone", hit: 119530001, count: 5, offset: 3.0, interval: 0.1, tags: [clone_shuriken]}
+    511931:   # Dance of Scattering Petals
+      overrides:
+        - {index: 0, event: "cast:main:skill"}
+    511932:   # Tender Trap: an ally at full Energy casts at once, so this barely runs
+      overrides:
+        - {index: 0, drop: true}
+    511933:   # United in Times
+      overrides:
+        - {index: 0, event: "mark:self", target: team}
+    511941:   # Blossom Rhyme
+      overrides:
+        - {index: 0, pct: true, hit_tags: [clone]}
+    511942:   # Infinite Shade
+      minion_rules:
+        clone: {count: 3, max: 3}
+    511943:   # Wind Whispers
+      minion_rules:
+        clone: {duration_add: {param: Param1}}

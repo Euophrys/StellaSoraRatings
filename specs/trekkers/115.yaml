@@ -20,14 +20,89 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
       - {attribute: 11596511, event: always}
 
 main:
-  stub: true   # placeholder hits only: not timed in game, potentials not modelled
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (support role)
+  mark: {hit: 115000001}
+  base_rules: {reset_cd: {ult: skill}}   # text: the ult resets her cooldowns
+
   actions:
-    skill:
+    auto:
+      duration: 3.4                # GUESS: 1 s per strike
       hits:
-        - {hit: 115110001, count: 4, interval: 0.5, tags: [cannon]}   # GUESS: main-role kit not authored beyond a stub
-    ult:
+        - {hit: 115100001, offset: 0.4}
+        - {hit: 115100002, offset: 1.4}
+        - {hit: 115100003, count: 4, offset: 2.4, interval: 0.15}
+
+    skill:                         # Star Barrage: Artillery Form, 14 s; GUESS: autos stop; 4 cannons firing once a second in turn
+      lock: 14.0                   # text
       hits:
-        - {hit: 115400001, count: 4, offset: 0.5, interval: 0.4, tags: [ult]}
+        - {hit: 115110001, count: 56, offset: 0.5, interval: 0.25, tags: [cannon], triggers_mark: true}
+
+    ult:                           # Stellar Torrent
+      lock: 6.3                    # user-timed in the support role
+      hits:
+        - {hit: 115400001, count: 4, offset: 0.4, interval: 0.6, tags: [ult]}
+        - {hit: 115400002, count: 2, offset: 1.2, interval: 1.1, tags: [ult]}
+        - {hit: 115400003, count: 2, offset: 1.3, interval: 1.0, tags: [ult]}
+
+  buffs:
+    - {effect: 3012, name: glimmer, level: skill, event: "mark:self", target: enemy, duration: {ref: "Buff,LevelUp,3012,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,3012,LaminatedNum,Fixed"}}
+
+  potentials:
+    511501:   # Firefly Glow: Radiance (pink): all 4 cannons, every 0.5 s, as Auto Attack DMG
+      replace_hits:
+        skill: [{hit: 115110101, count: 112, offset: 0.5, interval: 0.125, tags: [cannon], triggers_mark: true}]
+    511502:   # Firefly Glow: Luminary (pink): 12 Focus; Auto DMG only helps with Radiance
+      overrides:
+        - {index: 0, hit_tags: [cannon], event: "hit:self:cannon", every: 12, duration: 14}
+    511503:   # Firefly Glow: Convergence (pink): once per 10 s on a target
+      procs:
+        - {event: "hit:self:cannon", hit: 115506001, icd: 10, count: 5, offset: 0.4, interval: 0.4, tags: [sunray], triggers_mark: true}
+    511504:   # Firefly Glow: Scatter Beam (pink): refracts to other targets only
+      note: "Needs other targets."
+    511505:   # Tide of Starmarks
+      overrides:
+        - {index: 0, event: "hit:self:cannon", target: team}
+    511506:   # Radiant Rainfall: every 6 s in the form
+      add_hits:
+        skill:
+          - {hit: 115110302, count: 4, offset: 6.0, interval: 0.1, tags: [volley], triggers_mark: true}
+          - {hit: 115110302, count: 4, offset: 12.0, interval: 0.1, tags: [volley], triggers_mark: true}
+          - {hit: 115110301, offset: 6.5, tags: [volley], triggers_mark: true}
+          - {hit: 115110301, offset: 12.5, tags: [volley], triggers_mark: true}
+    511507:   # Lone Star Gleam
+      overrides:
+        - {index: 0, hit_tags: []}
+    511508:   # Astral Album
+      add_hits:
+        skill:
+          - {hit: 115308001, offset: 0.4, tags: [round], triggers_mark: true}
+          - {hit: 115308002, offset: 0.7, tags: [round], triggers_mark: true}
+    511509:   # Luminous Rhythm: a cannon's next attack every 4 s: 1 attack in 16
+      overrides:
+        - {index: 0, hit_tags: [cannon], event: unknown, uptime: 0.0625, duration: inf, max_stacks: 1}
+    511510:   # Flash Resonance
+      overrides:
+        - {index: 0, event: "hit:self:cannon&while:mark:5", target: team}
+    511511:   # Blazing Radiance
+      overrides:
+        - {index: 0, event: always}
+        - {index: 1, event: "mark:self"}
+    511512:   # Absolute Brilliance
+      mark_tags: [ult]
+      overrides:
+        - {index: 0, event: "mark:self"}
+    511513:   # Phantom Blast
+      procs:
+        - {event: "dodge:main", hit: 115211301, icd: 7, tags: [shadow], triggers_mark: true}
+    511541:   # Persistent Warmth: the ult resets the skill, so it's cast right after
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+    511542:   # Ultimate Radiance
+      overrides:
+        - {index: 0, hit_tags: [ult]}
+    511543:   # Radiance of Shattered Stars: below 80% HP (GUESS: 80% of the fight)
+      overrides:
+        - {index: 0, hit_tags: [ult], event: unknown, uptime: 0.8, duration: inf, max_stacks: 1}
 
 # User, frame-timed (2026-11-01, Twin Shadow + Firefly; offsets in seconds after the cast at 1:13,11):
 #   skill: first Giant Sword hit +2.40; first Flying Blade +2.97. Giant Sword strikes 1-3 between +2.40 and +4.30,

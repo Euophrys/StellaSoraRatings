@@ -8,6 +8,7 @@ talents:
       - {effect: 11896111, event: "mark:element6", target: team, duration: {ref: "BuffValue,NoLevel,11896111,Time,10K"}}
   1180232:   # Hostile Amplification (T2): the single-target value
     buffs:
+      - {attribute: 11896211, event: "while:not:squad:6:0"}   # hits several targets: never against a single boss
       - {attribute: 11896221, event: always}
   1180348:   # Stitch and Fix (T3)
     buffs:
@@ -34,6 +35,7 @@ main:
 
     skill:                         # Sleight of Scythe x5 and a smash (text)
       lock: 2.5                    # GUESS
+      cd_start: 2.5               # GUESS: the CD starts when the cast ends
       hits:
         - {hit: 118000015, count: 5, offset: 0.5, interval: 0.25, tags: [slice], triggers_mark: true}
         - {hit: 118000016, offset: 1.9, tags: [smash], triggers_mark: true}

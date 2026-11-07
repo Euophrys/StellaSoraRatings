@@ -183,7 +183,7 @@ All from the game text, none checked in game. Stat nodes were already read from 
 
 - **Not modelled, listed by the sim when unlocked:** Ann's The Watcher in the Rye (needs her ult to destroy a hostile projectile, which depends on the boss). Snowish Laru's Queen's Party (needs the shield from her ult form; her support kit doesn't cast the ult).
 - **Worth nothing here (`buffs: []`):** Noya's Today's Bond and Canace's Imminent Dawn (kills), Canace's Yearning for Truth (normal and elite targets, and every preset is a boss).
-- **Snowish Laru's ult** (user: the community doesn't use it unless the main is Fuyuka): her support kit leaves it out, so Dreams Replayed is modelled but never fires, and Queen's Party isn't modelled. Fuyuka has no kit spec yet. When she gets one, Laru's ult needs authoring for that pairing.
+- **Snowish Laru's ult** (user: the community doesn't use it unless the main is Fuyuka): her support kit sets `ult_only_with: [134]`, so it's only cast with Fuyuka, on untimed hits copied from her main role. Dreams Replayed fires only then, and Queen's Party isn't modelled.
 - **"Vs elite or higher-tier" is always on.** Every preset is a boss.
 - **HP conditions hold** (Claude's reading): Flora's Fate of Nirvana (main above 50%) and Firstlight Noya's Meeting You at Dawn (above 20%).
 - **Readings of unclear text** (Claude's, unconfirmed):
@@ -199,3 +199,27 @@ All from the game text, none checked in game. Stat nodes were already read from 
 - **A chance as a count:** Cosette's Determined to Leave (25% per hit) fires on every 4th hit, the same rate without the randomness.
 - **EAT 85 "DMG Multiplier" is now a real multiplier** (`DMG_MULT`, x (1 + value) on the hit), matching what the user's clips showed for Amber's recast. Night Watcher's Duty and Meeting You at Dawn use it. Resolve: Blitz, Surge: Thunderbolt and Firstlight Noya's per-Glimmer autos moved to it too (user, 2026-11-07), so `as_stat` no longer has any users. Lines on one hit add together inside the multiplier, as they did in the bucket. The bucket and the multiplier only differ when something else is in the general DMG bucket (EAT 49 / 50), and `fl_noya_skill`'s workbook has nothing that does: it comes out the same as before the move. Unscoped EAT 85 lines on stub support kits (Nimble Catwalk, Fiendbreaker, Breath of Light) were ignored before and now apply to all their hits; no team uses them.
 - **`damage:<who>`:** A Dance with Bullets (Amber T1) now stacks once per hit instead of once per tag and bucket. `amber_flora_chixia` moves -0.02%. No other team's total moved at its current talents.
+
+## Untimed kits (2026-11-07)
+
+Every Trekker now has both roles, but the 60 roles marked `untimed: true` have never been timed in game. Validation: `docs/validation/2026-11-07-untimed-kits.md`. The aim is that timing them moves them up, so each guess sits on the slow side of the kits the user has timed. Each is a default that a measurement replaces.
+
+| Thing | Guess | Timed kits, for comparison |
+| --- | --- | --- |
+| Main auto string | 1 s per strike, first hit +0.4 s | about 0.6-1.0 s per strike |
+| Main skill lock | 2.5 s, or the hits' span if longer; 1-2 s for a shot or summon | 0.37-2.33 s |
+| Main ult lock | last hit + about 1 s, up to 6 s; 3 s for summons that keep working | 0.47-5.63 s |
+| Main skill CD | starts when the cast ends (`cd_start` = lock), unless stored uses or the text says otherwise | at the cast for most; +2 s for Noya, after the recast for Amber |
+| Support on the field | 3 s; longer only where the hits or text need it | 2.6-21.5 s |
+| Hit counts | as the text says; a plain "multiple times" counts once | text can undercount (Amber) |
+| First hit | skill +0.5-1 s, ult +1 s | |
+
+- **Reused timings:** a role whose other role was timed reuses that role's ult hits, and its on-field time as the main's ult lock.
+- **Crits as a count:** "on a crit" effects assume a 50% Crit Rate, as every 2nd event or `chance: 0.5`.
+- **HP conditions on the boss:** "below N% HP" holds N% of the fight, as an `uptime`. The Trekker's own HP conditions hold, as in Key talents. "Vs elite or higher" always holds.
+- **Nothing rests on the 100% default:** `tests/test_untimed_kits.py` fails on an unscoped modifier or a missing trigger. Lines that can't be pinned are dropped with a comment and are worth 0. So are kill-based, multi-target, ricochet and purely defensive lines.
+- **Rotation choices:** Allie casting her ult through her skill and Wide Blade Arc's Mark DMG conversion aren't modelled. Tilia only holds Fortify Stance with a stance pink. Chaton taps her skill unless the build has a Bouncing Bomb pink, as bombs bounce to other targets. Sparkla holds for Rapid Fire unless the build has a Jaws pink. Willow uses Bubble Machine unless the build has a Megaphone pink.
+- **Summons that aren't minions:** hits with a non-minion DamageType count (Jinglin's Qilin, Minova's clan, Karin's Boss Shark, Eleanor's Sentries, Sparkla's doll, Shia's Rabbits, Ann's Coco and Wind Bursts, Nanoha's clones). Only DamageType 7 pools are skipped: Firenze's Shadow Clones, Donna's Doll, Caramel's Boombox, Ann's Bubble, Snowish Laru's toys and Mistique's Lanterna Phantoms. What those give besides damage is kept where the text is plain (Bubble's squad ATK, Donna's Agile, Caramel's connection ATK).
+- **Sub-actions as long locks:** a state that replaces the autos is written as hits on the action, inside a lock as long as the state, and skills can still be cast: Chaton's Evil Eye, Freesia's Berserk, Donna's Agile, Sparkla's modes, Firefly's Artillery Form, Snowish Laru's Dame Laru. Potentials that lengthen these states aren't modelled.
+- **`ult_cost_scale`** (Minova's Urgent Reinforcement, "25% more Energy") multiplies the ult's Energy cost.
+

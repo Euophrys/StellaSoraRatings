@@ -32,14 +32,92 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
       - {attribute: 14196511, event: always, minions: true}
 
 main:
-  stub: true   # placeholder hits only: not timed in game, potentials not modelled
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (support role)
+  mark: {hit: 141000001}
+
+  procs:
+    # Burn (Word 2027): flames on an Inked target: 8 ticks of the row's total (the highest Ink tiers aren't used)
+    - {event: "hit:self:flame", when: "while:status:ink", hit: 141100005, count: 8, offset: 1.0, interval: 1.0, mult: 0.125, restart: true, tags: [burn]}
+
   actions:
-    skill:
+    auto:
+      duration: 5.4                # GUESS: 1 s per strike
       hits:
-        - {hit: 141310001, count: 1, tags: [skill]}   # stub: main-role kit not authored
-    ult:
+        - {hit: 141100001, offset: 0.4}
+        - {hit: 141100002, offset: 1.4}
+        - {hit: 141100003, count: 4, offset: 2.4, interval: 0.15}
+        - {hit: 141100004, count: 3, offset: 3.4, interval: 0.15}
+        - {hit: 141100009, offset: 4.4}
+
+    skill:                         # Purifying Flames: every 0.2 s for 3 s (text)
+      lock: 3.5                    # GUESS
+      cd_start: 3.5               # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 141400001, count: 1, tags: [ult]}
+        - {hit: 141310001, count: 15, offset: 0.5, interval: 0.2, tags: [flame], triggers_mark: true}
+
+    ult:                           # Dragon's Ascension
+      lock: 3.4                    # user-timed in the support role
+      hits:
+        - {hit: 141400001, count: 17, offset: 1.433, interval: 0.3, tags: [ult]}
+
+  buffs:
+    - {name: ink, event: "hit:self:auto_dmg", duration: 8, target: enemy, excludes: [514103]}
+    - {name: ink, event: "hit:self:auto_dmg", duration: 8, max_stacks: 4, target: enemy, requires: [514103]}
+
+  potentials:
+    514101:   # Sleepless Flame (pink): 3 s longer
+      add_hits:
+        skill: [{hit: 141310001, count: 15, offset: 3.5, interval: 0.2, tags: [flame], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [flame]}
+    514102:   # Shooting Star (pink): one enhanced string per cast
+      add_hits:
+        skill:
+          - {hit: 141102001, count: 8, offset: 3.6, interval: 0.1, tags: [enhanced]}
+          - {hit: 141102002, count: 2, offset: 4.5, interval: 0.2, tags: [enhanced]}
+    514103:   # Flame-Stained Ink (pink): on each Burn, at 4 Ink
+      procs:
+        - {event: "hit:self:flame", when: "while:status:ink>=4", hit: 141503001, icd: 8, tags: [inkburst]}
+    514104:   # Blazing Rainbow Array (pink): fades over 3 s: half the value
+      overrides:
+        - {index: 0, hit_tags: [flame], stacks: 0.5}
+    514105:   # Blistering Flame Corrosion: lowers the target's ATK
+      overrides:
+        - {index: 0, drop: true}
+    514106:   # Ashes of the Firepit: kills
+      note: "Needs a kill: nothing against a single boss."
+    514107:   # Flame Resonance: while it's active
+      overrides:
+        - {index: 0, event: "cast:self:skill", duration: 3.5, target: team}
+    514108:   # Scorching Ink: per Ink stack
+      overrides:
+        - {index: 0, event: "while:status:ink", per_stack: true}
+    514109:   # Flame-Ink Matrix
+      add_hits:
+        skill: [{hit: 141509001, offset: 0.5, tags: [matrix]}]
+      overrides:
+        - {index: 0, event: "hit:self:flame&while:status:ink"}
+    514110:   # Infernal Ember: a shield
+      note: "A shield: no damage value."
+    514111:   # Inkburn Stroke
+      mark_tags: [ult]
+      overrides:
+        - {index: 0, event: "mark:self"}
+    514112:   # Finishing Touch
+      overrides:
+        - {index: 0, event: "mark:self"}
+    514113:   # Ink Brilliance: 3 s; the longer time on crits isn't modelled
+      overrides:
+        - {index: 0, event: "cast:self:skill", duration: 3}
+    514141:   # Dragon Blaze: crits as every 2nd hit (GUESS: 50% Crit Rate)
+      overrides:
+        - {index: 0, event: "hit:self:ult", every: 2}
+    514142:   # Blazing Vortex: every 0.5 s for 8 s
+      add_hits:
+        ult: [{hit: 141442001, count: 16, offset: 1.5, interval: 0.5, tags: [vortex]}]
+    514143:   # Dragon Breath: every 2 s for 8 s, after the ult
+      add_hits:
+        ult: [{hit: 141443001, count: 4, offset: 7.0, interval: 2.0, tags: [dragon_breath]}]
 
 support:
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits

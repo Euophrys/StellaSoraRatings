@@ -18,8 +18,8 @@ talents:
       - {effect: 16096311, event: "damage:any&while:mark:1", target: team, duration: {ref: "BuffValue,NoLevel,16096311,Time,10K"}}
   1600464:   # Going with the Flow (T4): 3 steps of 6%
     buffs:
-      - {effect: 16096411, event: "timer:4", target: main, max_stacks: 3}
-      - {effect: 16096412, event: "timer:4", target: main, max_stacks: 3}
+      - {effect: 16096411, event: "timer:1", icd: {ref: "ScriptParameterValue,NoLevel,16096411,CommonData,10K"}, target: main, max_stacks: 3}
+      - {effect: 16096412, event: "timer:1", icd: {ref: "ScriptParameterValue,NoLevel,16096411,CommonData,10K"}, target: main, max_stacks: 3}
   1600580:   # Reset and Restart (T5)
     buffs:
       - {effect: 16096511, event: "hit:self:skill_dmg", target: enemy, duration: {ref: "BuffValue,NoLevel,16096511,Time,10K"}}

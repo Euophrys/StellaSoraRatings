@@ -23,14 +23,88 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
 #   ult (23,12): hits +1.2 x2, then x2 every ~0.23 s; leaves +8.73.
 
 main:
-  stub: true   # placeholder hits only: not timed in game, potentials not modelled
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hit spacing is user-timed (support role)
+  mark: {hit: 120000001}
+
   actions:
-    skill:
+    auto:
+      duration: 5.4                # GUESS: 1 s per strike
       hits:
-        - {hit: 120320001, count: 1, tags: [skill]}   # stub: main-role kit not authored
-    ult:
+        - {hit: 120100001, offset: 0.4, tags: [shot]}
+        - {hit: 120100002, offset: 1.4, tags: [shot]}
+        - {hit: 120100003, offset: 2.4, tags: [shot]}
+        - {hit: 120100004, offset: 3.4, tags: [shot]}
+        - {hit: 120100005, count: 2, offset: 4.4, interval: 0.2, tags: [shot]}
+
+    skill:                         # Verdant Shroud, then 2 Flying Leaves for 7.2 s; GUESS: a leaf hits every 0.6 s
+      lock: 1.0                    # GUESS
+      cd_start: 1.0               # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 120400001, count: 1, tags: [ult]}
+        - {hit: 120310002, offset: 0.5, tags: [shroud], triggers_mark: true}
+        - {hit: 120310001, count: 24, offset: 1.0, interval: 0.3, tags: [leaf], triggers_mark: true}
+
+    ult:                           # Double Tempest
+      lock: 3.0                    # GUESS: she carries on while the cyclones work
+      hits:
+        - {hit: 120400001, count: 9, offset: 1.2, interval: 0.233, tags: [tempest]}
+        - {hit: 120400001, count: 9, offset: 1.2, interval: 0.233, tags: [tempest]}
+        - {hit: 0, offset: 5.0, tags: [ult_done]}
+
+  potentials:
+    512001:   # Most Admired (pink): 3 more leaves
+      add_hits:
+        skill: [{hit: 120310001, count: 36, offset: 1.1, interval: 0.2, tags: [leaf], triggers_mark: true}]
+    512002:   # Ring Blitz (pink): twice as fast
+      add_hits:
+        skill: [{hit: 120310001, count: 24, offset: 1.15, interval: 0.3, tags: [leaf], triggers_mark: true}]
+    512003:   # Erratic Weather (pink): 25% chance of another bullet
+      procs:
+        - {event: "hit:self:shot", hit: 120100001, chance: 0.25, offset: 0.1, tags: [extra_shot]}
+      overrides:
+        - {index: 0, event: always}
+    512004:   # Positive Score (pink): 5 strikes after each skill; squadmates' Energy isn't counted
+      overrides:
+        - {index: 0, hit_tags: [shot], event: "cast:self:skill", duration: 6.4}
+    512005:   # Subject Boost: 2 leaves for 7.2 s (more with Most Admired, not counted)
+      overrides:
+        - {index: 0, event: "cast:self:skill", duration: 7.2, stacks: 2, target: team}
+    512006:   # Strength Leverage: lowers the target's ATK
+      overrides:
+        - {index: 0, event: always}
+        - {index: 1, drop: true}
+    512007:   # Comprehensive Praise
+      overrides:
+        - {index: 0, hit_tags: [leaf]}
+    512008:   # Friendly Mentor
+      overrides:
+        - {index: 0, event: "cast:self:skill|cast:support:skill"}
+    512009:   # Unique Teaching
+      overrides:
+        - {index: 0, hit_tags: []}
+    512010:   # Counterstrike Tutorial: the final strike after a dodge
+      procs:
+        - {event: "dodge:main", hit: 120100005, icd: 5, count: 2, offset: 0.2, interval: 0.2, tags: [counter]}
+      overrides:
+        - {index: 0, hit_tags: [counter]}
+    512011:   # Lone Star Twinkle
+      mark_tags: [tempest]
+      overrides:
+        - {index: 0, event: "mark:self"}
+    512012:   # Weakness Analysis: 30% chance, as every 3rd
+      overrides:
+        - {index: 0, event: "hit:self:shot", every: 3}
+    512013:   # Shadow Stride
+      overrides:
+        - {index: 0, event: "dodge:main"}
+    512041:   # Storm Suppression: 17 x 2
+      add_hits:
+        ult: [{hit: 120400001, count: 16, offset: 1.3, interval: 0.233, tags: [tempest]}]
+    512042:   # Structure Shatter
+      overrides:
+        - {index: 0, event: "hit:self:tempest", reset_on: ["marker:self:ult_done"]}
+    512043:   # Downwind Area
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
 
 support:
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits

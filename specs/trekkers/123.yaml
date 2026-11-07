@@ -23,14 +23,82 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
 #   ult (59,04): a buff on Noya +0.87 (shield, Overlord's Warcry), hit +0.97; leaves +3.07.
 
 main:
-  stub: true   # placeholder hits only: not timed in game, potentials not modelled
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hit is user-timed (support role)
+  # Bubble (a minion) is skipped, except what it gives: its squad ATK, and a Wind Burst (Skill DMG, inflicts Breeze) about every
+  # 4 s: 25% per Bubble hit, once per second at most. Bubble lasts 15 s (Word 4013), the skill's CD.
+
   actions:
-    skill:
+    auto:                          # Coco the Firefang: Auto Attack DMG, not Minion DMG
+      duration: 4.4                # GUESS: 1 s per strike
       hits:
-        - {hit: 123320001, count: 1, tags: [skill]}   # stub: main-role kit not authored
-    ult:
+        - {hit: 123100001, offset: 0.4}
+        - {hit: 123100002, offset: 1.4}
+        - {hit: 123100003, count: 2, offset: 2.4, interval: 0.2}
+        - {hit: 123100004, offset: 3.4}
+
+    skill:                         # Puffloon Spits
+      lock: 1.0                    # GUESS
+      cd_start: 1.0               # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 123300001, count: 1, tags: [ult]}
+        - {hit: 123310004, count: 3, offset: 4.0, interval: 4.0, tags: [burst], applies_mark: true}
+
+    ult:                           # Call of the Wild
+      lock: 3.067                  # user-timed in the support role
+      hits:
+        - {hit: 123300001, offset: 0.967, tags: [howl], applies_mark: true}
+
+  buffs:
+    - {effect: 12393001, level: skill, event: "cast:self:skill", duration: 15, target: team}
+
+  potentials:
+    512301:   # Wind's Breath (pink)
+      procs:
+        - {event: "hit:self:auto_dmg", hit: 123310004, chance: 0.25, icd: 1, offset: 0.1, tags: [burst], applies_mark: true}
+      overrides:
+        - {index: 0, event: "hit:self:burst", target: team}
+    512302:   # Stone Dust Tempest (pink)
+      overrides:
+        - {index: 0, event: "hit:self:burst"}
+    512303:   # Dazzling Vortex (pink): Bubble
+      note: "Bubble's hits aren't modelled."
+    512304:   # Grand Debut (pink): the laser is Bubble's
+      overrides:
+        - {index: 0, event: "cast:self:skill", target: team}
+    512305:   # Victorious Pursuit
+      overrides:
+        - {index: 0, event: "hit:self:burst", target: team}
+    512306:   # Permeating Courage
+      overrides:
+        - {index: 0, drop: true}
+        - {index: 1, event: "cast:self:skill", duration: 15}
+    512307:   # Wind Chime: 46%, not 25%: about 2 more per cast
+      add_hits:
+        skill: [{hit: 123310004, count: 2, offset: 6.0, interval: 4.0, tags: [burst], applies_mark: true}]
+    512308:   # Wind Surge: GUESS: the main is the ally
+      overrides:
+        - {index: 0, event: "cast:support:skill", target: main}
+    512309:   # Breeze Caress: healing
+      note: "Healing; no damage value."
+    512310:   # Smooth Rotation: only for Marks a squadmate triggers; the CD cut isn't modelled
+      note: "The cooldown cut isn't modelled."
+    512311:   # Tall Tree Attracts Wind: DEF
+      overrides:
+        - {index: 0, drop: true}
+    512312:   # Wind's Track: needs a barrier
+      overrides:
+        - {index: 0, drop: true}
+    512313:   # Zephyr Caress
+      procs:
+        - {event: "dodge:main", hit: 123310004, count: 2, offset: 0.1, interval: 0.1, tags: [burst], applies_mark: true}
+      overrides:
+        - {index: 0, event: "dodge:main", target: team}
+    512341:   # Overlord's Warcry: a shield
+      note: "A shield: no damage value."
+    512342:   # Mountain's Entice
+      overrides:
+        - {index: 0, event: always}
+    512343:   # Impulsive Devourer: needs hostile projectiles
+      note: "Depends on the boss; not modelled."
 
 support:
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits

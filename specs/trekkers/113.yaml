@@ -35,6 +35,7 @@ main:
 
     skill:                         # Rising Tides, both phases, always (text: x6 and x6)
       lock: 5.0                    # GUESS
+      cd_start: 5.0               # GUESS: the CD starts when the cast ends
       hits:
         - {hit: 113310011, count: 6, offset: 0.5, interval: 0.3, tags: [p1], triggers_mark: true, excludes: [511302]}
         - {hit: 0, offset: 2.9, tags: [p2_start]}

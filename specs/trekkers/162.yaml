@@ -182,15 +182,76 @@ main:
         - {event: "timer:1", when: "while:status:starender", hit: 0, energy: {param: Param4}}   # every Param3 = 1 s (data, all levels)
 
 support:
-  stub: true   # placeholder hits only: not timed in game, potentials not modelled
-  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (main role)
+  on_field: {skill: 3.0, ult: 3.23}  # skill: GUESS; ult: the main role's lock
+  mark: {hit: 162000001}             # text: Thunderstrike: Break can trigger Lux Mark
   actions:
-    skill:
+    skill:                         # Thunderstrike: Break x8, then x6 and a big hit (text)
       hits:
-        - {hit: 162320001, count: 8, offset: 0.2, interval: 0.1, tags: [longsword]}
-        - {hit: 162320002, count: 6, offset: 1.2, interval: 0.2, tags: [greatsword]}
-        - {hit: 162320003, count: 1, offset: 2.5, tags: [greatsword]}
-    ult:
+        - {hit: 162320001, count: 8, offset: 0.5, interval: 0.15, tags: [longsword], triggers_mark: true}
+        - {hit: 162320002, count: 6, offset: 1.8, interval: 0.2, tags: [greatsword], triggers_mark: true}
+        - {hit: 162320003, offset: 3.0, tags: [greatsword], triggers_mark: true}
+    ult:                           # Greatsword form by default; Aegis: Blitz swaps it (Aegis: Sunder is the default anyway)
       hits:
-        - {hit: 162400001, count: 5, offset: 0.5, interval: 0.2, tags: [greatsword]}
-        - {hit: 162400002, count: 1, offset: 1.8, tags: [greatsword]}
+        - {hit: 162400001, count: 5, offset: 0.5, interval: 0.2, tags: [greatsword, ult_gs], triggers_mark: true, excludes: [516229]}
+        - {hit: 162400002, offset: 1.8, tags: [greatsword, ult_gs], triggers_mark: true, excludes: [516229]}
+        - {hit: 162400003, count: 7, offset: 0.4, interval: 0.1, tags: [longsword, ult_ls], triggers_mark: true, requires: [516229]}
+        - {hit: 162400004, count: 7, offset: 1.5, interval: 0.3, tags: [ult_ls], triggers_mark: true, requires: [516229]}
+
+  buffs:
+    - {effect: 3012, name: glimmer, level: skill, event: "mark:self", target: enemy, duration: {ref: "Buff,LevelUp,3012,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,3012,LaminatedNum,Fixed"}}
+    - {effect: 16290003, name: starender, level: ult, event: "cast:self:ult", duration: {ref: "Buff,LevelUp,16290003,Time,10K"}}
+
+  potentials:
+    516221:   # Tempest Scourge (pink): a field, x6
+      add_hits:
+        skill: [{hit: 162320006, count: 6, offset: 3.0, interval: 0.5, tags: [field]}]
+    516222:   # Inquisitor's Edge (pink): 11 Starfalls
+      add_hits:
+        skill: [{hit: 162320004, count: 11, offset: 2.0, interval: 0.1, tags: [starfall]}]
+    516223:   # Skyrend Flash (pink): GUESS: a Glow per longsword attack
+      add_hits:
+        skill: [{hit: 162320005, count: 8, offset: 0.6, interval: 0.15, tags: [glow]}]
+    516224:   # Galeblade (pink): 10 more
+      add_hits:
+        skill: [{hit: 162320001, count: 10, offset: 0.65, interval: 0.1, tags: [longsword], triggers_mark: true}]
+    516225:   # Radiant Sever
+      overrides:
+        - {index: 0, event: "hit:self:starfall"}
+    516226:   # Aegis: Sunder
+      overrides:
+        - {index: 0, event: "hit:self:longsword"}
+    516227:   # Fiendbreaker
+      overrides:
+        - {index: 0, hit_tags: [greatsword, starfall]}
+        - {index: 1, hit_tags: [greatsword, starfall]}
+    516228:   # Sunfire Cleave
+      overrides:
+        - {index: 0, hit_tags: [longsword, glow]}
+    516229:   # Aegis: Blitz: longsword form (hits above)
+      overrides:
+        - {index: 0, event: "hit:self:greatsword"}
+    516230:   # Breath of Light
+      overrides:
+        - {index: 0, hit_tags: [longsword, glow]}
+        - {index: 1, hit_tags: [longsword, glow]}
+    516231:   # No More Goodbyes
+      overrides:
+        - {index: 0, max_stacks: 1, target: "element:5", copies: [{event: "while:squad:5:1"}, {event: "while:squad:5:2"}, {event: "while:squad:5:3"}]}
+    516232:   # No More Sorrow
+      overrides:
+        - {index: 0, event: "cast:main:skill"}
+    516233:   # No More Chains
+      overrides:
+        - {index: 0, event: "cast:element5:skill"}
+    516241:   # Argent Mirage: needs the longsword form
+      add_hits:
+        ult: [{hit: 162400006, count: 7, offset: 1.0, interval: 0.1, tags: [glow], requires: [516229]}]
+    516242:   # Empyrean Starfall: needs the greatsword form
+      add_hits:
+        ult: [{hit: 162400007, count: 6, offset: 2.0, interval: 0.5, tags: [field], excludes: [516229]}]
+    516243:   # Guiding Star
+      overrides:
+        - {index: 0, event: cast:self:ult, duration: {ref: "Buff,LevelUp,16290003,Time,10K"}}
+      procs:
+        - {event: "timer:1", when: "while:status:starender", hit: 0, energy: {param: Param4}}

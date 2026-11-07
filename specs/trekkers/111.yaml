@@ -32,6 +32,7 @@ main:
 
     skill:                         # Frozen Path
       lock: 2.5                    # GUESS
+      cd_start: 2.5               # GUESS: the CD starts when the cast ends
       hits:
         - {hit: 111310001, offset: 0.6, tags: [frozen_path], triggers_mark: true, excludes: [511101]}
         # Solidifying: every 4th cast is a Wall of Frost (GUESS: about 5 auto hits per cast, 20 stacks)

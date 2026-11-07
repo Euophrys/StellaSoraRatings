@@ -20,14 +20,80 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
       - {effect: 12696511, event: "while:squad:2:3", target: team}
 
 main:
-  stub: true   # placeholder hits only: not timed in game, potentials not modelled
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (support role)
+
   actions:
-    skill:
+    auto:
+      duration: 3.4                # GUESS: 1 s per strike
       hits:
-        - {hit: 126310001, count: 1, tags: [skill]}   # stub: main-role kit not authored
-    ult:
+        - {hit: 126100001, offset: 0.4, tags: [bird]}
+        - {hit: 126100002, offset: 1.4, tags: [bird]}
+        - {hit: 126100003, offset: 2.4, tags: [bird]}
+
+    skill:                         # Hat Toss: every 0.5 s for 5 s (text)
+      lock: 1.0                    # GUESS
+      cd_start: 1.0               # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 126400001, count: 1, tags: [ult]}
+        - {hit: 126310001, count: 10, offset: 0.8, interval: 0.5, tags: [hat], applies_mark: true}
+
+    ult:                           # Undying Phoenix
+      lock: 4.533                  # user-timed in the support role
+      hits:
+        - {hit: 126400001, offset: 0.8, tags: [ult]}
+        - {hit: 126400002, count: 8, offset: 1.5, interval: 1.0, tags: [ult, egg], applies_mark: true}
+
+  buffs:
+    - {effect: 12693001, level: skill, event: "cast:self:skill", duration: 8, target: team}
+    - {name: flock, event: "cast:self:skill", duration: 8, requires: [512603]}
+    - {name: clone, event: "cast:self:skill", duration: 8, requires: [512604]}
+
+  potentials:
+    512601:   # Spiral Dance (pink): 2 hats, every 0.25 s for 5 s
+      add_hits:
+        skill: [{hit: 126501001, count: 40, offset: 0.9, interval: 0.125, tags: [hat2]}]
+    512602:   # Ending Song (pink): the second strike isn't modelled
+      overrides:
+        - {index: 0, hit_tags: []}
+    512603:   # Harmony Verse (pink): GUESS: 2 more birds per strike for 8 s
+      procs:
+        - {event: "hit:self:bird", when: "while:status:flock", hit: 126100004, count: 2, offset: 0.1, interval: 0.1, tags: [extra_bird]}
+    512604:   # Other Self (pink): a clone at 33%, for 8 s; Auto Attack DMG
+      procs:
+        - {event: "hit:self:bird", when: "while:status:clone", hit: 126100004, mult: 0.33, offset: 0.2, tags: [clone_bird]}
+    512605:   # Movement Artistry
+      overrides:
+        - {index: 0, hit_tags: [hat]}
+    512606:   # Perception of Psyche
+      overrides:
+        - {index: 0, event: "hit:self:hat"}
+    512607:   # Absurd Follies
+      overrides:
+        - {index: 0, hit_tags: [hat]}
+    512608:   # Emotional Catharsis
+      overrides:
+        - {index: 0, event: "hit:self:bird"}
+    512609:   # Hero's Halo
+      overrides:
+        - {index: 0, event: "hit:self:bird", target: team}
+    512610: {}   # Chekhov's Arm: the 50% Mark isn't modelled
+    512611:   # Rhythm Surge
+      overrides:
+        - {index: 1, event: "cast:self:skill"}
+    512612:   # Impromptu Performance: Movement SPD
+      overrides:
+        - {index: 0, drop: true}
+    512613:   # Home Court Dominance
+      overrides:
+        - {index: 0, event: "mark_applied:self"}
+    512641:   # Lethal Inferno
+      overrides:
+        - {index: 0, event: "hit:self:ult"}
+    512642:   # Weave of Annihilation
+      add_hits:
+        ult: [{hit: 126542001, offset: 9.6, tags: [ult], applies_mark: true}]
+    512643:   # Reincarnation of Fire: the shorter interval's size isn't in the data
+      add_hits:
+        ult: [{hit: 126543001, count: 7, offset: 1.7, interval: 1.0, tags: [ult]}]
 
 support:
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits

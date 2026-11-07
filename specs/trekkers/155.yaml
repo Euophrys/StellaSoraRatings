@@ -1,4 +1,4 @@
-# Shia (155) — Lux, Vanguard. Hits scale with ATK (data). Support kit only.
+# Shia (155) — Lux, Vanguard. Hits scale with ATK (data).
 # Schema: specs/README.md. Every guessed number is marked GUESS.
 #
 # User, frame-timed (2026-11-01, Bunny Torrent + Rabbit Flip; offsets below are seconds after the skill cast at 25,14):
@@ -133,5 +133,100 @@ support:
       note: "GUESS: other ults all unavailable half the time."
 
     515543:   # Wave to Oblivion: interval -30% (hits above) + ult Lux DMG
+      overrides:
+        - {index: 0, hit_tags: [ult]}
+
+main:
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (support role)
+  mark: {hit: 155000001}
+
+  actions:
+    auto:                          # the Rabbits, which deal her own Auto Attack DMG, not Minion DMG
+      duration: 4.4                # GUESS: 1 s per strike; bullet counts are a GUESS from the Energy cap per strike
+      hits:
+        - {hit: 155100001, count: 2, offset: 0.4, interval: 0.2, tags: [snow_auto]}
+        - {hit: 155100005, offset: 1.4, tags: [night_auto]}
+        - {hit: 155100003, count: 3, offset: 2.4, interval: 0.15, tags: [snow_auto]}
+        - {hit: 155100006, offset: 3.4, tags: [night_auto]}
+
+    skill:                         # Whirling Waves: 10 s; GUESS: each Snow Rabbit fires per second, the Night Rabbit per 2 s
+      lock: 1.0                    # GUESS
+      cd_start: 1.0               # GUESS: the CD starts when the cast ends
+      hits:
+        - {hit: 155310001, count: 20, offset: 0.8, interval: 0.5, tags: [snow_skill], triggers_mark: true}
+        - {hit: 155310002, count: 5, offset: 1.5, interval: 2.0, tags: [night], triggers_mark: true}
+        - {hit: 155310003, count: 5, offset: 1.7, interval: 2.0, tags: [night], triggers_mark: true}
+
+    ult:                           # Divine Deluge
+      lock: 6.5                    # GUESS: the last hit is at +5.9 (user-timed)
+      hits:
+        - {hit: 155400001, count: 28, offset: 1.0, interval: 0.18, tags: [ult], triggers_mark: true, excludes: [515543]}
+        - {hit: 155400001, count: 40, offset: 1.0, interval: 0.125, tags: [ult], triggers_mark: true, requires: [515543]}
+        - {hit: 0, offset: 5.9, tags: [ult_done]}
+
+  potentials:
+    515501:   # Phantom Step Radiance (pink)
+      procs:
+        - {event: "hit:self:snow_auto", every: 20, hit: 155310101, tags: [music]}
+    515502:   # Rimecrystal Edge (pink): a Snow Rabbit's entry; Electro Music from its Skill DMG
+      add_hits:
+        skill: [{hit: 155310201, offset: 0.5, tags: [snow_entry]}]
+      procs:
+        - {event: "hit:self:snow_skill", every: 20, hit: 155310101, tags: [music]}
+    515503:   # Moonlight Overflow (pink): GUESS: a bullet per string, on one target
+      add_hits:
+        auto: [{hit: 155310302, offset: 1.5, tags: [track]}]
+      overrides:
+        - {index: 0, hit_tags: [night_auto, night, track], event: "hit:self:track", duration: 10, max_stacks: 10}
+    515504:   # Astral Pirouette (pink): one target: a bullet per missile
+      procs:
+        - {event: "hit:self:night", every: 2, hit: 155310402, offset: 0.1, tags: [track]}
+      overrides:
+        - {index: 0, hit_tags: [night_auto, night, track], event: "hit:self:track", duration: 10, max_stacks: 10}
+    515505:   # Glacial Dash
+      overrides:
+        - {index: 0, hit_tags: [snow_auto]}
+    515506:   # Subzero Dominion: 1 more Snow Rabbit; while the skill is active
+      add_hits:
+        skill: [{hit: 155310001, count: 10, offset: 1.0, interval: 1.0, tags: [snow_skill], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [snow_auto, snow_skill], event: "cast:self:skill", duration: 10}
+        - {index: 1, drop: true}   # duplicate Lv1 row
+    515507:   # Rimeheart Pulse
+      overrides:
+        - {index: 0, hit_tags: [snow_auto, snow_skill], event: "mark:self", duration: 5, max_stacks: 6}
+        - {index: 1, drop: true}
+    515508:   # Final Crescent: one target, one stack, kept up by every hit
+      overrides:
+        - {index: 0, hit_tags: [night_auto], event: "hit:self:night_auto", duration: inf, max_stacks: 1}
+    515509:   # Lunar Detonation: splits to other targets
+      note: "Needs other targets."
+    515510:   # Lunar Combo: interval -40%: 3 more missiles
+      add_hits:
+        skill:
+          - {hit: 155310002, count: 3, offset: 2.5, interval: 3.0, tags: [night], triggers_mark: true}
+          - {hit: 155310003, count: 3, offset: 2.7, interval: 3.0, tags: [night], triggers_mark: true}
+      overrides:
+        - {index: 0, hit_tags: [night]}
+        - {index: 1, drop: true}
+    515511:   # Leporine Gale: she fights from range
+      overrides:
+        - {index: 0, drop: true}
+        - {index: 1, hit_tags: []}
+        - {index: 2, drop: true}
+    515512:   # Hare's Pursuit
+      overrides:
+        - {index: 0, event: "mark:self"}
+    515513:   # Rabbit's Beam: below 50% HP, half of the fight (GUESS)
+      overrides:
+        - {index: 0, hit_tags: [], event: unknown, uptime: 0.5, duration: inf, max_stacks: 1}
+        - {index: 1, drop: true}
+    515541:   # Howl to the Moon: crits as every 2nd hit (GUESS: 50% Crit Rate)
+      overrides:
+        - {index: 0, event: "hit:self:ult", every: 2}
+    515542:   # Silent Tide: GUESS: half of her ults
+      overrides:
+        - {index: 0, hit_tags: [ult], event: unknown, uptime: 0.5, duration: inf, max_stacks: 1}
+    515543:   # Wave to Oblivion: the faster bombs are in the hits above
       overrides:
         - {index: 0, hit_tags: [ult]}

@@ -193,12 +193,63 @@ main:
       note: "Kill bonus ignored (single boss)."
 
 support:
-  stub: true   # placeholder hits only: not timed in game, potentials not modelled
-  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hit is user-timed (main role)
+  on_field: {skill: 3.0, ult: 1.5}   # GUESS
+  mark: {hit: 103000001}             # text: Bullet Waltz can trigger Ignis Mark
   actions:
-    skill:
+    skill:                         # Bullet Waltz
       hits:
-        - {hit: 103320001, count: 1, offset: 0.3, tags: [skill]}   # stub: support kit not authored
+        - {hit: 103320001, offset: 0.8, tags: [waltz], triggers_mark: true}
     ult:
       hits:
-        - {hit: 103400001, count: 1, offset: 0.5, tags: [ult]}
+        - {hit: 103400001, offset: 0.5, tags: [ult], triggers_mark: true}
+        - {hit: 0, offset: 0.6, tags: [ult_done]}
+
+  potentials:
+    510321:   # Hunting Waltz (pink): GUESS: a hit per second for 6 s
+      add_hits:
+        skill: [{hit: 103521001, count: 6, offset: 1.0, interval: 1.0, tags: [waltz_shot]}]
+    510322:   # Scattering Waltz (pink): 2 Shadows every 2 s for 6 s, each every 0.25 s for 2.5 s
+      add_hits:
+        skill: [{hit: 103525001, count: 60, offset: 2.0, interval: 0.1, tags: [shadow]}]
+    510323:   # Echoing Waltz (pink): 20% chance of a second cast
+      procs:
+        - {event: "cast:self:skill", hit: 103320001, chance: 0.2, offset: 1.5, tags: [waltz], triggers_mark: true}
+    510324:   # Flame Waltz (pink)
+      add_hits:
+        skill: [{hit: 103524001, offset: 1.5, tags: [waltz_end]}]
+    510325:   # Nimble Catwalk
+      overrides:
+        - {index: 0, hit_tags: [waltz]}
+    510326:   # Crescendo Beat: every 4 s during a single hit: nothing
+      overrides:
+        - {index: 0, drop: true}
+    510327:   # Bullet Echoes
+      overrides:
+        - {index: 0, event: "cast:self:skill", icd: 14}
+    510328:   # Lingering Gunfire: 10 stacks, one lost per second
+      overrides:
+        - {index: 0, event: "cast:self:skill", max_stacks: 1, copies: [{duration: 1}, {duration: 2}, {duration: 3}, {duration: 4}, {duration: 5}, {duration: 6}, {duration: 7}, {duration: 8}, {duration: 9}, {duration: 10}]}
+    510329:   # Blazing Dance
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    510330:   # Sky Splitter
+      overrides:
+        - {index: 0, event: "damage:self&while:mark:2", icd: 2, reset_on: ["marker:self:ult_done"]}
+    510331: {}   # Trajectory Enhancement
+    510332: {}   # Pressure Amp
+    510333:   # Thermal Sync
+      overrides:
+        - {index: 0, event: always, target: "element:2"}
+    510341:   # Bursting Spark
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+    510342:   # Overloaded Spark
+      reset_cd: {ult: skill}
+      cd_when:
+        - {action: skill, scale: 0.5, when: "while:cast_within:self:ult:9.5"}
+      overrides:
+        - {index: 0, event: "while:cast_within:self:ult:9.5"}
+    510343:   # Soul-Hunting Spark
+      overrides:
+        - {index: 0, hit_tags: [], event: "hit:self:ult", duration: {ref: "BuffValue,NoLevel,10354311,Time,10K"}}

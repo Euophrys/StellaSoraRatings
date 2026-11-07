@@ -20,14 +20,97 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
       - {effect: 10796511, event: "while:squad:5:3", target: team}
 
 main:
-  stub: true   # placeholder hits only: not timed in game, potentials not modelled
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (support role)
+
   actions:
-    skill:
+    auto:
+      duration: 4.4                # GUESS: 1 s per strike
       hits:
-        - {hit: 107310001, count: 1, tags: [skill]}   # main-role kit not authored beyond a stub
-    ult:
+        - {hit: 107100001, offset: 0.4}
+        - {hit: 107100002, offset: 1.4}
+        - {hit: 107100003, offset: 2.4}
+        - {hit: 107100004, offset: 3.4}
+
+    skill:                         # Aegis Protection: a tap: the counter at once, no long hold (see the stance pinks)
+      lock: 1.5                    # GUESS
+      cd_start: 1.5               # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 107400001, count: 1, tags: [ult]}
+        - {hit: 107310001, offset: 1.0, tags: [counter], applies_mark: true}
+
+    ult:                           # Glorious Smite: the slam and an 8 s sphere
+      lock: 4.1                    # user-timed in the support role
+      hits:
+        - {hit: 107400001, offset: 0.6, tags: [ult]}
+        - {hit: 107400002, count: 8, offset: 1.0, interval: 1.0, tags: [sphere], applies_mark: true}
+
+  buffs:
+    - {effect: 10793005, level: skill, event: "hit:self:counter", target: team, duration: {ref: "Buff,LevelUp,10793014,Time,10K"}}
+
+  potentials:
+    510701:   # Shield Counter (pink): needs a block; GUESS: a boss hit lands in 1 of 4 casts
+      procs:
+        - {event: "cast:self:skill", hit: 107310002, chance: 0.25, offset: 1.1, tags: [block], applies_mark: true}
+      overrides:
+        - {index: 0, event: "hit:self:block", target: enemy}
+    510702:   # Perfect Triangle Formation (pink): defensive
+      note: "Defensive; no damage value."
+    510703:   # Unity of Offense and Defense (pink): held for the full 8 s, a hit every 0.25 s
+      add_actions:
+        stance:
+          followup: {after: skill}
+          lock: 6.5
+          skill_id: 10731000
+          hits:
+            - {hit: 107310301, count: 26, offset: 0.1, interval: 0.25, tags: [stance], requires: [510703]}
+            - {hit: 0, count: 6, offset: 1.0, interval: 1.0, tags: [stance_tick], requires: [510704]}
+      overrides:
+        - {index: 0, event: "hit:self:stance", target: enemy}
+    510704:   # Holy Domain (pink): held for the full 8 s, a stack per second
+      add_actions:
+        stance:
+          followup: {after: skill}
+          lock: 6.5
+          skill_id: 10731000
+          hits:
+            - {hit: 107310301, count: 26, offset: 0.1, interval: 0.25, tags: [stance], requires: [510703]}
+            - {hit: 0, count: 6, offset: 1.0, interval: 1.0, tags: [stance_tick], requires: [510704]}
+      overrides:
+        - {index: 0, event: "marker:self:stance_tick", target: enemy}
+    510705:   # Block Enhancement: Lux: 1 of 4 casts
+      overrides:
+        - {index: 0, event: "cast:self:skill", every: 4, target: team}
+    510706:   # Block Enhancement: ATK: 1 of 4 casts
+      procs:
+        - {event: "cast:self:skill", hit: 107310601, chance: 0.25, offset: 1.1, tags: [block_hit]}
+    510707:   # Bright Counter
+      overrides:
+        - {index: 0, event: "hit:self:auto_dmg", target: team}
+    510708:   # Aegis Blessing: 50% chance, as every 2nd
+      overrides:
+        - {index: 0, event: "hit:self:counter", every: 2, target: team}
+    510709:   # Strike Back: needs the full 8 s hold, which the kit doesn't do without a stance pink
+      overrides:
+        - {index: 0, event: "marker:self:stance_tick", every: 6, target: team}
+    510710:   # Unyielding Will: defensive
+      note: "Defensive; no damage value."
+    510711:   # Light Curtain
+      overrides:
+        - {index: 0, event: "mark_applied:self"}
+    510712:   # Wild Spirit
+      overrides:
+        - {index: 0, event: "damage:self", icd: 10, target: team}
+    510713:   # Revolt Call: DEF
+      overrides:
+        - {index: 0, drop: true}
+        - {index: 1, drop: true}
+    510741:   # Knight Oath: Skyfall
+      overrides:
+        - {index: 0, hit_tags: []}
+    510742:   # Knight Oath: Chalk Armor: a shield
+      note: "A shield: no damage value."
+    510743:   # Knight Oath: Courage
+      overrides:
+        - {index: 0, event: "cast:self:ult", target: team}
 
 support:
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits

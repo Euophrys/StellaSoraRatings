@@ -150,9 +150,64 @@ main:
         - {index: 0, event: "hit:self:ult_dmg"}
 
 support:
-  stub: true   # placeholder hits only: not timed in game, potentials not modelled
-  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (main role)
+  on_field: {skill: 3.0, ult: 2.1}   # GUESS
+  mark: {hit: 112100000, tags: [cyclone]}   # text: major auras and the ult can trigger Ventus Mark
+  procs:
+    - {event: "mark:self", hit: 112100000, count: 2, offset: 0.1, interval: 0.1, tags: [cyclone]}   # Cyclone x3 (text)
   actions:
-    skill:
+    skill:                         # Gale Storm: 4 minor auras, 1 major
       hits:
-        - {hit: 112320001, count: 1, offset: 0.3, tags: [skill]}   # stub: support kit not authored
+        - {hit: 112320001, count: 4, offset: 0.8, interval: 0.2, tags: [minor]}
+        - {hit: 112320002, offset: 1.8, tags: [major], triggers_mark: true}
+    ult:
+      hits:
+        - {hit: 112400001, offset: 0.733, tags: [rend], triggers_mark: true}
+        - {hit: 112400001, offset: 1.667, tags: [rend], triggers_mark: true}
+
+  potentials:
+    511221:   # Gallop: Flurry! (pink)
+      add_hits:
+        skill: [{hit: 112320002, offset: 2.1, tags: [major], triggers_mark: true}]
+    511222:   # Gallop: Squall! (pink)
+      add_hits:
+        skill: [{hit: 112320003, offset: 1.9, tags: [major], triggers_mark: true}]
+    511223:   # Gallop: Cyclone! (pink): 3 small auras per minor
+      add_hits:
+        skill: [{hit: 112320004, count: 12, offset: 0.9, interval: 0.1, tags: [split]}]
+    511224:   # Gallop: Gale! (pink)
+      add_hits:
+        skill: [{hit: 112320001, count: 4, offset: 0.9, interval: 0.2, tags: [minor]}]
+    511225:   # Corrosive Breeze
+      overrides:
+        - {index: 0, hit_tags: [major], event: "while:mark:4"}
+    511226:   # Wind Glaive
+      overrides:
+        - {index: 0, hit_tags: [major]}
+    511227:   # Leaf Barrier
+      overrides:
+        - {index: 0, hit_tags: [major]}
+    511228:   # Gathering Storm
+      mark_tags: [minor]
+      overrides:
+        - {index: 0, hit_tags: [minor]}
+    511229:   # Dancing Airflow
+      overrides:
+        - {index: 0, hit_tags: [minor, major]}
+    511230: {}   # Fierce Essence
+    511231:   # Cyclone Blades
+      overrides:
+        - {index: 0, event: "mark:self"}
+    511232:   # Rupture Circulation
+      overrides:
+        - {index: 0, hit_tags: [minor, major]}
+    511233:   # Charged Circulation: Energy for a squadmate isn't modelled
+      note: "Energy for a squadmate isn't modelled."
+    511241:   # Mist Banisher
+      note: "Kill-based energy; worth 0 vs a single boss."
+    511242:   # Space Splitter
+      overrides:
+        - {index: 0, event: "cast:self:ult", target: team}
+    511243:   # Choreographed Assault
+      overrides:
+        - {index: 0, event: "hit:self:ult_dmg"}

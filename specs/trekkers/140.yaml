@@ -38,8 +38,8 @@ main:
       lock: 10.0                   # text: 10 s in the mode
       cd_start: 10.0               # text: the cooldown starts when the transformation ends
       hits:
-        # Rapid Fire: x3 per burst; GUESS: a burst per second
-        - {hit: 140310003, count: 30, offset: 0.5, interval: 0.33, tags: [rapid], triggers_mark: true, excludes: [514003, 514004]}
+        # Rapid Fire: x3 per burst; GUESS: a burst per 1.5 s
+        - {hit: 140310003, count: 20, offset: 0.5, interval: 0.5, tags: [rapid], triggers_mark: true, excludes: [514003, 514004]}
         # Bunny Jaws: GUESS: a shell every 2 s
         - {hit: 140310002, count: 5, offset: 1.0, interval: 2.0, tags: [jaws], triggers_mark: true, requires: [514003]}
         - {hit: 140310002, count: 5, offset: 1.0, interval: 2.0, tags: [jaws], triggers_mark: true, requires: [514004], excludes: [514003]}
@@ -59,7 +59,7 @@ main:
   potentials:
     514001:   # Bunny-Ear Volley (pink): x7, every 3 s in Rapid Fire
       add_hits:
-        skill: [{hit: 140501001, count: 21, offset: 1.0, interval: 0.43, tags: [ear], triggers_mark: true}]
+        skill: [{hit: 140501001, count: 21, offset: 1.0, interval: 0.45, tags: [ear], triggers_mark: true}]
       overrides:
         - {index: 0, hit_tags: [ear], event: "while:squad:3:3"}
     514002:   # Click-Clack Echoes (pink): 20 hits to Crystallize, then the extra hit

@@ -34,6 +34,7 @@ main:
 
     skill:                         # Nightbloom
       lock: 1.5                    # GUESS
+      cd_start: 1.5               # GUESS: the CD starts when the cast ends
       hits:
         - {hit: 145300001, offset: 0.5, tags: [nightbloom], triggers_mark: true}
 

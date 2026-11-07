@@ -139,14 +139,23 @@ def test_a_dance_with_bullets_stacks_skill_dmg(gd):
 
 @pytest.mark.parametrize("cid,role,want", [
     (FL_NOYA, "main", "ok"), (TILIA, "support", "ok"),
-    (TILIA, "main", "stub"), (AMBER, "support", "stub"), (FL_NOYA, "support", "stub"),
-    (116, "main", "missing"), (155, "main", "missing"),
+    (TILIA, "main", "untimed"), (AMBER, "support", "untimed"), (FL_NOYA, "support", "untimed"),
+    (116, "main", "untimed"), (155, "main", "untimed"),
 ])
 def test_role_status(cid, role, want):
     assert role_status(SPECS / f"{cid}.yaml", role) == want
 
 
-def test_a_missing_role_is_a_readable_team_error(gd):
+@pytest.mark.parametrize("sec,want", [("stub: true", "stub"), ("untimed: true", "untimed"), ("actions: {}", "ok")])
+def test_role_status_flags(tmp_path, sec, want):
+    p = tmp_path / "1.yaml"
+    p.write_text(f"char_id: 1\nmain:\n  {sec}\n", encoding="utf-8")
+    assert role_status(p, "main") == want
+    assert role_status(p, "support") == "missing"
+
+
+def test_a_missing_role_is_a_readable_team_error(gd, tmp_path):
+    (tmp_path / "116.yaml").write_text("char_id: 116\nsupport:\n  actions: {}\n", encoding="utf-8")
     doc = {"members": [{"trekker": "Ridge", "role": "main"}]}
     with pytest.raises(TeamDocError, match="Ridge: no main kit"):
-        team_from_doc(gd, doc)
+        team_from_doc(gd, doc, specs=tmp_path)

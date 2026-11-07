@@ -33,6 +33,7 @@ main:
 
     skill:                         # Blooming Draught x7 (text)
       lock: 4.0                    # GUESS: she channels it
+      cd_start: 4.0               # GUESS: the CD starts when the cast ends
       hits:
         - {hit: 133310001, count: 7, offset: 0.6, interval: 0.5, tags: [pinwheel], triggers_mark: true}
         - {hit: 0, offset: 4.0, tags: [pinwheel_stops]}

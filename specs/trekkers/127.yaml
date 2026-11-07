@@ -26,14 +26,87 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
       - {effect: 12796511, event: "while:squad:1:3", target: team}
 
 main:
-  stub: true   # placeholder hits only: not timed in game, potentials not modelled
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (support role)
+
   actions:
-    skill:
+    auto:
+      duration: 4.4                # GUESS: 1 s per strike
       hits:
-        - {hit: 127310001, count: 1, tags: [skill]}   # stub: main-role kit not authored
-    ult:
+        - {hit: 127100001, offset: 0.4}
+        - {hit: 127100002, offset: 1.4}
+        - {hit: 127100003, offset: 2.4}
+        - {hit: 127100004, offset: 3.4}
+
+    skill:                         # Limpid Stream
+      lock: 2.0                    # GUESS
+      cd_start: 2.0               # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 127400001, count: 1, tags: [ult]}
+        - {hit: 127310001, offset: 0.5, tags: [limpid], applies_mark: true}
+        - {hit: 127310002, offset: 1.0, tags: [limpid], applies_mark: true}
+
+    ult:                           # Slicing Riptide
+      lock: 5.533                  # user-timed in the support role
+      hits:
+        - {hit: 127400001, offset: 2.467, tags: [teresa_ult], applies_mark: true}
+        - {hit: 127400002, offset: 2.567, tags: [teresa_ult], applies_mark: true}
+
+  buffs:
+    - {name: surging_shield, event: "cast:self:skill", duration: {ref: "Shield,LevelUp,12750001,Time,10K"}}
+    - {name: surging_shield, event: "cast:support:skill|cast:support:ult", duration: {ref: "Shield,LevelUp,12750001,Time,10K"}, requires: [512710]}
+
+  potentials:
+    512701:   # Stream: Cascade Strike (pink)
+      add_hits:
+        skill: [{hit: 127501001, offset: 1.2, tags: [wave], applies_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [limpid]}
+    512702:   # Stream: True Charged Strike (pink): the second phase, delayed 0.3 s for the debuff
+      add_hits:
+        skill:
+          - {hit: 127502001, count: 2, offset: 2.0, interval: 0.2, tags: [limpid2], applies_mark: true}
+          - {hit: 127502002, offset: 2.5, tags: [limpid2], applies_mark: true}
+          - {hit: 127502005, offset: 2.8, tags: [limpid2], applies_mark: true}
+      overrides:
+        - {index: 0, event: "hit:self:limpid2"}
+    512703:   # Stream: Cloud Ring (pink)
+      add_hits:
+        skill: [{hit: 127503001, offset: 1.2, tags: [cloud], applies_mark: true}]
+    512704:   # Stream: Drip's Overturn (pink): Energy for a squadmate isn't modelled
+      note: "Energy for a squadmate isn't modelled."
+    512705:   # Magic Sword Smack
+      overrides:
+        - {index: 0, event: "hit:self:skill_dmg", target: team}
+    512706:   # Muddy Engulf: one or the other value
+      overrides:
+        - {index: 0, event: "hit:self:skill_dmg&while:broken"}
+        - {index: 1, event: "hit:self:skill_dmg&while:not:broken"}
+    512707:   # Cordiality
+      overrides:
+        - {index: 0, event: "hit:self:skill_dmg", target: team}
+    512708:   # Guardsman Blessing
+      overrides:
+        - {index: 0, event: "cast:self:skill", target: team}
+    512709: {}   # Magic Sword Siphoning: the CD cut isn't modelled
+    512710:   # Restarting: the Shield status (buffs above)
+      note: "Shield from squadmates' casts."
+    512711:   # Magic Shield Enhancement
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    512712:   # Power Strike: bosses aren't stunned
+      note: "Bosses aren't stunned."
+    512713:   # Unbreakable Bond
+      overrides:
+        - {index: 0, max_stacks: 1, target: team, copies: [{event: "while:squad:1:1"}, {event: "while:squad:1:2"}, {event: "while:squad:1:3"}]}
+    512741:   # Wave Breaker
+      overrides:
+        - {index: 0, drop: true}
+        - {index: 1, event: "hit:self:teresa_ult"}
+    512742:   # Power Unbound
+      overrides:
+        - {index: 0, event: "cast:self:ult", target: team}
+    512743:   # Demonic Devour: she inflicts the Mark herself
+      overrides:
+        - {index: 0, hit_tags: [teresa_ult]}
 
 support:
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits

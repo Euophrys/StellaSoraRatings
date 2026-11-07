@@ -1,4 +1,4 @@
-# Cosette (142) — Umbra, Support. Hits scale with ATK (data). Support kit only.
+# Cosette (142) — Umbra, Support. Hits scale with ATK (data).
 # Schema: specs/README.md. Every guessed number is marked GUESS.
 #
 # User, frame-timed (2026-11-02, 30 fps; pinks Eclipse Imprint + Phantom Mark):
@@ -27,14 +27,85 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
       - {effect: 14296511, event: "while:squad:6:3", target: team}
 
 main:
-  stub: true   # placeholder hits only: not timed in game, potentials not modelled
+  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hit is user-timed (support role)
+
   actions:
-    skill:
+    auto:
+      duration: 5.4                # GUESS: 1 s per strike
       hits:
-        - {hit: 142300006, tags: [skill]}   # stub: main-role kit not authored
-    ult:
+        - {hit: 142100001, offset: 0.4}
+        - {hit: 142100002, offset: 1.4}
+        - {hit: 142100003, count: 2, offset: 2.4, interval: 0.2}
+        - {hit: 142100004, count: 2, offset: 3.4, interval: 0.2}
+        - {hit: 142100005, offset: 4.4}
+
+    skill:                         # Nocturn Hooks: x2 and x4 (text)
+      lock: 2.5                    # GUESS
+      cd_start: 2.5               # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 142400001, tags: [ult]}
+        - {hit: 142300001, count: 2, offset: 0.5, interval: 0.2, tags: [hook], applies_mark: true}
+        - {hit: 142300002, count: 4, offset: 1.0, interval: 0.2, tags: [hook, heavy], applies_mark: true}
+
+    ult:                           # Dark Apocalypse
+      lock: 4.2                    # user-timed in the support role
+      hits:
+        - {hit: 142400001, offset: 1.233, tags: [ult], applies_mark: true}
+
+  buffs:
+    - {effect: 14293001, level: skill, event: "hit:self:hook", duration: {ref: "Buff,LevelUp,14293011,Time,10K"}, target: enemy}
+
+  potentials:
+    514201:   # Nocturn Rip (pink)
+      overrides:
+        - {index: 0, event: "cast:self:skill", target: team}
+        - {index: 1, hit_tags: [heavy]}
+    514202:   # Nightscar Trace (pink): the squad's crits, 5 per cast (GUESS: 50% Crit Rate); the CD cut isn't modelled
+      procs:
+        - {event: "hit:main:any", hit: 142300004, chance: 0.5, icd: 2.4, tags: [claw], applies_mark: true}
+    514203:   # Netherworld Touch (pink): her autos' Mark isn't modelled
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+        - {index: 1, event: "cast:self:skill"}
+    514204:   # Nocturn Mark (pink)
+      procs:
+        - {event: "mark_applied:self", every: 3, icd: 1, hit: 142300005, tags: [claw_mark], applies_mark: true}
+      overrides:
+        - {index: 0, event: "hit:self:claw_mark"}
+    514205:   # Darkclaw Haunt
+      overrides:
+        - {index: 0, event: "hit:self:hook"}
+    514206:   # Darkclaw Mark: kills
+      overrides:
+        - {index: 0, drop: true}
+    514207:   # Darkclaw Etch
+      overrides:
+        - {index: 0, event: "cast:self:skill", target: team}
+    514208:   # Twilight Wish
+      overrides:
+        - {index: 0, event: "hit:self:auto_dmg", target: team}
+    514209:   # Nightshadow Invasion: DEF
+      overrides:
+        - {index: 0, drop: true}
+    514210:   # Nightshadow Veil: a shield
+      note: "A shield: no damage value."
+    514211:   # Shadowflash Enigma
+      overrides:
+        - {index: 0, event: "dodge:main", target: support}
+    514212:   # Shadowflash Companion
+      overrides:
+        - {index: 0, event: "dodge:main"}
+    514213:   # Starmark Nether
+      overrides:
+        - {index: 0, event: "mark:element6", target: team}
+    514241:   # Spectral Ignition: a boss stays at the center
+      overrides:
+        - {index: 0, hit_tags: [ult]}
+    514242:   # Nether Blaze
+      overrides:
+        - {index: 0, event: "hit:self:ult"}
+    514243:   # Tainted Scar: lowers the target's ATK
+      overrides:
+        - {index: 0, drop: true}
 
 support:
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits

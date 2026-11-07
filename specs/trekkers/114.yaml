@@ -42,6 +42,7 @@ main:
 
     skill:                         # Sniper Operation
       lock: 2.0                    # GUESS
+      cd_start: 2.0               # GUESS: the CD starts when the cast ends
       hits:
         - {hit: 114310001, offset: 0.6, tags: [ray], triggers_mark: true, excludes: [511401, 511402]}
         - {hit: 114310003, count: 2, offset: 0.8, interval: 0.2, tags: [bomb], triggers_mark: true, requires: [511401]}

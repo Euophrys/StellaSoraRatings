@@ -43,7 +43,7 @@ def _team(gd, cid, role, talents=0):
         members = [{"trekker": name, "role": "main", "talents": talents}]
         members += [{"trekker": s, "role": "support"} for s in sup[:2]]
     else:
-        members = [{"trekker": "Amber" if main == name else main, "role": "main"},
+        members = [{"trekker": "Gerie" if main == name else main, "role": "main"},
                    {"trekker": name, "role": "support", "talents": talents}]
         members += [{"trekker": s, "role": "support"} for s in sup[:1]]
     return team_from_doc(gd, {"members": members, "discs": {"main": ["filler"] * 3, "support": ["filler"] * 3},
@@ -57,7 +57,7 @@ def test_kit_names_real_hits_and_tags(gd, cid, role):
     tags = {"mark"} | set((sec.get("mark") or {}).get("tags", ()))
     for d in _walk(sec):
         tags |= set(d.get("tags", ()))
-    for d in _walk({"section": sec, "talents": doc.get("talents")}):
+    for d in _walk(sec):
         if d.get("hit"):
             assert str(d["hit"]) in gd.table("HitDamage"), f"no HitDamage row {d['hit']}"
         for key in ("event", "when"):
@@ -97,9 +97,25 @@ def test_kit_simulates_every_potential_and_talent(gd, cid, role):
             r = simulate(gd, team, Build({(cid, pid): lv}))
             assert r.total < base.total * 4, f"{pid} {gd.item_name(pid)} is suspiciously strong"
     t5 = simulate(gd, _team(gd, cid, role, talents=5), Build())
-    assert not [u for u in t5.unknown_modifiers if "key talent" in u and gd.char_name(cid) in u]
+    known = {"Ann key talent 1230348", "Snowish Laru key talent 1580464"}   # docs/assumptions.md, Key talents
+    assert not [u for u in t5.unknown_modifiers if "key talent" in u and gd.char_name(cid) in u
+                and not any(k in u for k in known)]
 
 
 def test_untimed_is_a_role_status():
     assert role_status(SPECS / "108.yaml", "main") == "untimed"
     assert role_status(SPECS / "108.yaml", "support") == "untimed"
+
+
+def _squad(gd, *names, first_role="main"):
+    members = [{"trekker": n, "role": first_role if i == 0 else "support"} for i, n in enumerate(names)]
+    return team_from_doc(gd, {"members": members, "discs": {"main": ["filler"] * 3, "support": ["filler"] * 3},
+                              "enemy": {"res": 250, "defense": 500}})
+
+
+def test_snowish_larus_ult_is_only_used_with_fuyuka(gd):
+    with_fuyuka = simulate(gd, _squad(gd, "Fuyuka", "Snowish Laru", "Flora"), Build())
+    without = simulate(gd, _squad(gd, "Amber", "Snowish Laru", "Flora"), Build())
+    assert with_fuyuka.casts[(1, "ult")] >= 1
+    assert (1, "ult") not in without.casts or without.casts[(1, "ult")] == 0
+

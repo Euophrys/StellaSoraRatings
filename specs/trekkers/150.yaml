@@ -36,6 +36,7 @@ main:
 
     skill:                         # Thunderflare Strike: a sweep, then the laser
       lock: 2.5                    # GUESS
+      cd_start: 2.5               # GUESS: the CD starts when the cast ends
       hits:
         - {hit: 150310001, offset: 0.5, tags: [sweep], triggers_mark: true}
         - {hit: 150310002, offset: 1.5, tags: [laser], triggers_mark: true}

@@ -45,6 +45,7 @@ main:
 
     skill:                         # Sweeping Rush x3 and x3 (text)
       lock: 2.5                    # GUESS
+      cd_start: 2.5               # GUESS: the CD starts when the cast ends
       hits:
         - {hit: 139310001, count: 3, offset: 0.5, interval: 0.2, tags: [rush], triggers_mark: true}
         - {hit: 139310002, count: 3, offset: 1.1, interval: 0.2, tags: [rush], triggers_mark: true}

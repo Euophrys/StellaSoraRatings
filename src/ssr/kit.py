@@ -168,6 +168,7 @@ class Kit:
     minions: dict[str, MinionSpec] = field(default_factory=dict)
     procs: list[HitSpec] = field(default_factory=list)   # base-kit procs (e.g. a DoT after each Mark trigger)
     wait_on_field: bool = False   # support: no new cast while still on the field (an ult would cancel the skill)
+    ult_only_with: tuple[int, ...] = ()   # the ult is only used in a squad with one of these Trekkers (char ids)
 
 
 @dataclass
@@ -318,6 +319,7 @@ def load_kit(gd: GameData, path: Path, role: str) -> Kit:
         minions={k: _minion(k, v) for k, v in (sec.get("minions") or {}).items()},
         procs=[_hitspec(p) for p in sec.get("procs", [])],
         wait_on_field=bool(sec.get("wait_on_field", False)),
+        ult_only_with=tuple(int(x) for x in sec.get("ult_only_with", ())),
     )
 
 

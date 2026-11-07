@@ -280,6 +280,9 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         for a in actions.values():
             a.hits = [h for h in a.hits if keep(h)]
 
+        if kit.ult_only_with and not set(kit.ult_only_with) & {x.char_id for x in team.members}:
+            actions.pop("ult", None)
+
         m = _Member(
             idx=i, cfg=mc, kit=kit, actions=actions, skill_levels=levels, pot_levels=pot_levels,
             mark_tags={t for rp in resolved for t in rp.mark_tags},

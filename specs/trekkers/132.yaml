@@ -37,6 +37,7 @@ main:
 
     skill:                         # Syou: Pulsar Streak, then Two Base Hit: every 0.3 s for 3 s and a smash (text)
       lock: 5.0                    # GUESS
+      cd_start: 5.0               # GUESS: the CD starts when the cast ends
       hits:
         - {hit: 132310001, offset: 0.5, tags: [syou], triggers_mark: true}
         - {hit: 132310004, count: 10, offset: 1.0, interval: 0.3, tags: [two_base], triggers_mark: true}
