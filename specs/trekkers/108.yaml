@@ -1,0 +1,174 @@
+# Kasimira (108) — Ignis Versatile. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Pellets per volley aren't in the data:
+# 10 is a GUESS sized so her ult is in line with other ults for its Energy.
+char_id: 108
+
+talents:
+  1080116:   # Joint Attack Command (T1): 10% chance per Ult DMG hit, as every 10th
+    buffs:
+      - {effect: 10896111, event: "hit:self:ult_dmg", every: 10, target: team, duration: {ref: "BuffValue,NoLevel,10896111,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,10896111,LaminatedNum,Fixed"}}
+  1080232:   # Scarlet Gunfire (T2): vs targets with her Ignis Mark
+    buffs:
+      - {attribute: 10896211, event: "while:mark:2"}
+  1080348:   # Blazing Ambition (T3): 20% chance per hit, as every 5th
+    buffs:
+      - {effect: 10896311, event: "damage:self", every: 5, target: team, duration: {ref: "BuffValue,NoLevel,10896311,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,10896311,LaminatedNum,Fixed"}}
+  1080464:   # Charred Lethality (T4)
+    buffs:
+      - {effect: 10896411, event: "hit:self:skill_dmg", icd: 15, duration: {ref: "BuffValue,NoLevel,10896411,Time,10K"}}
+  1080580:   # Rising Aspiration (T5): until her own ult has landed
+    buffs:
+      - {effect: 10896511, event: "cast:support:ult", reset_on: ["marker:self:ult_done"]}
+
+main:
+  untimed: true
+  mark: {hit: 108000001, tags: [incineration]}
+
+  actions:
+    auto:
+      duration: 1.5                # GUESS: one volley + reload (magazine 1)
+      hits:
+        - {hit: 108100001, count: 10, offset: 0.5, interval: 0, tags: [pellet]}   # GUESS: 10 pellets
+
+    skill:                         # Banishing Barrage: loads a shell, fired as the next shot; 3 stored uses (data)
+      lock: 1.5                    # GUESS
+      hits:
+        - {hit: 108110001, count: 10, offset: 1.0, interval: 0, tags: [shell], triggers_mark: true}
+
+    ult:                           # Sweeping Blast: 6 rounds and a final salvo (text)
+      lock: 6.0                    # GUESS
+      hits:
+        - {hit: 108400001, count: 10, offset: 1.0, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 10, offset: 1.6, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 10, offset: 2.2, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 10, offset: 2.8, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 10, offset: 3.4, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 10, offset: 4.0, interval: 0, tags: [round]}
+        - {hit: 108400002, count: 10, offset: 5.0, interval: 0, tags: [finale]}
+        - {hit: 0, offset: 5.1, tags: [ult_done]}
+
+  potentials:
+    510801:   # Scatter Trigger (pink): the shot also deals the extra hit
+      add_hits:
+        skill: [{hit: 108501001, offset: 1.0, tags: [scatter, shell]}]
+      note: "The extra pellets aren't in the data: not modelled."
+    510802:   # Incendiary Warhead (pink): burn, 1/s for 10 s, the row is the total
+      procs:
+        - {event: "cast:self:skill", hit: 108502001, count: 10, offset: 2.0, interval: 1.0, mult: 0.1, restart: true, tags: [burn]}
+    510803:   # Charged Bolt Action (pink): 5 uses; 15% chance of a second shell
+      add_charges: {skill: 2}
+      procs:
+        - {event: "cast:self:skill", hit: 108110001, count: 10, chance: 0.15, offset: 1.0, interval: 0, tags: [shell]}
+    510804:   # Lucky Magazine (pink): 25% of shells cost nothing
+      cd_scale: {skill: 0.75}
+      note: "Expected value: a shell every 75% of the cooldown."
+    510805:   # Mercenary Instinct
+      overrides:
+        - {index: 0, hit_tags: [shell]}
+    510806:   # Incendiary Ember: the next shot; the 4 s limit is shorter than the 5 s CD
+      overrides:
+        - {index: 0, hit_tags: [shell]}
+    510807:   # Ammo Overload: 10 crits, as every 20 hits (GUESS: 50% Crit Rate)
+      overrides:
+        - {index: 0, event: "damage:self", every: 20}
+    510808:   # Instant Combustion: one stack per shell (GUESS: not per pellet)
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    510809:   # Battle Trumpet
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    510810:   # Opportunistic Ambush: -1 s per 6 shells isn't modelled (about 3% more shells)
+      overrides:
+        - {index: 0, hit_tags: [shell]}
+    510811:   # Prime Condition: HP stays above 80%
+      overrides:
+        - {index: 0, hit_tags: []}
+    510812:   # Gunfighting: close-by enemies, half of the time (GUESS)
+      overrides:
+        - {index: 0, hit_tags: [], event: unknown, uptime: 0.5, duration: inf, max_stacks: 1}
+    510813:   # Play with Fire: the ult can trigger Marks
+      mark_tags: [round, finale]
+      overrides:
+        - {index: 0, event: "mark:self"}
+    510841:   # Army Breaker
+      overrides:
+        - {index: 0, event: "hit:self:round|hit:self:finale"}
+    510842:   # Finale Sweep
+      overrides:
+        - {index: 0, hit_tags: [finale]}
+    510843:   # Blazing Sweep: kills
+      overrides:
+        - {index: 0, drop: true}
+
+support:
+  untimed: true
+  on_field: {skill: 3.0, ult: 6.0}   # GUESS
+  actions:
+    skill:                         # Precision Strike: 3 bombs (text)
+      hits:
+        - {hit: 108320001, count: 3, offset: 1.0, interval: 0.5, tags: [bomb], applies_mark: true}
+    ult:
+      hits:
+        - {hit: 108400001, count: 10, offset: 1.0, interval: 0, tags: [round], excludes: [510831]}
+        - {hit: 108400001, count: 10, offset: 1.0, interval: 0, tags: [round], applies_mark: true, requires: [510831]}
+        - {hit: 108400001, count: 10, offset: 1.6, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 10, offset: 2.2, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 10, offset: 2.8, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 10, offset: 3.4, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 10, offset: 4.0, interval: 0, tags: [round]}
+        - {hit: 108400002, count: 10, offset: 5.0, interval: 0, tags: [finale]}
+        - {hit: 0, offset: 5.1, tags: [ult_done]}
+
+  potentials:
+    510821:   # Heated Battle (pink): crater, every 0.5 s for 8 s
+      add_hits:
+        skill: [{hit: 108521001, count: 16, offset: 2.5, interval: 0.5, tags: [crater], applies_mark: true}]
+    510822:   # Area Bombardment (pink): 5 rounds
+      add_hits:
+        skill: [{hit: 108320001, count: 2, offset: 2.5, interval: 0.5, tags: [bomb], applies_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: []}
+    510823:   # Preemptive Strike (pink): bosses aren't stunned
+      overrides:
+        - {index: 0, hit_tags: []}
+    510824:   # Precision Guidance (pink)
+      overrides:
+        - {index: 0, hit_tags: []}
+    510825:   # Chain Reaction: kills
+      note: "Needs a kill: nothing against a single boss."
+    510826:   # Shocking Bombardment
+      overrides:
+        - {index: 0, drop: true}
+        - {index: 1, event: "hit:self:bomb"}
+    510827:   # Weakness Mark: "for 10 s" when cast, against a broken target
+      overrides:
+        - {index: 0, hit_tags: [], event: "cast:self:skill&while:broken", duration: 10, target: team}
+    510828:   # Surprise Gift: 30% cooldown reset
+      cd_scale: {skill: 0.7}
+      overrides:
+        - {index: 0, hit_tags: []}
+      note: "Expected value of the reset."
+    510829:   # Lucky Blast: 30% chance of a second round
+      procs:
+        - {event: "cast:self:skill", hit: 108320001, count: 3, chance: 0.3, offset: 2.5, interval: 0.5, tags: [bomb], applies_mark: true}
+      overrides:
+        - {index: 0, hit_tags: []}
+    510830:   # Insult to Injury
+      overrides:
+        - {index: 0, hit_tags: [bomb], event: "while:broken"}
+    510831:   # Gradual Heat-Up: the ult inflicts a Mark (hits above)
+      overrides:
+        - {index: 0, hit_tags: []}
+    510832: {}   # Perfect Ambience
+    510833:   # Meltdown Threshold
+      overrides:
+        - {index: 0, hit_tags: [], target: "element:2"}
+    510841:
+      overrides:
+        - {index: 0, event: "hit:self:round|hit:self:finale"}
+    510842:
+      overrides:
+        - {index: 0, hit_tags: [finale]}
+    510843:
+      overrides:
+        - {index: 0, drop: true}

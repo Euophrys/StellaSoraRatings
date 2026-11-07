@@ -1,0 +1,168 @@
+# Iris (111) — Aqua Versatile. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits".
+char_id: 111
+
+talents:
+  1110116:   # Ultimate Optimization Plan (T1): for the 5 s domain
+    buffs:
+      - {effect: 11196111, event: "cast:self:ult", duration: 5, target: team}
+  1110232:   # Premium Service (T2)
+    buffs:
+      - {attribute: 11196211, event: "while:mark:1"}
+  1110348:   # Power of Knowledge (T3): 20% chance per hit, as every 5th
+    buffs:
+      - {effect: 11196311, event: "hit:self:skill_dmg", every: 5, target: team, duration: {ref: "BuffValue,NoLevel,11196311,Time,10K"}}
+  1110464:   # Veteran's Tips (T4)
+    buffs:
+      - {effect: 11196411, event: "mark:element1", duration: {ref: "BuffValue,NoLevel,11196411,Time,10K"}}
+  1110580:   # Enlightened Advice (T5): normal and elite targets only
+    buffs: []
+
+main:
+  untimed: true
+  mark: {hit: 111000001}
+
+  actions:
+    auto:                          # 3 strikes (S3 x3); the school bag only hits up close
+      duration: 3.4                # GUESS: 1 s per strike
+      hits:
+        - {hit: 111100001, offset: 0.4, tags: [frost]}
+        - {hit: 111100002, offset: 1.4, tags: [frost]}
+        - {hit: 111100003, count: 3, offset: 2.4, interval: 0.2, tags: [frost, s3]}
+
+    skill:                         # Frozen Path
+      lock: 2.5                    # GUESS
+      hits:
+        - {hit: 111310001, offset: 0.6, tags: [frozen_path], triggers_mark: true, excludes: [511101]}
+        # Solidifying: every 4th cast is a Wall of Frost (GUESS: about 5 auto hits per cast, 20 stacks)
+        - {hit: 111310001, offset: 0.6, tags: [frozen_path], triggers_mark: true, requires: [511101], cycle: [4, 1]}
+        - {hit: 111310001, offset: 0.6, tags: [frozen_path], triggers_mark: true, requires: [511101], cycle: [4, 2]}
+        - {hit: 111310001, offset: 0.6, tags: [frozen_path], triggers_mark: true, requires: [511101], cycle: [4, 3]}
+        - {hit: 111501001, offset: 0.6, tags: [wall], triggers_mark: true, requires: [511101], cycle: [4, 4]}
+        - {hit: 0, offset: 0.7, tags: [skill_done]}
+
+    ult:                           # Arctic Vortex: every 0.3 s for 5 s (text)
+      lock: 6.0                    # GUESS
+      hits:
+        - {hit: 111400001, count: 17, offset: 1.0, interval: 0.3, tags: [vortex]}
+
+  buffs:
+    - {name: chill, event: "mark:self", target: enemy, duration: {ref: "BuffValue,NoLevel,4021,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,4021,LaminatedNum,Fixed"}}
+
+  potentials:
+    511101:   # Vector: Solidifying (pink)
+      overrides:
+        - {index: 0, event: "hit:self:auto_dmg", reset_on: ["marker:self:skill_done"]}
+    511102:   # Vector: Shatter (pink): GUESS: the 12 s limit covers both hits
+      procs:
+        - {event: "hit:self:frozen_path", hit: 111502001, icd: 12, tags: [shatter]}
+        - {event: "hit:self:wall", hit: 111502002, icd: 12, tags: [shatter]}
+    511103:   # Vector: Entice (pink): 50% Frostflare; GUESS: 10 arrows in its 5 s
+      procs:
+        - {event: "cast:self:skill", hit: 111503001, chance: 0.5, count: 10, offset: 1.0, interval: 0.5, tags: [frostflare]}
+    511104:   # Vector: Chainfall (pink)
+      procs:
+        - {event: "mark:self", hit: 111504001, count: 4, offset: 0.5, interval: 0.5, tags: [chainfall]}
+    511105:   # Oops I Did It Again
+      overrides:
+        - {index: 0, hit_tags: [frost]}
+    511106:   # Windfall: S3 arrows doubled
+      add_hits:
+        auto: [{hit: 111100003, count: 3, offset: 2.5, interval: 0.2, tags: [frost, s3]}]
+      overrides:
+        - {index: 0, hit_tags: [s3]}
+    511107:   # Situational Judgment
+      overrides:
+        - {index: 0, event: "timer:12", reset_on: ["marker:self:skill_done"]}
+    511108:   # Secondary Frostbite: on a crit; GUESS: 50% Crit Rate
+      procs:
+        - {event: "hit:self:frozen_path|hit:self:wall", hit: 111508001, chance: 0.5, tags: [frostbite]}
+    511109:   # Precise Settlement: GUESS: 1 s covers the arrow
+      overrides:
+        - {index: 0, event: "cast:self:skill", duration: 1.0}
+    511110:   # Cold Snap: bosses can't be Frozen
+      overrides:
+        - {index: 0, drop: true}
+    511111:   # Keep Strangers at Bay: every time she's hit (hit_taken_interval), though it needs a melee strike
+      procs:
+        - {event: "hit_taken:main", hit: 111511001, icd: {param: Param3}, tags: [strangers]}
+    511112:   # Lady Essence: the school bag only swings up close and isn't in the string
+      overrides:
+        - {index: 0, drop: true}
+    511113:   # Turbulent Layers
+      mark_tags: [vortex]
+      overrides:
+        - {index: 0, event: "mark:self"}
+    511141:   # Icicle Rain: per second
+      add_hits:
+        ult: [{hit: 111541001, count: 5, offset: 1.5, interval: 1.0, tags: [icicle]}]
+    511142:   # Gleaming Snow: kills
+      overrides:
+        - {index: 0, drop: true}
+    511143:   # Frozen Shield: while in the domain
+      overrides:
+        - {index: 0, event: "cast:self:ult", duration: 6.0, target: team}
+
+support:
+  untimed: true
+  on_field: {skill: 3.0, ult: 6.0}   # GUESS
+  actions:
+    skill:                         # Iceberg Surge: every 0.5 s for 4 s (text)
+      hits:
+        - {hit: 111320001, count: 8, offset: 1.0, interval: 0.5, tags: [array], applies_mark: true}
+    ult:
+      hits:
+        - {hit: 111400001, count: 17, offset: 1.0, interval: 0.3, tags: [vortex], excludes: [511132]}
+        - {hit: 111400001, offset: 1.0, tags: [vortex], applies_mark: true, requires: [511132]}
+        - {hit: 111400001, count: 16, offset: 1.3, interval: 0.3, tags: [vortex], requires: [511132]}
+
+  potentials:
+    511121:   # Blizzard: Spread (pink)
+      overrides:
+        - {index: 0, hit_tags: [array]}
+    511122:   # Blizzard: Vortex (pink)
+      overrides:
+        - {index: 0, hit_tags: [array]}
+    511123:   # Blizzard: Stack (pink): when created
+      add_hits:
+        skill: [{hit: 111523001, offset: 0.8, tags: [array_burst], applies_mark: true}]
+    511124:   # Blizzard: Impact (pink): when it vanishes
+      add_hits:
+        skill: [{hit: 111524001, offset: 5.0, tags: [array_burst], applies_mark: true}]
+    511125:   # Raging Blizzard: interval -50%
+      add_hits:
+        skill: [{hit: 111320001, count: 8, offset: 1.25, interval: 0.5, tags: [array], applies_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [array]}
+    511126:   # Prolonged Winter: 6 s
+      add_hits:
+        skill: [{hit: 111320001, count: 4, offset: 5.0, interval: 0.5, tags: [array], applies_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [array]}
+    511127:   # Forced Liquidation: needs Chill, from the main's Mark triggers
+      overrides:
+        - {index: 0, event: "hit:self:array&while:status:chill", target: main}
+    511128:   # Bundle Sale: fewer than 3 targets holds
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    511129:   # Distressed Asset: kills
+      note: "Needs a kill: nothing against a single boss."
+    511130:   # Sneaky Fisher: while the array is up (4 s + the cast), the main in range
+      overrides:
+        - {index: 0, event: "cast:self:skill", duration: 5.0, target: team, minions: true}
+    511131: {}   # Functional Amp
+    511132:   # Torrential Irrigation: the ult inflicts a Mark (hits above)
+      overrides:
+        - {index: 0, event: always}
+    511133:   # Positive Signal: first cast only
+      overrides:
+        - {index: 0, event: "cast:self:skill&once", target: team}
+    511141:
+      add_hits:
+        ult: [{hit: 111541001, count: 5, offset: 1.5, interval: 1.0, tags: [icicle]}]
+    511142:
+      overrides:
+        - {index: 0, drop: true}
+    511143:
+      overrides:
+        - {index: 0, event: "cast:self:ult", duration: 6.0, target: team}

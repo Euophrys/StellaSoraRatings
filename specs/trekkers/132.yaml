@@ -1,0 +1,186 @@
+# Minova (132) — Lux Versatile. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". The Ashwind Clan members deal Ultimate DMG, not
+# Minion DMG: modelled as ult hits.
+char_id: 132
+
+talents:
+  1320116:   # Starry Night (T1)
+    buffs:
+      - {effect: 13296111, event: "mark:element5", target: enemy, duration: {ref: "BuffValue,NoLevel,13296111,Time,10K"}}
+  1320232:   # Where Wind Starts (T2)
+    buffs:
+      - {effect: 13296211, event: "cast:self:ult", duration: {ref: "BuffValue,NoLevel,13296211,Time,10K"}}
+  1320348:   # Forsaken Memories (T3)
+    buffs:
+      - {effect: 13296311, event: "hit:self:ult_dmg", target: enemy, duration: {ref: "BuffValue,NoLevel,13296311,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,13296311,LaminatedNum,Fixed"}}
+  1320464:   # Imperishable Belief (T4)
+    buffs:
+      - {effect: 13296411, event: "cast:any:skill", duration: {ref: "BuffValue,NoLevel,13296411,Time,10K"}}
+  1320580:   # Books, Skateboard and the Clan (T5)
+    buffs:
+      - {attribute: 13296511, event: always}
+
+main:
+  untimed: true
+  mark: {hit: 132000001}
+
+  actions:
+    auto:
+      duration: 5.4                # GUESS: 1 s per strike
+      hits:
+        - {hit: 132100001, offset: 0.4}
+        - {hit: 132100002, offset: 1.4}
+        - {hit: 132100003, offset: 2.4}
+        - {hit: 132100004, offset: 3.4}
+        - {hit: 132100005, count: 6, offset: 3.6, interval: 0.1}
+        - {hit: 132100006, offset: 4.6, tags: [s5]}
+
+    skill:                         # Syou: Pulsar Streak, then Two Base Hit: every 0.3 s for 3 s and a smash (text)
+      lock: 5.0                    # GUESS
+      hits:
+        - {hit: 132310001, offset: 0.5, tags: [syou], triggers_mark: true}
+        - {hit: 132310004, count: 10, offset: 1.0, interval: 0.3, tags: [two_base], triggers_mark: true}
+        - {hit: 132310005, offset: 4.2, tags: [two_base], triggers_mark: true}
+        - {hit: 0, offset: 5.5, tags: [skill_done]}
+
+    ult:                           # Ketsu: every 0.3 s for 5 s (text)
+      lock: 3.0                    # GUESS: the clan attacks, she carries on
+      hits:
+        - {hit: 132400001, count: 17, offset: 1.0, interval: 0.3, tags: [ketsu]}
+
+  potentials:
+    513201:   # Ultimatum (pink): Three Base Hit x2 and a big hit
+      add_hits:
+        skill:
+          - {hit: 132310101, count: 2, offset: 4.7, interval: 0.3, tags: [three], triggers_mark: true}
+          - {hit: 132310102, offset: 5.3, tags: [three], triggers_mark: true}
+    513202:   # Clan Clash Artistry (pink): the Two Base Hit part isn't modelled (needs a Mark first)
+      add_hits:
+        skill: [{hit: 132310204, offset: 5.4, tags: [three], requires: [513201]}]
+      overrides:
+        - {index: 0, hit_tags: [three]}
+    513203:   # Board Tricks (pink)
+      overrides:
+        - {index: 0, event: "mark:element5"}
+        - {index: 1, hit_tags: [syou]}
+    513204:   # No Respite (pink): 3 extra hits, one per combo hit
+      add_hits:
+        skill: [{hit: 132310401, count: 3, offset: 1.0, interval: 0.3, tags: [two_base]}]
+      overrides:
+        - {index: 0, hit_tags: [two_base]}
+    513205:   # Ashwind Rhythm
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+        - {index: 1, event: "cast:self:skill"}
+    513206:   # Unyielding Strength
+      overrides:
+        - {index: 0, hit_tags: [syou, two_base, three], event: "hit:self:auto_dmg", reset_on: ["marker:self:skill_done"]}
+    513207:   # On a Roll
+      overrides:
+        - {index: 0, hit_tags: [syou, two_base, three], event: "hit:self:syou|hit:self:two_base", reset_on: ["cast:self:skill"]}
+    513208:   # Radiant Glow
+      procs:
+        - {event: "hit:self:syou", hit: 132310801, tags: [glow]}
+    513209:   # Light Burn
+      cd_reduce: {action: skill, seconds: 4}
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    513210:   # Nebulous Reverb
+      mark_tags: [ketsu]
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+    513211:   # More Than Just Pretty
+      overrides:
+        - {index: 0, event: "hit:self:s5"}
+    513212:   # Home Court Advantage
+      overrides:
+        - {index: 0, event: "cast:self:skill", icd: 8}
+    513213:   # Starlit Sky
+      overrides:
+        - {index: 0, event: "cast:support:skill"}
+    513241:   # Urgent Reinforcement
+      ult_cost_scale: 1.25
+      overrides:
+        - {index: 0, hit_tags: []}
+    513242:   # Flash of Starlight: interval -30%
+      add_hits:
+        ult: [{hit: 132400001, count: 7, offset: 1.15, interval: 0.7, tags: [ketsu]}]
+      overrides:
+        - {index: 0, hit_tags: [ketsu]}
+    513243:   # Weakness Strike
+      add_hits:
+        ult:
+          - {hit: 132400002, count: 2, offset: 2.0, interval: 0.5, tags: [ketsu]}
+          - {hit: 132400003, offset: 3.0, tags: [ketsu]}
+
+support:
+  untimed: true
+  on_field: {skill: 3.0, ult: 3.0}   # GUESS
+  actions:
+    skill:                         # Gi: Supernova Burst: 2 Astral Hex, one every 3 s (GUESS: each one explodes and goes)
+      hits:
+        - {hit: 132320001, offset: 0.8, tags: [gi]}
+        - {hit: 132320002, count: 2, offset: 3.8, interval: 3.0, tags: [hex], applies_mark: true}
+    ult:
+      hits:
+        - {hit: 132400001, count: 17, offset: 1.0, interval: 0.3, tags: [ketsu], excludes: [513231]}
+        - {hit: 132400001, count: 17, offset: 1.0, interval: 0.3, tags: [ketsu], applies_mark: true, requires: [513231]}
+        - {hit: 0, offset: 6.2, tags: [ult_done]}
+
+  buffs:
+    - {name: astral_hex, event: "cast:self:skill", duration: 6.8, excludes: [513221]}
+    - {name: astral_hex, event: "cast:self:skill", duration: 12.8, requires: [513221]}
+
+  potentials:
+    513221:   # Four-Star Wanted Level (pink): 4 stacks
+      add_hits:
+        skill: [{hit: 132320002, count: 2, offset: 9.8, interval: 3.0, tags: [hex], applies_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [gi, hex]}
+    513222:   # Radiant Burst (pink)
+      overrides:
+        - {index: 0, hit_tags: [hex]}
+    513223:   # Oath Satellite (pink): a shield
+      note: "A shield: no damage value."
+    513224:   # Star Core Crumbled (pink): the main picks up the Meteor; the extra stack isn't modelled
+      overrides:
+        - {index: 0, event: "hit:self:hex", target: main}
+    513225:   # Optimal Hit Zone: one stack counted
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:astral_hex"}
+    513226:   # Shutout Desire
+      procs:
+        - {event: "hit:main:any", when: "while:status:astral_hex", hit: 132526001, icd: 1.0, tags: [shutout]}
+    513227:   # Final Score: one target, one stack
+      overrides:
+        - {index: 0, hit_tags: [hex]}
+    513228:   # Perfect Arc: x4; the extra Astral Hex isn't modelled
+      add_hits:
+        skill: [{hit: 132528001, count: 4, offset: 1.0, interval: 0.2, tags: [gi]}]
+    513229:   # Three Base Hit: needs 3 targets
+      overrides:
+        - {index: 0, drop: true}
+    513230:   # Fervent Applause: the main stays in range
+      overrides:
+        - {index: 0, event: "hit:self:hex", target: main}
+    513231:   # Ashwind's Wrath
+      overrides:
+        - {index: 0, event: "cast:self:skill", reset_on: ["marker:self:ult_done"]}
+    513232: {}   # Home Run State
+    513233:   # Radiant Synergy: per Lux Trekker
+      overrides:
+        - {index: 0, max_stacks: 1, target: team, copies: [{event: "while:squad:5:1"}, {event: "while:squad:5:2"}, {event: "while:squad:5:3"}]}
+    513241:
+      ult_cost_scale: 1.25
+      overrides:
+        - {index: 0, hit_tags: []}
+    513242:
+      add_hits:
+        ult: [{hit: 132400001, count: 7, offset: 1.15, interval: 0.7, tags: [ketsu]}]
+      overrides:
+        - {index: 0, hit_tags: [ketsu]}
+    513243:
+      add_hits:
+        ult:
+          - {hit: 132400002, count: 2, offset: 2.0, interval: 0.5, tags: [ketsu]}
+          - {hit: 132400003, offset: 3.0, tags: [ketsu]}

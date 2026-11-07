@@ -116,6 +116,7 @@ class PotentialSpec:
     cd_scale: dict[str, float] = field(default_factory=dict)    # {action: x} cooldown multiplied by x
     cd_when: list[dict] = field(default_factory=list)   # [{action, scale, when}]: a cooldown starting while `when` holds is scaled
     minion_rules: dict[str, dict] = field(default_factory=dict)  # {pool: {MinionSpec field: value}}
+    ult_cost_scale: float = 1.0   # the ult's Energy cost is multiplied by this
     note: str = ""
 
 
@@ -187,6 +188,7 @@ class ResolvedPotential:
     cd_scale: dict[str, float] = field(default_factory=dict)
     minion_rules: dict[str, dict] = field(default_factory=dict)
     cd_when: list[dict] = field(default_factory=list)
+    ult_cost_scale: float = 1.0
 
 
 def _hitspec(d: dict) -> HitSpec:
@@ -239,6 +241,7 @@ def _potential(d: dict) -> PotentialSpec:
         cd_scale={k: float(v) for k, v in (d.get("cd_scale") or {}).items()},
         cd_when=[dict(c) for c in d.get("cd_when", [])],
         minion_rules={k: dict(v) for k, v in (d.get("minion_rules") or {}).items()},
+        ult_cost_scale=float(d.get("ult_cost_scale", 1.0)),
         note=d.get("note", ""),
     )
 
@@ -426,7 +429,7 @@ def resolve_potential(gd: GameData, kit: Kit, potential_id: int, level: int) -> 
         add_hits=spec.add_hits, replace_hits=spec.replace_hits, add_actions=add_actions,
         mark_tags=spec.mark_tags, extra_casts=spec.extra_casts, reset_cd=spec.reset_cd,
         cd_reduce=cd_reduce, procs=procs, add_charges=spec.add_charges, cd_scale=spec.cd_scale,
-        minion_rules=minion_rules, cd_when=spec.cd_when,
+        minion_rules=minion_rules, cd_when=spec.cd_when, ult_cost_scale=spec.ult_cost_scale,
     )
 
 

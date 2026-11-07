@@ -1,0 +1,203 @@
+# Chaton (114) — Ignis Vanguard. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". The main skill is tapped (Dark Ray) unless the
+# build has a Bouncing Bomb pink; bombs are counted once each, as bounces need other targets.
+# Evil Eye Unleashed: Dark Burst replaces her autos for 15 s, written as ult-action hits inside a 15 s lock.
+char_id: 114
+
+talents:
+  1140116:   # Dark Power Slayer (T1)
+    buffs:
+      - {effect: 11496111, event: "mark_applied:element2", duration: {ref: "BuffValue,NoLevel,11496111,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,11496111,LaminatedNum,Fixed"}}
+  1140232:   # Meowth's Emissary (T2): after a crit; GUESS: 50% Crit Rate
+    buffs:
+      - {effect: 11496211, event: "damage:self", every: 2, duration: {ref: "BuffValue,NoLevel,11496211,Time,10K"}}
+  1140348:   # Enhanced Barrel (T3)
+    buffs:
+      - {effect: 11496311, event: "cast:self:skill", duration: {ref: "BuffValue,NoLevel,11496311,Time,10K"}}
+  1140464:   # Target Indicator (T4)
+    buffs:
+      - {attribute: 11496411, event: "while:status:evil_eye"}
+  1140580:   # Shooting Metronome (T5)
+    buffs:
+      - {attribute: 11496511, event: always}
+
+main:
+  untimed: true
+  mark: {hit: 114000001}
+
+  procs:
+    # Dark Mark: every 2 s for 14 s (text); a new laser refreshes it
+    - {event: "hit:self:ray", hit: 114310002, count: 7, offset: 2.0, interval: 2.0, restart: true, tags: [dark_tick], excludes: [511403, 511404]}
+    - {event: "hit:self:ray", hit: 114310002, count: 14, offset: 1.0, interval: 1.0, restart: true, tags: [dark_tick], requires: [511403], excludes: [511404]}
+    - {event: "hit:self:ray", when: "while:not:status:dark_stack>=3", hit: 114504001, count: 7, offset: 2.0, interval: 2.0, restart: true, tags: [dark_tick], requires: [511404], excludes: [511403]}
+    - {event: "hit:self:ray", when: "while:status:dark_stack>=3", hit: 114504003, count: 7, offset: 2.0, interval: 2.0, restart: true, tags: [dark_tick], requires: [511404], excludes: [511403]}
+    - {event: "hit:self:ray", when: "while:not:status:dark_stack>=3", hit: 114504001, count: 14, offset: 1.0, interval: 1.0, restart: true, tags: [dark_tick], requires_all: [511403, 511404]}
+    - {event: "hit:self:ray", when: "while:status:dark_stack>=3", hit: 114504003, count: 14, offset: 1.0, interval: 1.0, restart: true, tags: [dark_tick], requires_all: [511403, 511404]}
+
+  actions:
+    auto:
+      duration: 16.5               # GUESS: 30 shots, 0.5 s each, 1.5 s reload
+      hits:
+        - {hit: 114100001, count: 30, offset: 0.3, interval: 0.5, tags: [shot]}
+
+    skill:                         # Sniper Operation
+      lock: 2.0                    # GUESS
+      hits:
+        - {hit: 114310001, offset: 0.6, tags: [ray], triggers_mark: true, excludes: [511401, 511402]}
+        - {hit: 114310003, count: 2, offset: 0.8, interval: 0.2, tags: [bomb], triggers_mark: true, requires: [511401]}
+        - {hit: 114310003, count: 2, offset: 0.8, interval: 0.2, tags: [bomb], triggers_mark: true, requires: [511402], excludes: [511401]}
+
+    ult:                           # Dark Evil Eye x8, the detonation, then Dark Burst for the rest of the 15 s
+      lock: 15.0                   # Evil Eye Unleashed (text); skills can still be cast
+      hits:
+        - {hit: 114400001, count: 8, offset: 1.0, interval: 0.25, tags: [sweep], triggers_mark: true}
+        - {hit: 114400002, offset: 3.2, tags: [sweep], triggers_mark: true}
+        - {hit: 114400003, count: 48, offset: 4.5, interval: 0.2, tags: [burst]}   # GUESS: 5 shots/s
+
+  buffs:
+    - {effect: 11440013, event: "cast:self:ult", name: evil_eye, duration: {ref: "BuffValue,NoLevel,11440002,Time,10K"}}
+    - {name: cat_eye, event: "cast:self:ult", duration: {ref: "BuffValue,NoLevel,11440001,Time,10K"}, target: enemy}
+    - {name: dark_mark, event: "hit:self:ray", duration: 14, target: enemy}
+    - {name: dark_stack, event: "hit:self:ray", duration: 14, max_stacks: 3, target: enemy, requires: [511404]}
+
+  potentials:
+    511401:   # Area Explosion (pink)
+      add_hits:
+        skill: [{hit: 114501001, count: 2, offset: 0.9, interval: 0.2, tags: [bomb_blast]}]
+      overrides:
+        - {index: 0, hit_tags: [bomb]}
+    511402:   # Overwhelming Throw (pink): 2 more bombs
+      add_hits:
+        skill: [{hit: 114310003, count: 2, offset: 1.2, interval: 0.2, tags: [bomb], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [bomb]}
+    511403:   # Meowth's Curse (pink): ticks every 1 s (procs above)
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:dark_mark"}
+    511404:   # Reincarnation of Darkness (pink): stronger ticks; tier 1 until 3 lasers, then tier 3
+      overrides:
+        - {index: 0, hit_tags: [ray]}
+    511405:   # Chain Bounce
+      overrides:
+        - {index: 0, hit_tags: [bomb]}
+    511406:   # Efficient Use: needs bounces to run out on other targets
+      overrides:
+        - {index: 0, drop: true}
+    511407:   # Deadly Verdict: crits as every 2nd bomb (GUESS: 50% Crit Rate)
+      overrides:
+        - {index: 0, hit_tags: [bomb]}
+        - {index: 1, hit_tags: [bomb], event: "hit:self:bomb", every: 2, duration: 10, max_stacks: 5}
+    511408:   # Mark of Darkness
+      procs:
+        - {event: "hit:self:shot", when: "while:status:dark_mark", hit: 114508001, icd: 1.0, tags: [darkness]}
+      overrides:
+        - {index: 0, hit_tags: [ray]}
+    511409:   # Lucky Bullet: a 50% Crit Rate resets the CD about once per 12 s window; GUESS as a 20% shorter CD
+      cd_scale: {skill: 0.8}
+      overrides:
+        - {index: 0, hit_tags: [ray]}
+        - {index: 1, hit_tags: [ray], event: "hit:self:ray", every: 2, icd: 12, duration: 12}
+    511410:   # Hunting Mark: crits as every 2nd tick
+      overrides:
+        - {index: 0, hit_tags: [dark_tick], event: "hit:self:dark_tick", every: 2, duration: 4, max_stacks: 10}
+    511411:   # Mobile Combat
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    511412:   # Dominant Firepower: the rapid-fire amount isn't in the data; the 60% ATK SPD adds Burst shots
+      add_hits:
+        ult: [{hit: 114400003, count: 29, offset: 4.6, interval: 0.33, tags: [burst]}]
+      overrides:
+        - {index: 0, event: "mark:self"}
+        - {index: 1, drop: true}
+    511413:   # Foe Annihilation: boss HP above 20% holds
+      overrides:
+        - {index: 0, hit_tags: []}
+    511441:   # Curse Fall
+      procs:
+        - {event: "hit:self:sweep|hit:self:burst", when: "while:status:cat_eye", hit: 114541001, tags: [curse]}
+    511442:   # Penetrating Bullet: the longer state isn't modelled
+      overrides:
+        - {index: 0, hit_tags: []}
+    511443:   # Doom's Echo
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:cat_eye"}
+
+support:
+  untimed: true
+  on_field: {skill: 3.5, ult: 6.0}   # GUESS
+  mark: {hit: 114000001}             # text: Blitz Assault can trigger Ignis Mark
+  actions:
+    skill:                         # Blitz Assault x3 (text)
+      hits:
+        - {hit: 114320001, count: 3, offset: 0.8, interval: 0.8, tags: [bullet], triggers_mark: true}
+    ult:
+      hits:
+        - {hit: 114400001, count: 8, offset: 1.0, interval: 0.25, tags: [sweep], triggers_mark: true}
+        - {hit: 114400002, offset: 3.2, tags: [sweep], triggers_mark: true}
+
+  buffs:
+    - {effect: 11440013, event: "cast:self:ult", name: evil_eye, duration: {ref: "BuffValue,NoLevel,11440002,Time,10K"}}
+    - {name: cat_eye, event: "cast:self:ult", duration: {ref: "BuffValue,NoLevel,11440001,Time,10K"}, target: enemy}
+
+  potentials:
+    511421:   # Ambush Operation (pink): tier 1, 2, 3 across the 3 shots (GUESS: the same order every cast)
+      add_hits:
+        skill:
+          - {hit: 114521001, offset: 0.8, tags: [lock_hit]}
+          - {hit: 114521002, offset: 1.6, tags: [lock_hit]}
+          - {hit: 114521003, offset: 2.4, tags: [lock_hit]}
+    511422:   # Strike While the Iron is Hot (pink): expected 1 extra shot (2 x 50% Crit Rate, GUESS)
+      add_hits:
+        skill: [{hit: 114320001, offset: 3.2, tags: [bullet], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: []}
+    511423:   # Combat Frenzy (pink): 2 more bullets per firing
+      add_hits:
+        skill: [{hit: 114320001, count: 6, offset: 0.9, interval: 0.4, tags: [bullet], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: []}
+    511424:   # Core Blast (pink): 12 x 3 small bullets
+      add_hits:
+        skill: [{hit: 114524001, count: 36, offset: 1.0, interval: 0.06, tags: [small_bullet]}]
+      overrides:
+        - {index: 0, hit_tags: []}
+    511425:   # Evil Eye Gaze: every 0.4 s for 8 s
+      add_hits:
+        skill: [{hit: 114525001, count: 20, offset: 1.0, interval: 0.4, tags: [gaze]}]
+      overrides:
+        - {index: 0, hit_tags: []}
+    511426:   # Excess Amplification: per Lock tier, from Ambush Operation
+      overrides:
+        - {index: 0, hit_tags: [], event: "hit:self:lock_hit", max_stacks: 3, duration: 5}
+    511427:   # Relentless Suppression: per second on the field
+      overrides:
+        - {index: 0, hit_tags: [], event: "on_field_1s:self", duration: 3, max_stacks: 10}
+    511428:   # One Stone Two Birds: 2 bombs x 3 hits x 3 firings
+      add_hits:
+        skill: [{hit: 114528001, count: 18, offset: 1.0, interval: 0.15, tags: [meow_bomb]}]
+      overrides:
+        - {index: 0, event: always}
+    511429:   # Burnt Rifling: crits as every 2nd bullet
+      overrides:
+        - {index: 0, hit_tags: [bullet], event: "hit:self:bullet", every: 2, duration: 5, max_stacks: 5}
+    511430:   # Minor Fling: boss HP below 80% for most of the fight (GUESS: 70%)
+      overrides:
+        - {index: 0, hit_tags: [], event: unknown, uptime: 0.7, duration: inf, max_stacks: 1}
+    511431:   # Energy Overflow: the ult fires as soon as Energy is full, so this barely runs
+      overrides:
+        - {index: 0, drop: true}
+    511432:   # Swift Assault
+      overrides:
+        - {index: 0, event: "cast:self:skill", duration: 3}
+    511433:   # Burning Passion
+      overrides:
+        - {index: 0, event: always, target: "element:2"}
+    511441:
+      procs:
+        - {event: "hit:self:sweep", when: "while:status:cat_eye", hit: 114541001, tags: [curse]}
+    511442:
+      overrides:
+        - {index: 0, hit_tags: []}
+    511443:
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:cat_eye"}

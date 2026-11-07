@@ -1,0 +1,182 @@
+# Donna (130) — Aqua Versatile. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". The Advertising Doll (minion) is skipped, so its
+# damage, its Mark triggers and every doll-only potential are worth nothing here. Its only effect kept is Agile: while
+# the doll is out (12 s, Word 4017), her autos are the Agile shots, written as skill-action hits inside a 12 s lock.
+char_id: 130
+
+talents:
+  1300116:   # Courier's Aspiration (T1)
+    buffs:
+      - {effect: 13096111, event: "mark:element1", target: enemy, duration: {ref: "BuffValue,NoLevel,13096111,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,13096111,LaminatedNum,Fixed"}}
+  1300232:   # Memories of the Journey (T2)
+    buffs:
+      - {effect: 13096211, event: "cast:self:skill", duration: {ref: "BuffValue,NoLevel,13096211,Time,10K"}}
+  1300348:   # Dreams We Share (T3)
+    buffs:
+      - {effect: 13096311, event: "hit:self:skill_dmg", target: enemy, duration: {ref: "BuffValue,NoLevel,13096311,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,13096311,LaminatedNum,Fixed"}}
+  1300464:   # Drifter's Destination (T4)
+    buffs:
+      - {effect: 13096411, event: "mark:element1", duration: {ref: "BuffValue,NoLevel,13096411,Time,10K"}}
+  1300580:   # Our Post Haste (T5)
+    buffs:
+      - {attribute: 13096511, event: always}
+
+main:
+  untimed: true
+  mark: {hit: 130000001}
+
+  actions:
+    auto:
+      duration: 1.0                # GUESS: one arrow per second
+      hits:
+        - {hit: 130100001, offset: 0.5}
+
+    skill:                         # Rain Call: Volley Chase: 12 s of Agile shots
+      lock: 12.0                   # the doll's 12 s (Word 4017); the ult can still be cast
+      hits:
+        - {hit: 130310003, count: 11, offset: 1.0, interval: 1.0, tags: [agile], triggers_mark: true}
+
+    ult:                           # Argent Cascade: every 0.5 s for 6 s (text)
+      lock: 3.0                    # GUESS: she fires it and carries on
+      hits:
+        - {hit: 130400001, count: 12, offset: 1.0, interval: 0.5, tags: [cascade]}
+
+  buffs:
+    - {name: chill, event: "mark:self", target: enemy, duration: {ref: "BuffValue,NoLevel,4021,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,4021,LaminatedNum,Fixed"}}
+
+  potentials:
+    513001:   # Condensation Orbs (pink): 11 Agile shots make 1 orb; the 3 s longer Agile isn't modelled
+      add_hits:
+        skill: [{hit: 130505001, offset: 12.5, tags: [orb]}]
+    513002:   # Azure Night (pink): 4 spikes per Agile shot
+      procs:
+        - {event: "hit:self:agile", hit: 130502001, count: 4, offset: 0.1, interval: 0.05, tags: [spike]}
+    513003:   # Precision Marketing (pink): the doll
+      note: "The doll isn't modelled."
+    513004:   # Bubble Finale (pink): the doll
+      overrides:
+        - {index: 0, drop: true}
+        - {index: 1, drop: true}
+    513005:   # Tidal Echo
+      overrides:
+        - {index: 0, event: "hit:self:agile"}
+    513006:   # Piercing Arrow Rain
+      overrides:
+        - {index: 0, event: "hit:self:agile&while:status:chill"}
+    513007:   # Rime Shatterer: boss below 35% HP, a third of the fight (GUESS)
+      overrides:
+        - {index: 0, hit_tags: [], event: unknown, uptime: 0.33, duration: inf, max_stacks: 1}
+    513008:   # Surging Tide: the doll
+      overrides:
+        - {index: 0, drop: true}
+    513009:   # Cloud Piercer: the doll
+      overrides:
+        - {index: 0, drop: true}
+    513010:   # Hazy Curtain: the doll
+      note: "The doll isn't modelled."
+    513011:   # Lingering Noise
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    513012:   # Serene Sea Trance: stationary; Agile lets her move but needn't
+      overrides:
+        - {index: 0, event: always}
+    513013:   # Tidal Mark Resonance
+      mark_tags: [cascade]
+      overrides:
+        - {index: 0, event: "mark:self"}
+    513041:   # Rushing Tide
+      overrides:
+        - {index: 0, hit_tags: []}
+    513042:   # Corrosive Torrent: while the arrows fall
+      overrides:
+        - {index: 0, event: "cast:self:ult", duration: 7, target: "element:1"}
+    513043:   # Freezing Stasis: 5 stacks per ult; the longer duration isn't modelled
+      overrides:
+        - {index: 0, hit_tags: [], event: "hit:self:cascade&while:status:chill", duration: 12, max_stacks: 5}
+
+support:
+  untimed: true
+  on_field: {skill: 3.5, ult: 3.0}   # GUESS
+  actions:
+    skill:                         # Tide Threader: 9 arrows and a Frost Wave (text)
+      hits:
+        - {hit: 130320001, offset: 0.8, tags: [arrow], applies_mark: true}
+        - {hit: 130320002, count: 2, offset: 1.1, interval: 0.3, tags: [arrow], applies_mark: true}
+        - {hit: 130320003, count: 3, offset: 1.7, interval: 0.3, tags: [arrow], applies_mark: true}
+        - {hit: 130320004, count: 2, offset: 2.6, interval: 0.3, tags: [arrow], applies_mark: true}
+        - {hit: 130320005, offset: 3.2, tags: [arrow], applies_mark: true}
+        - {hit: 130320006, offset: 3.4, tags: [wave], applies_mark: true}
+    ult:
+      hits:
+        - {hit: 130400001, count: 12, offset: 1.0, interval: 0.5, tags: [cascade], excludes: [513032]}
+        - {hit: 130400001, count: 12, offset: 1.0, interval: 0.5, tags: [cascade], applies_mark: true, requires: [513032]}
+
+  buffs:
+    - {name: rain, event: "cast:self:ult", duration: 7}
+
+  potentials:
+    513021:   # Unleashed Arrow (pink): 1 more per other Aqua Trekker, per shot
+      procs:
+        - {event: "hit:self:arrow", when: "while:squad:1:2", hit: 130521001, tags: [extra_arrow]}
+        - {event: "hit:self:arrow", when: "while:squad:1:3", hit: 130521001, offset: 0.05, tags: [extra_arrow]}
+    513022:   # Arrowfall Reckoning (pink): a tail per arrow; the pull at the end is +10% DMG Multiplier per tail
+      add_hits:
+        skill:
+          - {hit: 130522001, offset: 3.6, tags: [pull]}
+          - {hit: 0, offset: 3.7, tags: [pull_done]}
+      procs:
+        - {event: "hit:self:arrow", hit: 130522002, offset: 0.05, tags: [tail]}
+      overrides:
+        - {index: 0, hit_tags: [pull], event: "hit:self:arrow", duration: inf, max_stacks: 30, reset_on: ["marker:self:pull_done"]}
+    513023:   # Wave-Chasing String (pink): all Aqua: a wave per 3 shots
+      procs:
+        - {event: "hit:self:arrow", every: 3, when: "while:squad:1:3", hit: 130523001, tags: [wave]}
+      overrides:
+        - {index: 0, hit_tags: [wave]}
+    513024:   # Stray Arrow (pink): 3 orbs per wave; one target, so no per-target bonus
+      procs:
+        - {event: "hit:self:wave", hit: 130524002, count: 3, offset: 0.3, interval: 0.2, tags: [orb]}
+      overrides:
+        - {index: 0, drop: true}
+    513025:   # Arrow Pursuit
+      procs:
+        - {event: "hit:self:arrow", every: 3, icd: 0.2, hit: 130525001, tags: [pursuit]}
+      overrides:
+        - {index: 0, hit_tags: [arrow]}
+    513026:   # Frostbitten Arrow
+      overrides:
+        - {index: 0, event: "hit:self:arrow", every: 3}
+    513027:   # Dead Shot: boss below 30% HP (GUESS: 30% of the fight)
+      overrides:
+        - {index: 0, hit_tags: [arrow], event: unknown, uptime: 0.3, duration: inf, max_stacks: 1}
+    513028:   # Coast Crusher: crits as every 2nd wave (GUESS: 50% Crit Rate)
+      overrides:
+        - {index: 0, event: "hit:self:wave", every: 2, target: "element:1"}
+        - {index: 1, hit_tags: [wave]}
+        - {index: 2, hit_tags: [wave]}
+    513029:   # Aquatic Assault: needs different targets
+      overrides:
+        - {index: 0, drop: true}
+    513030:   # Chilling Onslaught: a wave with the first shot
+      add_hits:
+        skill: [{hit: 130320006, offset: 0.9, tags: [wave], applies_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [wave]}
+    513031:   # Messenger Arrow: the main picks up the letter
+      overrides:
+        - {index: 0, event: "cast:self:skill", target: main}
+    513032:   # Wave Resonance: "during the rain of arrows"
+      overrides:
+        - {index: 0, event: "mark:element1&while:status:rain"}
+    513033:   # Water Ripple
+      overrides:
+        - {index: 0, event: always, target: "element:1"}
+    513041:
+      overrides:
+        - {index: 0, hit_tags: []}
+    513042:
+      overrides:
+        - {index: 0, event: "cast:self:ult", duration: 7, target: "element:1"}
+    513043:
+      overrides:
+        - {index: 0, hit_tags: [], event: "hit:self:cascade&while:status:chill", duration: 12, max_stacks: 5}

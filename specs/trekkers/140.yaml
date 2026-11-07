@@ -1,0 +1,205 @@
+# Sparkla (140) — Terra Vanguard. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". The skill's transformation (10 s, text) replaces her
+# autos and is written as skill-action hits inside a 10 s lock; the CD starts when it ends (text). Rapid Fire by default;
+# Bunny Jaws with a Jaws pink. Her doll deals Ultimate DMG, so it counts. Her autos are unusually big (861% per volley in the
+# data), so a volley every 3 s is a deliberately slow GUESS.
+char_id: 140
+
+talents:
+  1400116:   # Genius Artisan (T1)
+    buffs:
+      - {effect: 14096111, event: "mark:self", duration: {ref: "BuffValue,NoLevel,14096111,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,14096111,LaminatedNum,Fixed"}}
+  1400232:   # Blacklist (T2)
+    buffs:
+      - {effect: 14096211, event: "damage:self", duration: {ref: "BuffValue,NoLevel,14096211,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,14096211,LaminatedNum,Fixed"}}
+  1400348:   # Invention Blueprint (T3)
+    buffs:
+      - {effect: 14096311, event: "cast:self:skill", duration: {ref: "BuffValue,NoLevel,14096311,Time,10K"}}
+  1400464:   # Fairy Tale Friends (T4)
+    buffs:
+      - {effect: 14096411, event: "mark_applied:element3", duration: {ref: "BuffValue,NoLevel,14096411,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,14096411,LaminatedNum,Fixed"}}
+  1400580:   # Rhymes of the Wonderbox (T5)
+    buffs:
+      - {attribute: 14096511, event: always}
+
+main:
+  untimed: true
+  mark: {hit: 140000001}
+
+  actions:
+    auto:
+      duration: 9.5                # GUESS: a volley every 3 s
+      hits:
+        - {hit: 140100001, offset: 0.5, tags: [volley]}
+        - {hit: 140100002, offset: 3.5, tags: [volley]}
+        - {hit: 140100003, count: 2, offset: 6.5, interval: 0.3, tags: [volley]}
+
+    skill:                         # Rabbit Pie Tempo Switch
+      lock: 10.0                   # text: 10 s in the mode
+      cd_start: 10.0               # text: the cooldown starts when the transformation ends
+      hits:
+        # Rapid Fire: x3 per burst; GUESS: a burst per second
+        - {hit: 140310003, count: 30, offset: 0.5, interval: 0.33, tags: [rapid], triggers_mark: true, excludes: [514003, 514004]}
+        # Bunny Jaws: GUESS: a shell every 2 s
+        - {hit: 140310002, count: 5, offset: 1.0, interval: 2.0, tags: [jaws], triggers_mark: true, requires: [514003]}
+        - {hit: 140310002, count: 5, offset: 1.0, interval: 2.0, tags: [jaws], triggers_mark: true, requires: [514004], excludes: [514003]}
+
+    ult:                           # All-Out Bunny Barrage: the doll x10, then the cannon (text)
+      lock: 6.0                    # GUESS
+      hits:
+        - {hit: 140400001, count: 10, offset: 1.0, interval: 0.35, tags: [doll], triggers_mark: true}
+        - {hit: 140400002, offset: 5.0, tags: [cannon], triggers_mark: true}
+        - {hit: 0, offset: 5.1, tags: [ult_end]}
+
+  buffs:
+    - {name: napping, event: "cast:self:ult", duration: 5.1}
+    - {name: crystallized, event: "hit:self:rapid", every: 20, duration: 5, target: enemy, requires: [514002]}
+    - {name: solution, event: "marker:self:ult_end", duration: 10, requires: [514041]}
+
+  potentials:
+    514001:   # Bunny-Ear Volley (pink): x7, every 3 s in Rapid Fire
+      add_hits:
+        skill: [{hit: 140501001, count: 21, offset: 1.0, interval: 0.43, tags: [ear], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [ear], event: "while:squad:3:3"}
+    514002:   # Click-Clack Echoes (pink): 20 hits to Crystallize, then the extra hit
+      procs:
+        - {event: "hit:self:rapid", when: "while:status:crystallized", hit: 140502001, tags: [crystal_hit], triggers_mark: true}
+      overrides:
+        - {index: 0, hit_tags: [rapid]}
+    514003:   # Fluffy Rechamber (pink): Bunny Roar, once per mode
+      add_hits:
+        skill: [{hit: 140503001, offset: 2.5, tags: [roar], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [jaws, roar], event: "while:squad:3:3"}
+    514004:   # Neo Radiance Burst (pink): a bottle per 2 s, a shell per bottle
+      add_hits:
+        skill: [{hit: 140310002, count: 5, offset: 1.2, interval: 2.0, tags: [jaws], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [jaws]}
+    514005:   # Leap Barrage: in Rapid Fire builds
+      overrides:
+        - {index: 0, event: "mark:self"}
+    514006:   # Hover-Rail Volley
+      overrides:
+        - {index: 0, hit_tags: [rapid, ear, crystal_hit], event: "cast:self:skill"}
+    514007:   # Clockwork Resonance
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    514008:   # Cyclone Dial
+      procs:
+        - {event: "hit:self:jaws", hit: 140508001, tags: [cyclone], triggers_mark: true}
+        - {event: "hit:self:roar", hit: 140508002, tags: [cyclone], triggers_mark: true}
+    514009:   # Ticking Aftershock: 5 traps per shell, 10 per Roar
+      procs:
+        - {event: "hit:self:jaws", hit: 140509001, count: 5, offset: 0.5, interval: 0.1, tags: [trap], triggers_mark: true}
+        - {event: "hit:self:roar", hit: 140509001, count: 10, offset: 0.5, interval: 0.1, tags: [trap], triggers_mark: true}
+      overrides:
+        - {index: 0, hit_tags: [jaws, roar, trap]}
+    514010:   # Static Strike: while in Bunny Jaws
+      overrides:
+        - {index: 0, event: "hit:self:jaws"}
+    514011:   # Harmonic Barrage
+      add_hits:
+        skill: [{hit: 140511001, offset: 10.0, tags: [harmonic], triggers_mark: true}]
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    514012:   # Velvet Prowl
+      overrides:
+        - {index: 0, event: "dodge:main", icd: 10}
+    514013:   # Prism Convergence: she fights from range
+      overrides:
+        - {index: 0, hit_tags: []}
+    514041:   # Solution Support: 3 bottles to the main; then a hit on its autos
+      procs:
+        - {event: "hit:main:auto_dmg", when: "while:status:solution", hit: 140541001, icd: 0.5, tags: [solution_hit]}
+      overrides:
+        - {index: 0, event: "marker:self:ult_end", stacks: 3, target: main}
+    514042:   # Wonderland Bound: Bleeding, 1/s for 10 s, the row is the total
+      add_hits:
+        ult: [{hit: 140542001, count: 10, offset: 6.0, interval: 1.0, mult: 0.1, tags: [bleed]}]
+    514043:   # Leap of Finale
+      overrides:
+        - {index: 0, hit_tags: [doll, cannon], event: "mark:self&while:status:napping", duration: inf, reset_on: ["marker:self:ult_end"]}
+
+support:
+  untimed: true
+  on_field: {skill: 5.6, ult: 6.0}   # GUESS: she stays for the 13 volleys
+  mark: {hit: 140000001}             # text: Bunny Fireworks can trigger Terra Mark
+  actions:
+    skill:                         # Homing Bunny Volley: 2 fireworks x 13 volleys (text)
+      hits:
+        - {hit: 140320002, count: 26, offset: 0.8, interval: 0.2, tags: [firework], triggers_mark: true}
+        - {hit: 0, offset: 6.0, tags: [volley_end]}
+    ult:
+      hits:
+        - {hit: 140400001, count: 10, offset: 1.0, interval: 0.35, tags: [doll], triggers_mark: true}
+        - {hit: 140400002, offset: 5.0, tags: [cannon], triggers_mark: true}
+        - {hit: 0, offset: 5.1, tags: [ult_end]}
+
+  buffs:
+    - {name: napping, event: "cast:self:ult", duration: 5.1}
+    - {name: solution, event: "marker:self:ult_end", duration: 10, requires: [514041]}
+
+  potentials:
+    514021:   # Bunny Backfire (pink): all Terra: 3 per volley
+      procs:
+        - {event: "hit:self:firework", every: 2, when: "while:squad:3:3", hit: 140320002, tags: [extra_firework], triggers_mark: true}
+      overrides:
+        - {index: 0, hit_tags: []}
+    514022:   # Rolling Support (pink): 26 Energy spent on Skill DMG, then the charge and Bleeding
+      add_hits:
+        skill:
+          - {hit: 140522001, offset: 6.1, tags: [charge]}
+          - {hit: 140522002, count: 10, offset: 6.4, interval: 0.3, mult: 0.1, tags: [bleed]}
+      overrides:
+        - {index: 0, event: "marker:self:volley_end", stacks: 26}
+    514023:   # Covering Fire (pink): GUESS: a shot per second for 8 s
+      add_hits:
+        skill: [{hit: 140523001, count: 8, offset: 6.5, interval: 1.0, tags: [cover]}]
+      overrides:
+        - {index: 0, hit_tags: [cover]}
+    514024:   # Incendiary Volley (pink): every 3.5 s on the field; one in her 5.6 s
+      add_hits:
+        skill: [{hit: 140524001, offset: 3.5, tags: [incendiary]}]
+      overrides:
+        - {index: 0, hit_tags: [incendiary], max_stacks: 1, copies: [{event: "while:squad:3:1"}, {event: "while:squad:3:2"}, {event: "while:squad:3:3"}]}
+    514025:   # Furball Fusillade
+      add_hits:
+        skill: [{hit: 140525001, offset: 0.8, tags: [furball]}]
+    514026:   # Bunny Blitz
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    514027:   # Gauge Overdrive
+      overrides:
+        - {index: 0, event: "mark:self"}
+    514028:   # Bunny Munitions Boost
+      overrides:
+        - {index: 0, hit_tags: [cover, incendiary]}
+    514029:   # Rabbit's Watch
+      overrides:
+        - {index: 0, event: "on_field_1s:self", duration: 2}
+    514030:   # Pressure Surge
+      overrides:
+        - {index: 0, event: "marker:self:volley_end"}
+    514031:   # Artisan's Pride
+      overrides:
+        - {index: 0, event: always}
+    514032:   # Prodigy's Oath
+      overrides:
+        - {index: 0, event: always}
+        - {index: 1, event: "marker:self:ult_end"}
+    514033:   # Max Overclock
+      overrides:
+        - {index: 0, event: always, target: "element:3"}
+    514041:
+      procs:
+        - {event: "hit:main:auto_dmg", when: "while:status:solution", hit: 140541001, icd: 0.5, tags: [solution_hit]}
+      overrides:
+        - {index: 0, event: "marker:self:ult_end", stacks: 3, target: main}
+    514042:
+      add_hits:
+        ult: [{hit: 140542001, count: 10, offset: 6.0, interval: 1.0, mult: 0.1, tags: [bleed]}]
+    514043:
+      overrides:
+        - {index: 0, hit_tags: [doll, cannon], event: "mark:self&while:status:napping", duration: inf, reset_on: ["marker:self:ult_end"]}

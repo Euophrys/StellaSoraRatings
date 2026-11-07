@@ -1,0 +1,200 @@
+# Fuyuka (134) — Ignis Vanguard. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Fiery Punches: the skill reloads 3 rounds, spent on
+# the next autos, written as skill-action hits. Snowish Laru's ult is meant for this pairing and isn't authored yet.
+char_id: 134
+
+talents:
+  1340116:   # Natural Strength (T1)
+    buffs:
+      - {effect: 13496111, event: "mark:self", duration: {ref: "BuffValue,NoLevel,13496111,Time,10K"}}
+  1340232:   # Fist of Awakening (T2)
+    buffs:
+      - {effect: 13496211, event: "cast:self:skill", max_stacks: {ref: "BuffValue,NoLevel,13496211,LaminatedNum,Fixed"}, reset_on: ["marker:self:ult_done"]}
+  1340348:   # Peerless Might (T3)
+    buffs:
+      - {effect: 13496311, event: "cast:self:ult", duration: {ref: "BuffValue,NoLevel,13496311,Time,10K"}}
+  1340464:   # Two Punch Hero (T4)
+    buffs:
+      - {effect: 13496411, event: "mark_applied:element2", duration: {ref: "BuffValue,NoLevel,13496411,Time,10K"}}
+  1340580:   # Learned from the Best (T5)
+    buffs:
+      - {attribute: 13496511, event: always}
+
+main:
+  untimed: true
+  mark: {hit: 134000001}
+
+  actions:
+    auto:                          # Blitz Combo
+      duration: 5.4                # GUESS: 1 s per strike
+      hits:
+        - {hit: 134100001, count: 2, offset: 0.4, interval: 0.2}
+        - {hit: 134100002, offset: 1.4}
+        - {hit: 134100003, count: 2, offset: 2.4, interval: 0.2}
+        - {hit: 134100004, count: 5, offset: 3.4, interval: 0.12}
+        - {hit: 134100005, count: 2, offset: 4.4, interval: 0.2}
+
+    skill:                         # Ignis Infusion, then the 3 Fiery Punches
+      lock: 5.5                    # GUESS
+      hits:
+        - {hit: 134310001, offset: 0.5, tags: [infusion], triggers_mark: true}
+        - {hit: 134310002, offset: 1.4, tags: [infusion], triggers_mark: true}
+        - {hit: 134100006, offset: 3.0, tags: [fiery], excludes: [513404]}
+        - {hit: 134100007, offset: 4.0, tags: [fiery], excludes: [513404]}
+        - {hit: 134100008, offset: 5.0, tags: [fiery, fiery3], excludes: [513404]}
+        - {hit: 134504001, offset: 3.0, tags: [magma], requires: [513404]}
+        - {hit: 134504002, offset: 3.6, tags: [magma], requires: [513404]}
+
+    ult:                           # Blaze Unsealed (text)
+      lock: 5.5                    # GUESS
+      hits:
+        - {hit: 134400001, offset: 1.0, tags: [blaze], triggers_mark: true}
+        - {hit: 134400002, count: 5, offset: 1.8, interval: 0.5, tags: [blaze], triggers_mark: true}
+        - {hit: 134400003, offset: 4.5, tags: [blaze], triggers_mark: true}
+        - {hit: 0, offset: 4.6, tags: [ult_done]}
+
+  buffs:
+    - {name: blazing, event: "cast:self:ult", duration: 5.5}
+    - {name: paw_print, event: "hit:self:infusion", duration: 15, target: enemy, requires: [513403]}
+
+  potentials:
+    513401:   # Reload (pink): 9 rounds: 2 more sets of 3 Fiery Punches; +x3 hits on the skill
+      add_hits:
+        skill: [{hit: 134501001, count: 3, offset: 1.6, interval: 0.2, tags: [infusion]}]
+      add_actions:
+        fiery_reload:
+          followup: {after: skill}
+          lock: 6.0                # GUESS
+          skill_id: 13410000
+          hits:
+            - {hit: 134100006, offset: 0.5, tags: [fiery]}
+            - {hit: 134100007, offset: 1.5, tags: [fiery]}
+            - {hit: 134100008, offset: 2.5, tags: [fiery, fiery3]}
+            - {hit: 134100006, offset: 3.5, tags: [fiery]}
+            - {hit: 134100007, offset: 4.5, tags: [fiery]}
+            - {hit: 134100008, offset: 5.5, tags: [fiery, fiery3]}
+    513402:   # Double Strike (pink)
+      add_hits:
+        skill:
+          - {hit: 134502001, offset: 3.1, tags: [fiery_extra], excludes: [513404]}
+          - {hit: 134502002, offset: 4.1, tags: [fiery_extra], excludes: [513404]}
+          - {hit: 134502003, offset: 5.1, tags: [fiery_extra], excludes: [513404]}
+      note: "Not added to Reload's extra punches."
+    513403:   # Kitty Punch (pink)
+      procs:
+        - {event: "hit:self:auto_dmg", when: "while:status:paw_print", hit: 134503001, tags: [paw], triggers_mark: true}
+    513404:   # Multi-Shot (pink): Magma Burst (hits above); empty magazine for the whole string
+      overrides:
+        - {index: 0, event: always}
+    513405:   # Pyro Mark
+      mark_tags: [fiery, magma]
+      overrides:
+        - {index: 0, hit_tags: [fiery, magma]}
+    513406:   # Thunder Punch
+      procs:
+        - {event: "hit:self:fiery3", hit: 134506001, offset: 0.1, tags: [thunder]}
+    513407:   # All-Out Effort
+      overrides:
+        - {index: 0, hit_tags: [fiery], event: "hit:self:fiery", duration: 3, max_stacks: 8, reset_on: ["cast:self:skill"]}
+    513408:   # Combo Punch
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+        - {index: 1, event: "cast:self:skill"}
+    513409:   # Blast Chase
+      procs:
+        - {event: "damage:self", every: 4, icd: 1.5, hit: 134509001, tags: [chase]}
+    513410:   # Inertial Punch
+      overrides:
+        - {index: 0, hit_tags: [fiery, magma], event: "timer:8", duration: inf, reset_on: ["hit:self:fiery", "hit:self:magma"]}
+    513411:   # Swirling Counterattack
+      overrides:
+        - {index: 0, event: "while:squad:2:3", duration: inf}
+    513412:   # Bold Challenge: crits as every 2nd hit (GUESS: 50% Crit Rate)
+      overrides:
+        - {index: 0, event: "damage:self", every: 2}
+    513413:   # Finishing Blow: boss below 70% HP (GUESS: 70% of the fight)
+      overrides:
+        - {index: 0, hit_tags: [], event: unknown, uptime: 0.7, duration: inf, max_stacks: 1}
+    513441:   # Blazing Heart: during this ult
+      overrides:
+        - {index: 0, event: "mark:self&while:status:blazing", reset_on: ["marker:self:ult_done"]}
+    513442:   # Ironfist Blow
+      add_hits:
+        ult: [{hit: 134400002, count: 4, offset: 2.0, interval: 0.5, tags: [blaze], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: []}
+    513443:   # Peak Performance: 6 stacks, one lost per second
+      overrides:
+        - {index: 0, event: "cast:self:ult", max_stacks: 1, copies: [{duration: 1}, {duration: 2}, {duration: 3}, {duration: 4}, {duration: 5}, {duration: 6}]}
+
+support:
+  untimed: true
+  on_field: {skill: 3.2, ult: 5.5}   # GUESS
+  mark: {hit: 134000001}             # text: Eruption Punch can trigger Ignis Mark
+  actions:
+    skill:                         # Eruption Punch x11 (text)
+      hits:
+        - {hit: 134320001, count: 11, offset: 0.8, interval: 0.2, tags: [punch], triggers_mark: true}
+    ult:
+      hits:
+        - {hit: 134400001, offset: 1.0, tags: [blaze], triggers_mark: true}
+        - {hit: 134400002, count: 5, offset: 1.8, interval: 0.5, tags: [blaze], triggers_mark: true}
+        - {hit: 134400003, offset: 4.5, tags: [blaze], triggers_mark: true}
+        - {hit: 0, offset: 4.6, tags: [ult_done]}
+
+  buffs:
+    - {name: blazing, event: "cast:self:ult", duration: 5.5}
+
+  potentials:
+    513421:   # Sky Crusher (pink): one big blow and the wide hit
+      replace_hits:
+        skill:
+          - {hit: 134521001, offset: 0.8, tags: [punch], triggers_mark: true}
+          - {hit: 134521002, offset: 1.0, tags: [punch], triggers_mark: true}
+    513422:   # Lightning Split (pink)
+      add_hits:
+        skill: [{hit: 134522001, offset: 3.1, tags: [split]}]
+    513423:   # Meteor Strike (pink)
+      overrides:
+        - {index: 0, hit_tags: []}
+    513424:   # Fearless (pink): every 0.5 s while active, as every 3rd of her punches
+      overrides:
+        - {index: 0, hit_tags: [], event: "hit:self:punch", every: 3, duration: 3, max_stacks: 6}
+    513425:   # Frenzied Support
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    513426:   # Shock Raid
+      add_hits:
+        skill: [{hit: 134526001, offset: 0.6, tags: [raid]}]
+    513427:   # Momentum Primed: 14 s CD, so all 9 stacks come back between casts
+      overrides:
+        - {index: 0, hit_tags: [punch], event: always, stacks: 9}
+    513428:   # Multi-Blow Impact
+      procs:
+        - {event: "hit:self:punch", hit: 134528001, tags: [multi_blow]}
+    513429:   # Lethal Boost
+      overrides:
+        - {index: 0, event: "on_field_1s:self", duration: 3}
+    513430:   # Lightning Raid: the interval only moves the same hits
+      overrides:
+        - {index: 0, hit_tags: [punch]}
+    513431:   # Hero's Will
+      overrides:
+        - {index: 0, hit_tags: []}
+    513432:   # Prove of Strength: kills
+      overrides:
+        - {index: 0, drop: true}
+    513433:   # Companions' Power
+      overrides:
+        - {index: 0, event: always, target: "element:2"}
+    513441:
+      overrides:
+        - {index: 0, event: "mark:self&while:status:blazing", reset_on: ["marker:self:ult_done"]}
+    513442:
+      add_hits:
+        ult: [{hit: 134400002, count: 4, offset: 2.0, interval: 0.5, tags: [blaze], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: []}
+    513443:
+      overrides:
+        - {index: 0, event: "cast:self:ult", max_stacks: 1, copies: [{duration: 1}, {duration: 2}, {duration: 3}, {duration: 4}, {duration: 5}, {duration: 6}]}

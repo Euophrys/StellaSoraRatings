@@ -1,0 +1,192 @@
+# Allie (139) — Aqua Vanguard. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Not modelled: casting either ult phase through
+# the Main Skill (Quick Sweep, Dusting Vortex) and all-Aqua Mark DMG conversion (Wide Blade Arc), which change her rotation.
+char_id: 139
+
+talents:
+  1390116:   # Special Cleaning Tools (T1)
+    buffs:
+      - {attribute: 13996111, event: always}
+      - {attribute: 13996121, event: "while:status:stance"}
+  1390232:   # Sewing Kit (T2): both phases come with the ult cast
+    buffs:
+      - {effect: 13996211, event: "cast:self:ult", duration: {ref: "BuffValue,NoLevel,13996211,Time,10K"}}
+      - {effect: 13996221, event: "cast:self:ult", duration: {ref: "BuffValue,NoLevel,13996221,Time,10K"}}
+  1390348:   # Morning Kiss (T3)
+    buffs:
+      - {effect: 13996311, event: "mark_applied:element1", duration: {ref: "BuffValue,NoLevel,13996311,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,13996311,LaminatedNum,Fixed"}}
+  1390464:   # Afternoon Sweep (T4)
+    buffs:
+      - {effect: 13996411, event: "mark:self|cast:self:ult", duration: {ref: "BuffValue,NoLevel,13996411,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,13996411,LaminatedNum,Fixed"}}
+      - {effect: 13996421, event: "mark:self|cast:self:ult", duration: {ref: "BuffValue,NoLevel,13996411,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,13996411,LaminatedNum,Fixed"}}
+  1390580:   # All-Night Watch (T5)
+    buffs:
+      - {attribute: 13996511, event: always}
+
+main:
+  untimed: true
+  mark: {hit: 139000001, tags: [tide]}
+
+  procs:
+    - {event: "mark:self", every: 9, hit: 139000002, tags: [ebb]}   # Flood at 9 stacks: Ebb (Word 4053)
+
+  actions:
+    auto:
+      duration: 5.4                # GUESS: 1 s per strike
+      hits:
+        - {hit: 139100001, offset: 0.4, tags: [slash]}
+        - {hit: 139100002, offset: 0.6, tags: [slash]}
+        - {hit: 139100003, offset: 1.4, tags: [slash]}
+        - {hit: 139100004, count: 2, offset: 2.4, interval: 0.2, tags: [slash]}
+        - {hit: 139100005, offset: 3.4, tags: [slash]}
+        - {hit: 139100006, offset: 3.6, tags: [slash]}
+        - {hit: 139100007, offset: 3.8, tags: [slash]}
+        - {hit: 139100008, offset: 4.4, tags: [slash]}
+
+    skill:                         # Sweeping Rush x3 and x3 (text)
+      lock: 2.5                    # GUESS
+      hits:
+        - {hit: 139310001, count: 3, offset: 0.5, interval: 0.2, tags: [rush], triggers_mark: true}
+        - {hit: 139310002, count: 3, offset: 1.1, interval: 0.2, tags: [rush], triggers_mark: true}
+
+    ult:                           # Deep Sweep: both phases, the second as soon as it's unlocked
+      lock: 4.5                    # GUESS
+      hits:
+        - {hit: 139400001, offset: 1.0, tags: [phase1], triggers_mark: true}
+        - {hit: 139400002, offset: 3.0, tags: [phase2], triggers_mark: true, excludes: [513905]}
+        - {hit: 139400302, offset: 3.0, tags: [phase2], triggers_mark: true, requires: [513905]}
+
+  buffs:
+    - {effect: 13900001, level: skill, name: sweep_mark, event: "cast:self:skill", duration: {ref: "BuffValue,NoLevel,13900001,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,13900001,LaminatedNum,Fixed"}}
+    - {effect: 13994001, level: ult, name: stance, event: "cast:self:ult", duration: {ref: "BuffValue,NoLevel,13994011,Time,10K"}}
+
+  potentials:
+    513901:   # Quick Sweep (pink): Crit Rate in an all-Aqua squad; the cast through the skill isn't modelled
+      overrides:
+        - {index: 0, event: "cast:self:skill&while:squad:1:3", duration: inf, max_stacks: 5}
+    513902:   # Multi Sweep (pink): blade shadow once per 4 s; its extra Sweep Marks aren't modelled
+      procs:
+        - {event: "cast:self:skill|hit:self:slash", hit: 139502001, icd: 4, tags: [shadow]}
+      overrides:
+        - {index: 0, drop: true}
+    513903:   # Dusting Vortex (pink): only changes her rotation
+      note: "Casting the ult through the skill isn't modelled."
+    513904:   # Sweep Extension (pink): a wave at 3 and 6 Flood, as every 3 Marks in the stance
+      procs:
+        - {event: "mark:self", every: 3, when: "while:status:stance", hit: 139504001, tags: [abyssal]}
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+    513905:   # Clothesline Stance: Phase 2 is Skill DMG (hits above)
+      overrides:
+        - {index: 0, event: "cast:self:skill|cast:self:ult"}
+    513906:   # Sweeper's Blow
+      overrides:
+        - {index: 0, hit_tags: [rush, shadow], event: "cast:self:skill", duration: 8, max_stacks: 6}
+    513907:   # Cleaver Ready: the faster shadow isn't modelled
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:squad:1:3", duration: inf}
+        - {index: 1, hit_tags: [], event: "while:squad:1:3", duration: inf}
+    513908:   # Wide Blade Arc: the conversion isn't modelled
+      overrides:
+        - {index: 0, drop: true}
+        - {index: 1, drop: true}
+    513909:   # Pending Chore: the stacks' Sweep Marks aren't modelled
+      overrides:
+        - {index: 0, event: "mark:self&while:status:stance"}
+    513910:   # Overtime Chore: the stance part, all-Aqua only (hit tags can't test both; the stance alone)
+      overrides:
+        - {index: 1, hit_tags: [slash], event: "while:status:stance", duration: inf}
+    513911:   # Silent Paws
+      overrides:
+        - {index: 0, event: "dodge:main"}
+    513912:   # Repeated Sweep
+      overrides:
+        - {index: 0, event: "hit:self:mark_dmg"}
+    513913:   # Sweep Dash: per Aqua Trekker
+      overrides:
+        - {index: 0, max_stacks: 1, copies: [{event: "while:squad:1:1"}, {event: "while:squad:1:2"}, {event: "while:squad:1:3"}]}
+    513941:   # Purge Stance
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+    513942:   # Swift Wipe
+      overrides:
+        - {index: 0, hit_tags: [phase1]}
+    513943:   # Mirror Blade
+      add_hits:
+        ult: [{hit: 139543002, offset: 3.2, tags: [phase2]}]
+      overrides:
+        - {index: 0, hit_tags: [phase2]}
+
+support:
+  untimed: true
+  on_field: {skill: 3.0, ult: 4.5}   # GUESS
+  mark: {hit: 139000001, tags: [tide]}   # text: Sweeping Slashes can trigger Aqua Mark
+  procs:
+    - {event: "mark:self", every: 9, hit: 139000002, tags: [ebb]}
+  actions:
+    skill:                         # Sweeping Slashes x4, then the Finishing Slash and crystals
+      hits:
+        - {hit: 139320001, count: 4, offset: 0.8, interval: 0.3, tags: [cycling], triggers_mark: true}
+        - {hit: 139320002, offset: 2.2, tags: [finish], triggers_mark: true}
+        - {hit: 139320003, offset: 2.5, tags: [crystal], triggers_mark: true}
+    ult:
+      hits:
+        - {hit: 139400001, offset: 1.0, tags: [phase1], triggers_mark: true}
+        - {hit: 139400002, offset: 3.0, tags: [phase2], triggers_mark: true}
+
+  buffs:
+    - {effect: 13994001, level: ult, name: stance, event: "cast:self:ult", duration: {ref: "BuffValue,NoLevel,13994011,Time,10K"}}
+
+  potentials:
+    513921:   # Frost Blade (pink): GUESS: one per Cycling Slash
+      add_hits:
+        skill: [{hit: 139521001, count: 4, offset: 0.9, interval: 0.3, tags: [frost_blade]}]
+    513922:   # Repeat Sweep (pink)
+      add_hits:
+        skill: [{hit: 139522001, count: 8, offset: 0.95, interval: 0.15, tags: [cycling], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [cycling]}
+    513923:   # Sweeper's Finale (pink)
+      add_hits:
+        skill: [{hit: 139523001, count: 3, offset: 2.3, interval: 0.1, tags: [finish]}]
+    513924:   # Accidental Ruin (pink)
+      add_hits:
+        skill: [{hit: 139524001, offset: 3.5, tags: [crystal]}]
+    513925:   # Timber Splitter
+      overrides:
+        - {index: 0, hit_tags: [cycling]}
+        - {index: 1, hit_tags: [cycling], event: "while:broken"}
+    513926:   # Frosty Gale: needs 3 targets
+      overrides:
+        - {index: 0, drop: true}
+    513927:   # Housework Hazard: per second on the field (GUESS: half the text's rate)
+      overrides:
+        - {index: 0, event: "on_field_1s:self"}
+    513928:   # Deep Freeze
+      overrides:
+        - {index: 0, hit_tags: [finish, crystal]}
+        - {index: 1, hit_tags: [finish, crystal]}
+    513929:   # Solitary Chill
+      overrides:
+        - {index: 0, hit_tags: [finish, crystal]}
+    513930:   # Crescent Icicle
+      add_hits:
+        skill: [{hit: 139530001, count: 2, offset: 2.6, interval: 0.1, tags: [crystal]}]
+    513931:   # Winter's Vigil
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:on_field:self"}
+    513932: {}   # Icy Aegis
+    513933:   # Moonglow Haven
+      overrides:
+        - {index: 0, event: "while:squad:1:3", target: team}
+    513941:
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+    513942:
+      overrides:
+        - {index: 0, hit_tags: [phase1]}
+    513943:
+      add_hits:
+        ult: [{hit: 139543002, offset: 3.2, tags: [phase2]}]
+      overrides:
+        - {index: 0, hit_tags: [phase2]}

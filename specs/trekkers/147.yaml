@@ -1,0 +1,166 @@
+# Caramel (147) — Umbra Vanguard. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Her Demonic Boombox (a minion, 15 s) is most of her
+# main-role damage and is skipped, with its Mark triggers: expect a very low total as a main until it's modelled.
+char_id: 147
+
+talents:
+  1470116:   # Fundamental Theory (T1)
+    buffs:
+      - {effect: 14796111, event: "mark:self", duration: {ref: "BuffValue,NoLevel,14796111,Time,10K"}}
+  1470232:   # Chord Crescendo (T2)
+    buffs:
+      - {effect: 14796211, event: "cast:self:ult", duration: {ref: "BuffValue,NoLevel,14796211,Time,10K"}}
+  1470348:   # Silken Performance (T3): kills
+    buffs: []
+  1470464:   # Cadenza Pluck (T4)
+    buffs:
+      - {effect: 14796411, event: "hit:self:auto_dmg", duration: {ref: "BuffValue,NoLevel,14796411,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,14796411,LaminatedNum,Fixed"}}
+  1470580:   # Superb Debut (T5)
+    buffs:
+      - {effect: 14796511, event: "cast:self:skill", duration: {ref: "BuffValue,NoLevel,14796511,Time,10K"}}
+
+main:
+  untimed: true
+  mark: {hit: 147100000}
+  procs:
+    - {event: "mark:self", hit: 147000001, count: 10, offset: 0.067, interval: 0.5, mult: 0.1, restart: true, tags: [dark_burn_tick]}   # Dark Burn, as Mistique's
+
+  actions:
+    auto:
+      duration: 3.4                # GUESS: 1 s per strike
+      hits:
+        - {hit: 147100001, count: 2, offset: 0.4, interval: 0.2}
+        - {hit: 147100002, count: 2, offset: 1.4, interval: 0.2}
+        - {hit: 147100003, count: 5, offset: 2.4, interval: 0.1, tags: [s3]}
+
+    skill:                         # Co-Performance: the Boombox; only her connection ATK is kept
+      lock: 1.0                    # GUESS
+      hits: []
+
+    ult:                           # Melodic Seraphim x6 (text)
+      lock: 4.5                    # GUESS
+      hits:
+        - {hit: 147400001, count: 6, offset: 1.0, interval: 0.5, tags: [seraphim], triggers_mark: true}
+        - {hit: 0, offset: 3.6, tags: [ult_done]}
+
+  buffs:
+    - {effect: 14790001, level: skill, event: "cast:self:skill", duration: 15}   # near the Boombox, which lasts 15 s (Word 4016)
+    - {name: dark_burn, event: "mark:self", duration: {ref: "Buff,LevelUp,13590000,Time,10K"}, target: enemy}
+
+  potentials:
+    514701:   # Baseline Finale (pink): near the Boombox, one AoE hit on the last strike
+      add_hits:
+        auto: [{hit: 147100005, offset: 2.9, tags: [finale], triggers_mark: true}]
+    514702:   # Cheer Sparkle (pink): a Mark trigger means an extra last strike
+      procs:
+        - {event: "mark:self", hit: 147100003, count: 5, offset: 0.4, interval: 0.1, tags: [s3]}
+    514703:   # Rhythm Pulse (pink): the Boombox
+      note: "The Boombox isn't modelled."
+    514704:   # Sonic Boom (pink): the Boombox
+      note: "The Boombox isn't modelled."
+    514705:   # Tempo Shift: every 5th hit of the last strike
+      overrides:
+        - {index: 0, event: "hit:self:s3", every: 5}
+        - {index: 1, drop: true}
+    514706:   # Hype Trigger
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    514707:   # Rising Tone: the Boombox outlasts its cooldown; she stays near it
+      overrides:
+        - {index: 0, event: always}
+    514708:   # Fallen Duet: the Boombox
+      note: "The Boombox isn't modelled."
+    514709:   # Echo Stack: the Boombox
+      overrides:
+        - {index: 0, drop: true}
+    514710:   # Earcatch Riff: the Boombox's ATK
+      overrides:
+        - {index: 0, drop: true}
+    514711:   # Flicker Moves: needs a barrier to dodge through
+      overrides:
+        - {index: 0, drop: true}
+    514712:   # Maximum Boost: the Boombox
+      note: "The Boombox isn't modelled."
+    514713:   # Shadow Soundstrike
+      overrides:
+        - {index: 0, event: "mark:self"}
+    514741:   # Fallen Veil
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:dark_burn"}
+    514742:   # Demon's Runway
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+    514743:   # Ascension Soundflare
+      overrides:
+        - {index: 0, event: "hit:self:seraphim", reset_on: ["marker:self:ult_done"]}
+
+support:
+  untimed: true
+  on_field: {skill: 3.0, ult: 4.5}   # GUESS
+  mark: {hit: 147100000}             # text: Melodic Sweep can trigger Umbra Mark: Gloom
+  procs:
+    - {event: "mark:self", hit: 147000001, count: 10, offset: 0.067, interval: 0.5, mult: 0.1, restart: true, tags: [dark_burn_tick]}
+  actions:
+    skill:                         # Melodic Sweep x2, then 5 Notes (text)
+      hits:
+        - {hit: 147300006, count: 2, offset: 0.8, interval: 0.4, tags: [sweep], triggers_mark: true}
+        - {hit: 147300007, count: 5, offset: 1.8, interval: 0.2, tags: [note], triggers_mark: true}
+    ult:
+      hits:
+        - {hit: 147400001, count: 6, offset: 1.0, interval: 0.5, tags: [seraphim], triggers_mark: true}
+        - {hit: 0, offset: 3.6, tags: [ult_done]}
+
+  buffs:
+    - {name: dark_burn, event: "mark:self", duration: {ref: "Buff,LevelUp,13590000,Time,10K"}, target: enemy}
+
+  potentials:
+    514721:   # Melody Return (pink)
+      add_hits:
+        skill: [{hit: 147300006, offset: 1.6, tags: [sweep], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [sweep]}
+    514722:   # Heavenly Dropbeat (pink): -1 s per sweep hit
+      cd_reduce: {action: skill, seconds: 2}
+      procs:
+        - {event: "hit:self:sweep", hit: 147300008, tags: [boombox_drop]}
+    514723:   # Heart Sync (pink): ricochets
+      note: "Ricochets need other targets."
+    514724:   # Overflowing Passion (pink): 3 more Notes
+      add_hits:
+        skill: [{hit: 147300007, count: 3, offset: 2.8, interval: 0.2, tags: [note], triggers_mark: true}]
+    514725:   # Bass Gravity
+      overrides:
+        - {index: 0, hit_tags: [sweep]}
+    514726:   # Rhythm Waves
+      overrides:
+        - {index: 0, hit_tags: [sweep]}
+    514727:   # Heart Piercer
+      overrides:
+        - {index: 0, hit_tags: [sweep]}
+    514728:   # Sync Chime
+      overrides:
+        - {index: 0, event: "hit:self:note"}
+    514729:   # Soulstrike Sound
+      overrides:
+        - {index: 0, hit_tags: [note], event: "hit:self:note", duration: 5, max_stacks: 8}
+    514730:   # House Resonance
+      overrides:
+        - {index: 0, hit_tags: [note]}
+    514731:   # Surging Undercurrent
+      overrides:
+        - {index: 0, event: "mark:self"}
+    514732:   # Blazing Remnant
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:dark_burn"}
+    514733:   # Ball of Darkness
+      overrides:
+        - {index: 0, event: always, target: "element:6"}
+    514741:
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:dark_burn"}
+    514742:
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+    514743:
+      overrides:
+        - {index: 0, event: "hit:self:seraphim", reset_on: ["marker:self:ult_done"]}

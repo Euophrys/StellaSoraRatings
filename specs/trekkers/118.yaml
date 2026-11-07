@@ -1,0 +1,176 @@
+# Coronis (118) — Umbra Versatile. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits".
+char_id: 118
+
+talents:
+  1180116:   # Severing Edge (T1)
+    buffs:
+      - {effect: 11896111, event: "mark:element6", target: team, duration: {ref: "BuffValue,NoLevel,11896111,Time,10K"}}
+  1180232:   # Hostile Amplification (T2): the single-target value
+    buffs:
+      - {attribute: 11896221, event: always}
+  1180348:   # Stitch and Fix (T3)
+    buffs:
+      - {effect: 11896311, event: "cast:self:ult", target: team, duration: {ref: "BuffValue,NoLevel,11896311,Time,10K"}}
+  1180464:   # Beautification and Fix (T4)
+    buffs:
+      - {effect: 11896411, event: "mark:element6", duration: {ref: "BuffValue,NoLevel,11896411,Time,10K"}}
+  1180580:   # Specimen Exhibition (T5)
+    buffs:
+      - {attribute: 11896511, event: always}
+
+main:
+  untimed: true
+  mark: {hit: 118000001}
+
+  actions:
+    auto:
+      duration: 4.4                # GUESS: 1 s per strike
+      hits:
+        - {hit: 118000003, offset: 0.4}
+        - {hit: 118000004, offset: 1.4}
+        - {hit: 118000005, offset: 2.4}
+        - {hit: 118000006, offset: 3.4, tags: [s4]}
+
+    skill:                         # Sleight of Scythe x5 and a smash (text)
+      lock: 2.5                    # GUESS
+      hits:
+        - {hit: 118000015, count: 5, offset: 0.5, interval: 0.25, tags: [slice], triggers_mark: true}
+        - {hit: 118000016, offset: 1.9, tags: [smash], triggers_mark: true}
+
+    ult:                           # Void Reaper x8 and a slash (text)
+      lock: 6.0                    # GUESS
+      hits:
+        - {hit: 118000013, count: 8, offset: 1.0, interval: 0.4, tags: [storm]}
+        - {hit: 118000014, offset: 4.5, tags: [slash]}
+
+  buffs:
+    - {name: dark_shackles, event: "mark:self", duration: {ref: "Buff,LevelUp,5031,Time,10K"}, target: enemy}
+
+  potentials:
+    511801:   # Shadow Reaper's Dance (pink): 4 more strikes (GUESS: the slice row)
+      add_hits:
+        skill: [{hit: 118000015, count: 4, offset: 0.6, interval: 0.25, tags: [slice], triggers_mark: true}]
+      overrides:
+        - {index: 0, event: always}
+    511802:   # Soul Splitter (pink): stacks per strike, 3 times
+      overrides:
+        - {index: 0, hit_tags: [slice, smash], event: "hit:self:slice", duration: 3, max_stacks: 3}
+    511803:   # Shadow Invasion (pink): 2 Necro Energy per cast, spent by the next auto
+      procs:
+        - {event: "cast:self:skill", hit: 118000007, count: 3, offset: 2.9, interval: 0.2, tags: [scythe]}
+    511804:   # Phantom Blade (pink): 1 Necro Energy per final strike, 2 needed
+      procs:
+        - {event: "hit:self:s4", every: 2, hit: 118000007, count: 3, offset: 0.4, interval: 0.2, tags: [scythe]}
+    511805:   # Night Cruise
+      overrides:
+        - {index: 0, event: always}
+    511806:   # Soul Buckle
+      overrides:
+        - {index: 0, hit_tags: [slice, smash], event: "while:status:dark_shackles"}
+    511807:   # Chained Shadow: one target, one stack
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:dark_shackles"}
+    511808:   # Roaming Spectre: refreshed by new Scythes
+      procs:
+        - {event: "hit:self:scythe", hit: 118000017, count: 12, offset: 0.5, interval: 0.5, restart: true, tags: [venom]}
+      overrides:
+        - {index: 0, event: always}
+    511809:   # Obscure Eruption
+      overrides:
+        - {index: 0, event: "mark:self"}
+    511810:   # Dark Veil
+      overrides:
+        - {index: 0, event: "dodge:main"}
+    511811:   # Arcane Blade
+      mark_tags: [storm, slash]
+      overrides:
+        - {index: 0, event: always}
+    511812: {}   # Shadow Escape
+    511813:   # Shadow Dash: DEF
+      overrides:
+        - {index: 0, drop: true}
+    511841:   # Night Reaper: one target, one stack
+      overrides:
+        - {index: 0, hit_tags: [storm, slash]}
+        - {index: 1, hit_tags: [slash]}
+    511842:   # Formidable Glyph
+      overrides:
+        - {index: 0, event: "cast:self:ult", target: main}
+    511843:   # Terrifying Rampage: while the target's bar isn't broken
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:not:broken"}
+
+support:
+  untimed: true
+  on_field: {skill: 3.0, ult: 6.0}   # GUESS
+  actions:
+    skill:                         # Bone Chain: a sweep, then the chains break
+      hits:
+        - {hit: 118000008, offset: 0.8, tags: [sweep], applies_mark: true}
+        - {hit: 118000009, offset: 1.8, tags: [chain], applies_mark: true}
+    ult:
+      hits:
+        - {hit: 118000013, count: 8, offset: 1.0, interval: 0.4, tags: [storm], excludes: [511831]}
+        - {hit: 118000013, offset: 1.0, tags: [storm], applies_mark: true, requires: [511831]}
+        - {hit: 118000013, count: 7, offset: 1.4, interval: 0.4, tags: [storm], requires: [511831]}
+        - {hit: 118000014, offset: 4.5, tags: [slash]}
+
+  potentials:
+    511821:   # Skeleton Sculpture (pink): the Efficiency is for the sweep and Scythes
+      add_hits:
+        skill: [{hit: 118000010, count: 3, offset: 0.9, interval: 0.1, tags: [scythe], applies_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [sweep, scythe]}
+    511822:   # Skeleton Frenzy (pink)
+      add_hits:
+        skill: [{hit: 118000010, count: 3, offset: 1.9, interval: 0.1, tags: [scythe], applies_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [sweep, scythe]}
+    511823:   # Hormone Elixir (pink): only her own Marks, and she doesn't trigger any
+      overrides:
+        - {index: 0, event: "hit:self:sweep", every: 2}
+    511824:   # Toxin Infusion (pink): every 0.5 s for 6 s
+      add_hits:
+        skill: [{hit: 118000011, count: 12, offset: 2.3, interval: 0.5, tags: [venom], applies_mark: true}]
+    511825:   # Spiritual Tome: a second sweep
+      add_hits:
+        skill: [{hit: 118000012, offset: 1.1, tags: [sweep], applies_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [sweep, scythe]}
+    511826:   # Bloodletting Therapy
+      overrides:
+        - {index: 0, event: "mark_applied:self"}
+    511827:   # Magic Transplant
+      overrides:
+        - {index: 0, event: "hit:self:sweep"}
+    511828:   # Arcane Collection: needs 3 bound targets
+      overrides:
+        - {index: 0, drop: true}
+    511829:   # Soul Restraint
+      overrides:
+        - {index: 0, hit_tags: [chain]}
+    511830:   # Tag of Fate
+      overrides:
+        - {index: 0, event: "hit:self:chain"}
+    511831:   # Precision Surgery
+      overrides:
+        - {index: 0, event: always}
+    511832:   # Medical Research: 5% of the bar once per 12 s
+      procs:
+        - {event: "hit:self:sweep", hit: 0, icd: 12, resilience: {param: Param1}}
+      overrides:
+        - {index: 0, event: always}
+    511833:   # Underground Healer
+      overrides:
+        - {index: 0, event: always, target: "element:6"}
+    511841:
+      overrides:
+        - {index: 0, hit_tags: [storm, slash]}
+        - {index: 1, hit_tags: [slash]}
+    511842:
+      overrides:
+        - {index: 0, event: "cast:self:ult", target: main}
+    511843:
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:not:broken"}

@@ -1,0 +1,184 @@
+# Karin (157) — Umbra Vanguard. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Boss Shark deals Ultimate DMG, not Minion DMG:
+# modelled. Hunting Energy: 100 at 10/s: a chain and Hunter's Mark (3 s) every 10 s.
+char_id: 157
+
+talents:
+  1570116:   # Ripples of Grace (T1)
+    buffs:
+      - {effect: 15796111, event: "mark_applied:element6", duration: {ref: "BuffValue,NoLevel,15796111,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,15796111,LaminatedNum,Fixed"}}
+  1570232:   # Ocean's Echo (T2)
+    buffs:
+      - {effect: 15796211, event: "hit:self:auto_dmg|hit:self:ult_dmg", duration: {ref: "BuffValue,NoLevel,15796211,Time,10K"}}
+  1570348:   # Twilight's End (T3)
+    buffs:
+      - {effect: 15796311, event: "mark:self", duration: {ref: "BuffValue,NoLevel,15796311,Time,10K"}}
+      - {effect: 15796312, event: "mark:self", duration: {ref: "BuffValue,NoLevel,15796311,Time,10K"}}
+  1570464:   # Calm Summer Night (T4)
+    buffs:
+      - {effect: 15796411, event: "cast:self:ult", duration: {ref: "BuffValue,NoLevel,15796411,Time,10K"}}
+  1570580:   # Heart as Waves (T5)
+    buffs:
+      - {attribute: 15796511, event: always}
+
+main:
+  untimed: true
+  mark: {hit: 157000001}
+  procs:
+    - {event: "mark:self", hit: 157000002, count: 10, offset: 0.067, interval: 0.5, mult: 0.1, restart: true, tags: [dark_burn_tick]}   # Dark Burn, as Mistique's
+
+  actions:
+    auto:
+      duration: 1.0                # GUESS: a shell per second
+      hits:
+        - {hit: 157100001, offset: 0.5, tags: [shell]}
+
+    skill:                         # Bait and Catch: a fishcake, then Boss Shark
+      lock: 2.0                    # GUESS
+      hits:
+        - {hit: 157300001, offset: 0.5, tags: [fishcake], triggers_mark: true}
+        - {hit: 157300002, offset: 1.2, tags: [shark], triggers_mark: true}
+
+    ult:                           # Shark Assault x14 (text)
+      lock: 6.0                    # GUESS
+      hits:
+        - {hit: 157400001, count: 14, offset: 1.0, interval: 0.3, tags: [assault], triggers_mark: true}
+
+  buffs:
+    - {name: dark_burn, event: "mark:self", duration: 5, target: enemy}
+    - {effect: 15790003, level: auto, name: hunter, event: "timer:10", duration: 3, excludes: [515704]}
+    - {effect: 15790003, level: auto, name: hunter, event: "timer:10", duration: 6, requires: [515704]}
+
+  potentials:
+    515701:   # Predator's Vortex (pink)
+      procs:
+        - {event: "hit:self:shark", hit: 157300003, count: 7, icd: 1.5, offset: 0.2, interval: 0.1, tags: [vortex], triggers_mark: true}
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:dark_burn"}
+    515702:   # Shark Ambush (pink): GUESS: a lunge every 2 s of its 8 s
+      procs:
+        - {event: "cast:self:skill", hit: 157300006, count: 4, offset: 2.0, interval: 2.0, tags: [shark], triggers_mark: true}
+    515703:   # Scatter Shot (pink): the extra bullets aren't counted
+      procs:
+        - {event: "hit:self:shell", when: "while:status:hunter", hit: 157300004, tags: [lob]}
+      overrides:
+        - {index: 0, event: "while:status:hunter"}
+        - {index: 1, event: "while:status:hunter"}
+    515704:   # Hunting Dark Shackle (pink): 3 s longer; GUESS: the link hits once per second
+      procs:
+        - {event: "timer:1", when: "while:status:hunter", hit: 157300005, tags: [link], triggers_mark: true}
+      overrides:
+        - {index: 0, event: "timer:10"}
+        - {index: 1, event: "timer:10"}
+      note: "The extra Hunting Energy from the link isn't modelled."
+    515705:   # Crashing Wave
+      procs:
+        - {event: "hit:self:ult_dmg", every: 5, icd: 2, hit: 157300007, tags: [shark], triggers_mark: true}
+    515706:   # Twin Predator
+      overrides:
+        - {index: 0, event: "hit:self:shark"}
+        - {index: 1, event: "hit:self:shark", target: "class:2"}
+    515707:   # Hunter's Command: assumes an all-Umbra squad
+      overrides:
+        - {index: 0, hit_tags: [shark], event: "while:status:dark_burn"}
+    515708:   # Dark Shackle Detonation: when Hunter's Mark ends
+      procs:
+        - {event: "timer:10", hit: 157300008, offset: 3.0, tags: [detonation], triggers_mark: true}
+      overrides:
+        - {index: 0, event: "timer:10"}
+    515709:   # High-Threat Target: assumes an all-Umbra squad, skill on cooldown
+      overrides:
+        - {index: 0, hit_tags: [shell], event: "while:status:dark_burn"}
+    515710:   # Hunting Suppression
+      overrides:
+        - {index: 0, event: "mark:self&while:status:hunter"}
+    515711:   # Confidence Booster
+      overrides:
+        - {index: 0, event: "mark:self"}
+    515712:   # Pursuit of the Shadow
+      overrides:
+        - {index: 0, event: "dodge:main"}
+    515713:   # Aura of Unity
+      overrides:
+        - {index: 0, max_stacks: 1, copies: [{event: "while:squad:6:1"}, {event: "while:squad:6:2"}, {event: "while:squad:6:3"}]}
+        - {index: 1, max_stacks: 1, target: "element:6", copies: [{event: "while:squad:6:1"}, {event: "while:squad:6:2"}, {event: "while:squad:6:3"}]}
+    515741:   # Unyielding Spirit
+      overrides:
+        - {index: 1, hit_tags: [assault]}
+    515742:   # Deep-Sea Conflict: GUESS: 2 volleys of 3
+      add_hits:
+        ult: [{hit: 157400002, count: 6, offset: 2.0, interval: 0.4, tags: [bubble], triggers_mark: true}]
+    515743:   # Self-Transcend
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+
+support:
+  untimed: true
+  on_field: {skill: 4.0, ult: 6.0}   # GUESS
+  mark: {hit: 157000001}             # text: Raging Sea can trigger Umbra Mark
+  procs:
+    - {event: "mark:self", hit: 157000002, count: 10, offset: 0.067, interval: 0.5, mult: 0.1, restart: true, tags: [dark_burn_tick]}
+  actions:
+    skill:                         # Raging Sea: chains x4, Boss Shark x4, the slam (text)
+      hits:
+        - {hit: 157300011, count: 4, offset: 0.8, interval: 0.6, tags: [chain], triggers_mark: true}
+        - {hit: 157300012, count: 4, offset: 0.9, interval: 0.6, tags: [shark], triggers_mark: true}
+        - {hit: 157300013, offset: 3.6, tags: [shark], triggers_mark: true}
+    ult:
+      hits:
+        - {hit: 157400001, count: 14, offset: 1.0, interval: 0.3, tags: [assault], triggers_mark: true}
+
+  buffs:
+    - {name: dark_burn, event: "mark:self", duration: 5, target: enemy}
+
+  potentials:
+    515721:   # Shark's Phantom (pink): GUESS: a second bite each time
+      add_hits:
+        skill: [{hit: 157300012, count: 4, offset: 1.1, interval: 0.6, tags: [shark], triggers_mark: true}]
+    515722:   # Dark Bite Mark (pink): every 2nd bite detonates the last one's mark
+      procs:
+        - {event: "hit:self:shark", every: 2, hit: 157300014, tags: [bite], triggers_mark: true}
+    515723:   # Tidal Lash (pink): GUESS: 2 more swings
+      add_hits:
+        skill: [{hit: 157300011, count: 2, offset: 3.0, interval: 0.3, tags: [chain], triggers_mark: true}]
+    515724:   # Undercurrent Blast (pink): GUESS: one explosion per swing
+      procs:
+        - {event: "hit:self:chain", hit: 157300015, offset: 0.1, tags: [blast], triggers_mark: true}
+    515725:   # Ocean Aftershock: one explosion per bite (GUESS)
+      procs:
+        - {event: "hit:self:shark", hit: 157300016, offset: 0.1, tags: [bubble], triggers_mark: true}
+      overrides:
+        - {index: 0, hit_tags: [shark]}
+    515726:   # Pack Pursuit
+      overrides:
+        - {index: 0, event: "hit:self:shark"}
+    515727:   # Apex Dominance: elite or lower only
+      overrides:
+        - {index: 0, drop: true}
+    515728:   # Surging Rhythm
+      overrides:
+        - {index: 0, hit_tags: [chain], event: "hit:self:chain", duration: 2, max_stacks: 9}
+    515729:   # Against the Tide
+      overrides:
+        - {index: 0, hit_tags: [chain]}
+    515730:   # Undercurrent Surge
+      overrides:
+        - {index: 0, event: "cast:element6:skill"}
+    515731:   # Awkward Inspiration
+      overrides:
+        - {index: 0, event: always, target: "element:6"}
+    515732:   # Competitive Spirit
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    515733:   # Moonlit Bond
+      overrides:
+        - {index: 0, max_stacks: 1, copies: [{event: "while:squad:6:1"}, {event: "while:squad:6:2"}, {event: "while:squad:6:3"}]}
+    515741:
+      overrides:
+        - {index: 1, hit_tags: [assault]}
+    515742:
+      add_hits:
+        ult: [{hit: 157400002, count: 6, offset: 2.0, interval: 0.4, tags: [bubble], triggers_mark: true}]
+    515743:
+      overrides:
+        - {index: 0, event: "cast:self:ult"}

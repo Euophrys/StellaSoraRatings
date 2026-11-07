@@ -166,6 +166,7 @@ potentials:
 | `reset_cd` | `{ult: skill}`: casting the ult makes the skill ready |
 | `add_charges` | `{skill: 1}`: more stored uses of that action ("increases initial uses by 1") |
 | `cd_scale` | `{skill: 0.5}`: that action's cooldown is multiplied by the value ("reduces the Cooldown by 50%") |
+| `ult_cost_scale` | the ult's Energy cost is multiplied by the value ("requires 25% more Energy": `1.25`) |
 | `cd_when` | `[{action: skill, scale: 0.5, when: "while:cast_within:self:ult:9.167"}]`: a cooldown is multiplied by `scale` if `when` holds as it starts. A cooldown already running doesn't change |
 | `cd_reduce` | `{action: skill, seconds: <value>, times: <value>}`: each cast refunds `seconds × times` of its own cooldown |
 | `minion_rules` | `{pool: {key: value}}`: changes a minion pool (see Minion pools) |

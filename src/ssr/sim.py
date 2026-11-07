@@ -329,6 +329,8 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                                                  for h in ms.reactions if keep(h)])
         if "ult" in actions and actions["ult"].skill_id:
             m.ult_cost = ult_energy(gd, actions["ult"].skill_id)
+            for rp in resolved:
+                m.ult_cost *= rp.ult_cost_scale
         m.charge = charge
         members.append(m)
 

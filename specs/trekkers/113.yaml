@@ -1,0 +1,206 @@
+# Shimiao (113) — Aqua Vanguard. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits".
+char_id: 113
+
+talents:
+  1130116:   # Ceaseless Drizzle (T1)
+    buffs:
+      - {effect: 11396111, event: "cast:self:ult", duration: {ref: "BuffValue,NoLevel,11396111,Time,10K"}}
+  1130232:   # Splashing Raindrops (T2)
+    buffs:
+      - {effect: 11396211, event: "mark:self", duration: {ref: "BuffValue,NoLevel,11396211,Time,10K"}}
+  1130348:   # Clear Water: Traceless (T3)
+    buffs:
+      - {effect: 11396311, event: "hit:self:skill_dmg", max_stacks: {ref: "BuffValue,NoLevel,11396311,LaminatedNum,Fixed"}, reset_on: ["marker:self:ult_done"]}
+  1130464:   # Clear Water: Melody (T4)
+    buffs:
+      - {effect: 11396411, event: "hit:self:auto_dmg", duration: {ref: "BuffValue,NoLevel,11396411,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,11396411,LaminatedNum,Fixed"}}
+  1130580:   # Clear Water: Meditation (T5): kills
+    buffs: []
+
+main:
+  untimed: true
+  mark: {hit: 113000001}
+
+  actions:
+    auto:
+      duration: 6.4                # GUESS: 1 s per strike
+      hits:
+        - {hit: 113100011, offset: 0.4}
+        - {hit: 113100011, offset: 1.4}
+        - {hit: 113100012, offset: 2.4}
+        - {hit: 113100021, offset: 3.4}
+        - {hit: 113100021, offset: 4.4}
+        - {hit: 113100031, offset: 5.4}
+
+    skill:                         # Rising Tides, both phases, always (text: x6 and x6)
+      lock: 5.0                    # GUESS
+      hits:
+        - {hit: 113310011, count: 6, offset: 0.5, interval: 0.3, tags: [p1], triggers_mark: true, excludes: [511302]}
+        - {hit: 0, offset: 2.9, tags: [p2_start]}
+        - {hit: 113310021, count: 6, offset: 3.0, interval: 0.3, tags: [p2], triggers_mark: true, excludes: [511302]}
+        - {hit: 113310211, count: 6, offset: 0.5, interval: 0.3, tags: [p1], triggers_mark: true, requires: [511302]}
+        - {hit: 113310221, count: 6, offset: 3.0, interval: 0.3, tags: [p2], triggers_mark: true, requires: [511302]}
+
+    ult:                           # Flood Mantra (text)
+      lock: 5.0                    # GUESS
+      hits:
+        - {hit: 113400001, offset: 1.0, tags: [mantra], triggers_mark: true}
+        - {hit: 113400011, count: 4, offset: 1.8, interval: 0.5, tags: [mantra], triggers_mark: true}
+        - {hit: 0, offset: 3.4, tags: [ult_done]}
+
+  buffs:
+    - {name: chill, event: "mark:self", target: enemy, duration: {ref: "BuffValue,NoLevel,4021,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,4021,LaminatedNum,Fixed"}}
+
+  potentials:
+    511301:   # Stream Embrace (pink)
+      add_hits:
+        skill: [{hit: 113310011, count: 6, offset: 0.65, interval: 0.3, tags: [p1], triggers_mark: true}]
+      overrides:
+        - {index: 0, event: "damage:self", reset_on: ["marker:self:p2_start"]}
+    511302:   # Wave Swirl (pink): water blades, same counts (GUESS, not in the text)
+      overrides:
+        - {index: 0, hit_tags: []}
+    511303:   # Torrent Plunge (pink): one target, one stack
+      overrides:
+        - {index: 0, event: "cast:self:skill", max_stacks: 1}
+        - {index: 1, hit_tags: [p2]}
+    511304:   # Gurgling Streams (pink): 1 ripple per 2 of the 6 spins
+      add_hits:
+        skill: [{hit: 113310401, count: 3, offset: 3.5, interval: 0.6, tags: [ripple], triggers_mark: true}]
+    511305:   # Stream Mirror
+      overrides:
+        - {index: 0, event: "hit_taken:main"}
+    511306:   # Towering Waves: only if Phase 2 is skipped, and the kit always casts it
+      overrides:
+        - {index: 0, drop: true}
+    511307:   # Cascade Glow: the lowest bonus only; the HP tiers aren't modelled
+      overrides:
+        - {index: 0, hit_tags: [p2], event: "while:status:chill"}
+        - {index: 1, drop: true}
+        - {index: 2, drop: true}
+        - {index: 3, drop: true}
+        - {index: 4, drop: true}
+        - {index: 5, drop: true}
+        - {index: 6, drop: true}
+        - {index: 7, drop: true}
+        - {index: 8, drop: true}
+    511308:   # Relenting Rain: kills
+      overrides:
+        - {index: 0, drop: true}
+    511309:   # Raining Ripples
+      procs:
+        - {event: "damage:self", hit: 113310901, chance: 0.15, icd: 5, tags: [ripple], triggers_mark: true}
+    511310:   # Silent Rain
+      procs:
+        - {event: "cast:self:skill|dodge:main", hit: 113311001, icd: 10, count: 10, offset: 1.0, interval: 1.0, tags: [puddle]}
+    511311:   # Cliffside Spring: the extra final hit isn't modelled
+      overrides:
+        - {index: 0, hit_tags: [], event: "marker:self:p2_start", duration: 10}
+    511312:   # Roaring Ocean Wave
+      overrides:
+        - {index: 0, event: "hit:self:auto_dmg&while:status:chill"}
+        - {index: 1, event: "hit:self:auto_dmg&while:status:chill"}
+    511313:   # Sky-Washing Shower
+      overrides:
+        - {index: 0, hit_tags: [p1, p2], event: "while:status:chill"}
+        - {index: 1, hit_tags: [p1, p2], event: "while:broken"}
+    511341:   # Intonation
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:chill"}
+    511342:   # Wave Rider: the lowest bonus only
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:chill"}
+        - {index: 1, drop: true}
+        - {index: 2, drop: true}
+        - {index: 3, drop: true}
+        - {index: 4, drop: true}
+        - {index: 5, drop: true}
+        - {index: 6, drop: true}
+        - {index: 7, drop: true}
+        - {index: 8, drop: true}
+    511343:   # Humming Wellspring: 3 puddles
+      add_hits:
+        ult: [{hit: 113404301, count: 3, offset: 3.5, interval: 0.3, tags: [puddle]}]
+
+support:
+  untimed: true
+  on_field: {skill: 6.0, ult: 4.0}   # GUESS: she stays for the 7 rounds
+  mark: {hit: 113000001}             # text: Aqua Aide can trigger Aqua Mark: Torrent
+  actions:
+    skill:                         # Aqua Aide: a splash, then 7 rounds x5 (text)
+      hits:
+        - {hit: 113320000, offset: 0.8, tags: [splash], triggers_mark: true}
+        - {hit: 113320001, count: 35, offset: 1.2, interval: 0.14, tags: [blade], triggers_mark: true}
+    ult:
+      hits:
+        - {hit: 113400001, offset: 1.0, tags: [mantra], triggers_mark: true}
+        - {hit: 113400011, count: 4, offset: 1.8, interval: 0.5, tags: [mantra], triggers_mark: true}
+        - {hit: 0, offset: 3.4, tags: [ult_done]}
+
+  buffs:
+    - {name: chill, event: "mark:self", target: enemy, duration: {ref: "BuffValue,NoLevel,4021,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,4021,LaminatedNum,Fixed"}}
+
+  potentials:
+    511321:   # Rain Whisper: Gentle (pink): a medium blade per 3 blades; "more blades" isn't in the data
+      add_hits:
+        skill: [{hit: 113320002, count: 11, offset: 1.5, interval: 0.42, tags: [blade], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: []}
+    511322:   # Rain Whisper: Steady (pink): 50% chance, one pellet per blade (GUESS)
+      procs:
+        - {event: "hit:self:blade", hit: 113322201, chance: 0.5, tags: [pellet]}
+      overrides:
+        - {index: 0, event: "hit:self:blade"}
+    511323:   # Rain Whisper: Pouring (pink)
+      add_hits:
+        skill: [{hit: 113320003, offset: 1.2, tags: [major], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [blade, major]}
+    511324:   # Rain Whisper: Light (pink): "next blade every 1.5 s" isn't modelled; about 4 of 35 blades
+      overrides:
+        - {index: 0, drop: true}
+    511325:   # Hazard Elimination
+      overrides:
+        - {index: 0, event: "hit:self:blade"}
+    511326:   # Full Preparation: needs 2 slowed targets
+      overrides:
+        - {index: 0, drop: true}
+        - {index: 1, drop: true}
+    511327:   # Fire Patrol
+      overrides:
+        - {index: 0, event: "hit:self:blade"}
+    511328:   # Missive Support: while on the field; she stands still (GUESS)
+      overrides:
+        - {index: 0, event: "on_field_1s:self"}
+    511329:   # Secretary Duty: once per 5 s on the field
+      procs:
+        - {event: "on_field_1s:self", hit: 113322901, icd: 5, tags: [ripple], triggers_mark: true}
+    511330:   # Field Review: kills
+      note: "Needs a kill: nothing against a single boss."
+    511331:   # Efficiency Boost
+      overrides:
+        - {index: 0, hit_tags: [blade], event: "while:status:chill"}
+        - {index: 1, hit_tags: [blade], event: "while:broken"}
+    511332:   # Effortless Fulfillment: kills
+      note: "Needs a kill: nothing against a single boss."
+    511333:   # Irrigation Mastery: GUESS: "enters combat" is once, at her first skill
+      overrides:
+        - {index: 0, event: "cast:self:skill&once", target: team}
+    511341:
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:chill"}
+    511342:
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:chill"}
+        - {index: 1, drop: true}
+        - {index: 2, drop: true}
+        - {index: 3, drop: true}
+        - {index: 4, drop: true}
+        - {index: 5, drop: true}
+        - {index: 6, drop: true}
+        - {index: 7, drop: true}
+        - {index: 8, drop: true}
+    511343:
+      add_hits:
+        ult: [{hit: 113404301, count: 3, offset: 3.5, interval: 0.3, tags: [puddle]}]

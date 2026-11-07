@@ -1,0 +1,164 @@
+# Jinglin (117) — Lux Versatile. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". The Qilin is Ultimate DMG, not a minion: modelled,
+# one hit per tick on a single boss (the text says it picks 4 random enemies).
+char_id: 117
+
+talents:
+  1170116:   # Thunder Wrath (T1): the Qilin's 10 s
+    buffs:
+      - {effect: 11796111, event: "cast:self:ult", duration: 10, target: team}
+  1170232:   # Qilin Roar (T2)
+    buffs:
+      - {attribute: 11796211, event: "while:mark:5"}
+  1170348:   # Good Business (T3)
+    buffs:
+      - {effect: 11796311, event: "hit:self:ult_dmg", duration: {ref: "BuffValue,NoLevel,11796311,Time,10K"}, target: enemy}
+  1170464:   # Meeting Ends (T4)
+    buffs:
+      - {effect: 11796411, event: "mark:element5", duration: {ref: "BuffValue,NoLevel,11796411,Time,10K"}}
+  1170580:   # Triple Revenue (T5): kills
+    buffs: []
+
+main:
+  untimed: true
+  mark: {hit: 117000001}
+
+  actions:
+    auto:
+      duration: 3.4                # GUESS: 1 s per strike
+      hits:
+        - {hit: 117100001, offset: 0.4}
+        - {hit: 117100001, offset: 1.4}
+        - {hit: 117100002, offset: 2.4}
+
+    skill:                         # Thunder Strike: 4 stored uses (data)
+      lock: 1.5                    # GUESS
+      hits:
+        - {hit: 117502001, offset: 0.6, tags: [bolt], triggers_mark: true}
+        - {hit: 0, offset: 0.7, tags: [skill_done]}
+        - {hit: 0, offset: 0.7, tags: [knot_reset], cycle: [4, 4], requires: [511702]}
+
+    ult:                           # Roar of the Qilin: every 0.5 s for 10 s (text)
+      lock: 3.0                    # GUESS: she summons it and carries on
+      hits:
+        - {hit: 117400001, count: 20, offset: 1.0, interval: 0.5, tags: [qilin]}
+
+  potentials:
+    511701:   # Energy Storage: Bind (pink): CD 2 s shorter
+      cd_reduce: {action: skill, seconds: 2}
+    511702:   # Energy Storage: Knot (pink): stacks 1, 2, 3, then the next cast clears them
+      overrides:
+        - {index: 0, hit_tags: [bolt], event: "cast:self:skill", duration: inf, max_stacks: 3, reset_on: ["marker:self:knot_reset"]}
+    511703:   # Energy Storage: Channel (pink): one target, so no bounces
+      procs:
+        - {event: "mark:self", hit: 117503001, tags: [chain]}
+    511704:   # Energy Storage: Ascend (pink): per second for 6 s
+      procs:
+        - {event: "cast:self:skill", hit: 117504001, count: 6, offset: 1.0, interval: 1.0, restart: true, tags: [ascend]}
+    511705:   # Charge Cycle
+      procs:
+        - {event: "mark:self", hit: 117505001, icd: 3, tags: [charge]}
+    511706:   # Discharge Test
+      overrides:
+        - {index: 0, hit_tags: [bolt], event: "hit:self:auto_dmg", reset_on: ["marker:self:skill_done"]}
+    511707:   # Integrated Energy Storage
+      overrides:
+        - {index: 0, event: "hit:self:bolt"}
+    511708:   # Heat Management: on the next bolt after a Mark (GUESS); "always crits" isn't modelled
+      overrides:
+        - {index: 0, hit_tags: [bolt], event: "mark:self", icd: 8, duration: inf, reset_on: ["hit:self:bolt"]}
+    511709:   # Recycle and Reuse
+      overrides:
+        - {index: 0, event: "mark:self"}
+    511710:   # Power Distribution: kills
+      overrides:
+        - {index: 0, drop: true}
+    511711:   # Leakage Protection
+      mark_tags: [qilin]
+      overrides:
+        - {index: 0, event: "mark:self"}
+    511712:   # Neutral Left...: every time she's hit, though it needs a melee hit
+      procs:
+        - {event: "hit_taken:main", hit: 117512001, icd: 6, tags: [counter]}
+    511713:   # Conductor Conversion
+      overrides:
+        - {index: 0, event: "mark:self"}
+    511741:   # Heavenly Kirin
+      overrides:
+        - {index: 0, event: "cast:self:ult", duration: 10}
+    511742:   # Lord of Beasts: interval -50%
+      add_hits:
+        ult: [{hit: 117400001, count: 20, offset: 1.25, interval: 0.5, tags: [qilin]}]
+      overrides:
+        - {index: 0, hit_tags: [qilin]}
+    511743:   # Auspicious Spirit
+      overrides:
+        - {index: 0, event: "hit:self:qilin&while:mark:5"}
+
+support:
+  untimed: true
+  on_field: {skill: 3.0, ult: 3.0}   # GUESS
+  actions:
+    skill:                         # Static Discharge: every 0.5 s for 8 s (text)
+      hits:
+        - {hit: 117320001, count: 16, offset: 1.0, interval: 0.5, tags: [domain], applies_mark: true}
+    ult:
+      hits:
+        - {hit: 117400001, count: 20, offset: 1.0, interval: 0.5, tags: [qilin], excludes: [511731]}
+        - {hit: 117400001, offset: 1.0, tags: [qilin], applies_mark: true, requires: [511731]}
+        - {hit: 117400001, count: 19, offset: 1.5, interval: 0.5, tags: [qilin], requires: [511731]}
+
+  potentials:
+    511721:   # Thunderbolt: Dragon (pink)
+      overrides:
+        - {index: 0, hit_tags: [domain]}
+    511722:   # Thunderbolt: Bamboo (pink): interval -30%
+      add_hits:
+        skill: [{hit: 117320001, count: 7, offset: 1.25, interval: 1.1, tags: [domain], applies_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [domain]}
+    511723:   # Thunderbolt: Character (pink): once per cast
+      overrides:
+        - {index: 0, event: "cast:self:skill", duration: 8}
+    511724:   # Thunderbolt: Circle (pink): at the start, then every 3 s
+      add_hits:
+        skill: [{hit: 117524001, count: 3, offset: 1.0, interval: 3.0, tags: [domain_burst]}]
+    511725:   # Sequential Triplets
+      overrides:
+        - {index: 0, hit_tags: [domain]}
+    511726:   # Self-drawn Concealed Hand: 2 s longer
+      add_hits:
+        skill: [{hit: 117320001, count: 4, offset: 9.0, interval: 0.5, tags: [domain], applies_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [domain]}
+    511727:   # Win upon a Kong: every 2nd tick = 1 s
+      overrides:
+        - {index: 0, hit_tags: [domain], event: "hit:self:domain", every: 2, duration: inf, max_stacks: 10, reset_on: ["cast:self:skill"]}
+    511728:   # Complete Sequence
+      cd_reduce: {action: skill, seconds: 2}
+      overrides:
+        - {index: 0, hit_tags: [domain]}
+    511729:   # Triple Chows: 30% chance per tick, as every 3rd
+      overrides:
+        - {index: 0, event: "hit:self:domain", every: 3, target: main}
+    511730:   # No Ones No Nines: the main fights the boss inside the domain
+      overrides:
+        - {index: 0, event: "cast:self:skill", duration: 9, target: main}
+    511731:   # Effortless Mastery
+      overrides:
+        - {index: 0, hit_tags: [qilin]}
+    511732: {}   # Little Manager
+    511733:   # Social Butterfly
+      overrides:
+        - {index: 0, event: always, target: "element:5"}
+    511741:
+      overrides:
+        - {index: 0, event: "cast:self:ult", duration: 10}
+    511742:
+      add_hits:
+        ult: [{hit: 117400001, count: 20, offset: 1.25, interval: 0.5, tags: [qilin]}]
+      overrides:
+        - {index: 0, hit_tags: [qilin]}
+    511743:
+      overrides:
+        - {index: 0, event: "hit:self:qilin&while:mark:5"}

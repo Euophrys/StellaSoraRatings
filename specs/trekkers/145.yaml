@@ -1,0 +1,173 @@
+# Otoha (145) — Umbra Versatile. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Ricochets need other targets: not counted.
+# The ult's cooldown cuts (Subtle Tremor, Lonely Twin Shadows) aren't modelled, their Energy is.
+char_id: 145
+
+talents:
+  1450116:   # Lightless Night (T1)
+    buffs:
+      - {effect: 14596111, event: "hit:self:skill_dmg", target: enemy, duration: {ref: "BuffValue,NoLevel,14596111,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,14596111,LaminatedNum,Fixed"}}
+  1450232:   # Gloomy Reality (T2)
+    buffs:
+      - {effect: 14596211, event: "cast:self:ult", duration: {ref: "BuffValue,NoLevel,14596211,Time,10K"}}
+  1450348:   # Exotic Flora (T3)
+    buffs:
+      - {effect: 14596311, event: "hit:self:ult_dmg", target: "element:6", minions: true, duration: {ref: "BuffValue,NoLevel,14596311,Time,10K"}}
+  1450464:   # Eye for an Eye (T4)
+    buffs:
+      - {effect: 14596411, event: "mark:element6", duration: {ref: "BuffValue,NoLevel,14596411,Time,10K"}}
+  1450580:   # Heart to Heart (T5)
+    buffs:
+      - {attribute: 14596511, event: always}
+
+main:
+  untimed: true
+  mark: {hit: 145000001}
+
+  actions:
+    auto:
+      duration: 3.4                # GUESS: 1 s per strike
+      hits:
+        - {hit: 145100001, count: 3, offset: 0.4, interval: 0.15}
+        - {hit: 145100002, count: 3, offset: 1.4, interval: 0.15}
+        - {hit: 145100003, count: 9, offset: 2.4, interval: 0.08}
+
+    skill:                         # Nightbloom
+      lock: 1.5                    # GUESS
+      hits:
+        - {hit: 145300001, offset: 0.5, tags: [nightbloom], triggers_mark: true}
+
+    ult:                           # Void Blossom: the parasol spins (GUESS: 20 hits), then detonates (text)
+      lock: 6.0                    # GUESS
+      hits:
+        - {hit: 145400003, count: 20, offset: 0.8, interval: 0.15, tags: [blossom]}
+        - {hit: 145400004, offset: 4.0, tags: [blossom]}
+        - {hit: 145400001, offset: 4.3, tags: [blossom]}
+        - {hit: 145400002, offset: 4.6, tags: [blossom]}
+
+  buffs:
+    - {name: dark_shackles, event: "mark:self", duration: {ref: "Buff,LevelUp,5031,Time,10K"}, target: enemy}
+
+  potentials:
+    514501:   # Subtle Tremor (pink): Doomfall x3; 7 Energy once per second
+      add_hits:
+        skill: [{hit: 145300002, count: 3, offset: 0.7, interval: 0.2, tags: [doomfall], triggers_mark: true}]
+      procs:
+        - {event: "hit:self:doomfall", hit: 0, icd: 1, energy: {param: Param3}}
+    514502:   # Hymn of Gloom (pink): for the shield's 5 s: Doomfall and 7 Energy per second
+      procs:
+        - {event: "cast:self:skill", hit: 145300002, count: 5, offset: 1.0, interval: 1.0, restart: true, tags: [doomfall]}
+        - {event: "hit:self:doomfall", hit: 0, icd: 1, energy: {param: Param3}}
+    514503:   # Solemn Echo (pink): ricochets
+      note: "Ricochets need other targets."
+    514504:   # Petal-Shower Grace (pink): 8 small bullets
+      add_hits:
+        skill: [{hit: 145300004, count: 8, offset: 0.7, interval: 0.05, tags: [petal]}]
+    514505:   # Umbral Depth
+      procs:
+        - {event: "hit:self:auto_dmg", every: 5, icd: 2, hit: 145300005, tags: [doomfall_auto]}
+    514506:   # Cycle of Four Seasons
+      overrides:
+        - {index: 0, event: "hit:self:auto_dmg"}
+        - {index: 1, event: "hit:self:auto_dmg"}
+    514507:   # Shadow Soulknell
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+        - {index: 1, event: "cast:self:skill"}
+    514508:   # Twilight Gleam
+      add_charges: {skill: 1}
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    514509:   # Duskfall
+      overrides:
+        - {index: 0, hit_tags: [nightbloom], event: "while:status:dark_shackles"}
+    514510: {}   # Fading Candle Flame
+    514511:   # Bewitching Phantom
+      overrides:
+        - {index: 0, event: "dodge:main"}
+    514512:   # Night Tide Rush
+      mark_tags: [blossom]
+    514513:   # Shadow Blossom
+      overrides:
+        - {index: 0, event: "mark:self"}
+    514541: {}   # Blossom-Eroded Abyss
+    514542:   # Ultimate Darkness
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:dark_shackles"}
+    514543:   # Moonlit Edge
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+
+support:
+  untimed: true
+  on_field: {skill: 3.0, ult: 6.0}   # GUESS
+  actions:
+    skill:                         # Shattered Edge: every 0.5 s for 4 s, Soul Rend every 0.5 s for 6 s (text)
+      hits:
+        - {hit: 145300006, count: 8, offset: 1.0, interval: 0.5, tags: [sky], applies_mark: true}
+        - {hit: 145300007, count: 12, offset: 1.5, interval: 0.5, tags: [rend], applies_mark: true}
+    ult:
+      hits:
+        - {hit: 145400003, count: 20, offset: 0.8, interval: 0.15, tags: [blossom], excludes: [514533]}
+        - {hit: 145400003, count: 20, offset: 0.8, interval: 0.15, tags: [blossom], applies_mark: true, requires: [514533]}
+        - {hit: 145400004, offset: 4.0, tags: [blossom]}
+        - {hit: 145400001, offset: 4.3, tags: [blossom]}
+        - {hit: 145400002, offset: 4.6, tags: [blossom]}
+
+  buffs:
+    - {name: soul_rend, event: "cast:self:skill", duration: 7.5, target: enemy, excludes: [514521]}
+    - {name: soul_rend, event: "cast:self:skill", duration: 12.5, target: enemy, requires: [514521]}
+
+  potentials:
+    514521:   # Lonely Twin Shadows (pink): Soul Rend 11 s; 9 Energy once per second
+      add_hits:
+        skill: [{hit: 145300007, count: 10, offset: 7.5, interval: 0.5, tags: [rend], applies_mark: true}]
+      procs:
+        - {event: "hit:self:ult_dmg", hit: 0, icd: 1, energy: {param: Param3}}
+    514522:   # Night-Walker (pink): the main hitting a target with Soul Rend, once per second; 9 Energy
+      procs:
+        - {event: "hit:main:any", when: "while:status:soul_rend", hit: 145300010, icd: 1, energy: {param: Param2}, tags: [doomfall]}
+    514523:   # Ripple of Shadow (pink): 10 bombardments; the chance of a second hit isn't counted
+      add_hits:
+        skill: [{hit: 145300011, count: 10, offset: 1.2, interval: 0.3, tags: [bombardment]}]
+      overrides:
+        - {index: 1, hit_tags: [sky]}
+    514524:   # Evening Rain (pink): all Umbra: GUESS: one more hit for the extra wave
+      procs:
+        - {event: "cast:self:skill", when: "while:squad:6:3", hit: 145300012, offset: 1.0, tags: [sky]}
+      overrides:
+        - {index: 1, hit_tags: [sky], event: "while:mark:6"}
+    514525:   # Solitary Lantern
+      procs:
+        - {event: "hit:self:ult_dmg", hit: 145300009, chance: 0.8, icd: 2, count: 3, offset: 0.1, interval: 0.1, tags: [lantern]}
+    514526:   # Without A Trace: the skill is nearly always on cooldown
+      overrides:
+        - {index: 0, event: always}
+    514527:   # Hollow Steps
+      overrides:
+        - {index: 0, event: "cast:element6:skill"}
+        - {index: 1, event: "cast:element6:skill"}
+    514528:   # Rain-Woven Sorrow
+      overrides:
+        - {index: 0, hit_tags: [sky]}
+    514529:   # Bone-Chilling Rain
+      overrides:
+        - {index: 0, event: "hit:self:sky"}
+    514530:   # Inevitable End
+      overrides:
+        - {index: 0, hit_tags: [sky]}
+    514531:   # Devouring Shadow
+      overrides:
+        - {index: 0, event: "while:squad:6:3", target: "element:6"}
+        - {index: 1, event: "while:squad:6:3", target: "element:6"}
+    514532:   # Murmur of Annihilation
+      overrides:
+        - {index: 0, max_stacks: 1, target: "element:6", copies: [{event: "while:squad:6:1"}, {event: "while:squad:6:2"}, {event: "while:squad:6:3"}]}
+    514533: {}   # Silent Knell: the ult's Mark is in the hits above
+    514541: {}
+    514542:
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:soul_rend"}
+    514543:
+      overrides:
+        - {index: 0, event: "cast:self:ult"}

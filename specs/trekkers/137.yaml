@@ -1,0 +1,180 @@
+# Eleanor (137) — Ventus Versatile. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Her Sentries deal Skill or Auto Attack DMG, not
+# Minion DMG: modelled, at a GUESS rate. Cross Slash: 80% x 2 Energy per 2 s (Word 4048) = 10 Energy in 12.5 s; 13 s used.
+char_id: 137
+
+talents:
+  1370116:   # Small Treat (T1)
+    buffs:
+      - {effect: 13796111, event: "hit:self:auto_dmg", target: enemy, duration: {ref: "BuffValue,NoLevel,13796111,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,13796111,LaminatedNum,Fixed"}}
+  1370232:   # Spree Mode (T2)
+    buffs:
+      - {effect: 13792001, event: always}
+      - {effect: 13796211, event: "mark:element4", duration: {ref: "BuffValue,NoLevel,13796211,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,13796211,LaminatedNum,Fixed"}}
+  1370348:   # On the House (T3)
+    buffs:
+      - {effect: 13796311, event: "mark_applied:element4", target: "element:4", duration: {ref: "BuffValue,NoLevel,13796311,Time,10K"}}
+      - {effect: 13796321, event: "mark_applied:element4", target: "element:4", duration: {ref: "BuffValue,NoLevel,13796311,Time,10K"}}
+  1370464:   # My Treat Today (T4)
+    buffs:
+      - {effect: 13796411, event: "cast:self:skill", duration: {ref: "BuffValue,NoLevel,13796411,Time,10K"}}
+      - {effect: 13796421, event: "cast:self:skill", duration: {ref: "BuffValue,NoLevel,13796411,Time,10K"}}
+  1370580:   # Party Time (T5)
+    buffs:
+      - {attribute: 13796511, event: always}
+
+main:
+  untimed: true
+  mark: {hit: 137000001}
+
+  procs:
+    - {event: "timer:13", hit: 137100006, tags: [cross], triggers_mark: true, excludes: [513702]}
+    - {event: "timer:8", hit: 137100006, tags: [cross], triggers_mark: true, requires: [513702]}   # Detonation: 6 Energy per Slash
+
+  actions:
+    auto:
+      duration: 5.4                # GUESS: 1 s per strike
+      hits:
+        - {hit: 137100001, offset: 0.4, tags: [slash]}
+        - {hit: 137100002, count: 5, offset: 1.4, interval: 0.15, tags: [slash]}
+        - {hit: 137100003, count: 5, offset: 2.4, interval: 0.15, tags: [slash]}
+        - {hit: 137100004, count: 6, offset: 3.4, interval: 0.12, tags: [slash]}
+        - {hit: 137100005, count: 7, offset: 4.4, interval: 0.1, tags: [slash, s5]}
+
+    skill:                         # Sentry Deployment x2, then Vigil for 10 s (GUESS: a hit every 2 s)
+      lock: 1.5                    # GUESS
+      hits:
+        - {hit: 137300001, count: 2, offset: 0.5, interval: 0.4, tags: [spin], triggers_mark: true}
+        - {hit: 137300002, count: 5, offset: 2.0, interval: 2.0, tags: [vigil], triggers_mark: true}
+
+    ult:                           # Firestorm x14 (text)
+      lock: 5.5                    # GUESS
+      hits:
+        - {hit: 137900001, count: 14, offset: 1.0, interval: 0.3, tags: [rocket]}
+
+  potentials:
+    513701:   # Tactical Protocol: Threshold (pink): one more attack; faster Energy under Vigil isn't modelled
+      procs:
+        - {event: "hit:self:cross", hit: 137100006, offset: 0.2, tags: [cross_extra], triggers_mark: true}
+      overrides:
+        - {index: 0, hit_tags: [cross, cross_extra]}
+    513702:   # Tactical Protocol: Detonation (pink): a bomb per gain (every 2.5 s) or spend; every 3 s used
+      procs:
+        - {event: "timer:3", hit: 137100007, tags: [bomb], triggers_mark: true}
+    513703:   # Tactical Protocol: Overload (pink): the shorter interval's size isn't in the data
+      overrides:
+        - {index: 0, event: "hit:self:cross"}
+    513704:   # Tactical Protocol: Synergy (pink)
+      procs:
+        - {event: "hit:self:vigil", every: 2, hit: 137300003, tags: [synergy]}
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    513705:   # Double Rifts
+      procs:
+        - {event: "hit:self:cross", hit: 137100008, offset: 0.2, tags: [rift]}
+      overrides:
+        - {index: 0, hit_tags: [cross]}
+    513706:   # Battle Fury
+      overrides:
+        - {index: 0, event: "hit:self:cross"}
+    513707:   # Vortex Boost
+      mark_tags: [s5]
+      overrides:
+        - {index: 0, event: "cast:self:skill", duration: 10}
+    513708:   # Area Volley
+      overrides:
+        - {index: 0, hit_tags: [vigil]}
+    513709:   # Zone Detection: one target, one stack
+      overrides:
+        - {index: 0, event: "cast:self:skill", max_stacks: 1}
+    513710:   # Chain Echo
+      overrides:
+        - {index: 0, event: "hit:self:auto_dmg", icd: 1}
+    513711:   # Annihilation Pulse
+      mark_tags: [rocket]
+    513712: {}   # Flicker Sequence
+    513713:   # Wind Bond
+      overrides:
+        - {index: 0, event: "mark:self", target: "element:4"}
+    513741:   # Reinforcement Command
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+    513742:   # Purge Command
+      overrides:
+        - {index: 1, hit_tags: [rocket], event: "hit:self:rocket", duration: 2, max_stacks: 5}
+    513743:   # Focus Command
+      overrides:
+        - {index: 0, event: "cast:element4:skill"}
+
+support:
+  untimed: true
+  on_field: {skill: 5.0, ult: 5.5}   # GUESS: she stays for the 9 slams
+  actions:
+    skill:                         # Armed Assault x9; a Sentry per 3 slams, firing about once a second (GUESS)
+      hits:
+        - {hit: 137300010, count: 9, offset: 0.8, interval: 0.5, tags: [slam], applies_mark: true}
+        - {hit: 137300011, count: 9, offset: 2.0, interval: 1.0, tags: [sentry]}
+    ult:
+      hits:
+        - {hit: 137900001, count: 14, offset: 1.0, interval: 0.3, tags: [rocket], excludes: [513732]}
+        - {hit: 137900001, count: 14, offset: 1.0, interval: 0.3, tags: [rocket], applies_mark: true, requires: [513732]}
+
+  potentials:
+    513721:   # Chain Detonation (pink): one more explosion per slam
+      add_hits:
+        skill: [{hit: 137300010, count: 9, offset: 0.9, interval: 0.5, tags: [slam], applies_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [slam]}
+    513722:   # Seismic Spread (pink): assumes a single Support Trekker in the squad
+      overrides:
+        - {index: 0, hit_tags: [slam], event: "hit:self:slam", duration: inf, max_stacks: 9, reset_on: ["cast:self:skill"]}
+        - {index: 1, hit_tags: [slam]}
+    513723:   # Function Sustain (pink): longer Sentries aren't modelled
+      overrides:
+        - {index: 0, hit_tags: [sentry], event: "hit:self:slam", duration: 3, max_stacks: 9}
+        - {index: 1, hit_tags: [sentry]}
+    513724:   # Cluster Barrage (pink): Sentry ATK SPD isn't modelled
+      procs:
+        - {event: "hit:self:sentry", every: 3, icd: 0.5, hit: 137300013, tags: [cluster]}
+      overrides:
+        - {index: 0, drop: true}
+    513725:   # Field Pull
+      overrides:
+        - {index: 0, hit_tags: [slam]}
+        - {index: 1, hit_tags: [slam]}
+    513726:   # Power Boost: Crit DMG to Ventus Vanguard mains
+      overrides:
+        - {index: 0, event: "hit:self:slam"}
+        - {index: 1, event: "hit:self:slam", target: "class:1"}
+    513727:   # Shattering Blow
+      overrides:
+        - {index: 0, hit_tags: [slam]}
+        - {index: 1, hit_tags: [slam]}
+    513728:   # Piercing Trajectory
+      overrides:
+        - {index: 0, hit_tags: [sentry]}
+    513729:   # Suppression Analysis
+      overrides:
+        - {index: 1, hit_tags: [sentry]}
+    513730:   # Precision Calibration: the main's part needs 3 Sentries out; they last 3 s and come every 1.5 s
+      overrides:
+        - {index: 0, hit_tags: [sentry]}
+        - {index: 1, drop: true}
+    513731:   # Wind Resonance
+      overrides:
+        - {index: 0, event: "mark:element4"}
+    513732:   # Annihilation Echo
+      overrides:
+        - {index: 0, event: "damage:self"}
+    513733:   # Power Amp
+      overrides:
+        - {index: 0, event: "damage:self", target: "element:4"}
+    513741:
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+    513742:
+      overrides:
+        - {index: 1, hit_tags: [rocket], event: "hit:self:rocket", duration: 2, max_stacks: 5}
+    513743:
+      overrides:
+        - {index: 0, event: "cast:element4:skill"}

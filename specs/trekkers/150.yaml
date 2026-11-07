@@ -1,0 +1,184 @@
+# Laru (150) — Lux Vanguard (the original Laru, not Snowish). Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits".
+char_id: 150
+
+talents:
+  1500116:   # Lancefall: Benediction (T1)
+    buffs:
+      - {effect: 15096111, event: "damage:self", duration: {ref: "BuffValue,NoLevel,15096111,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,15096111,LaminatedNum,Fixed"}}
+  1500232:   # Lancefall: Retribution (T2)
+    buffs:
+      - {effect: 15096211, event: "mark:self", duration: {ref: "BuffValue,NoLevel,15096211,Time,10K"}}
+  1500348:   # Seagull's Fries (T3)
+    buffs:
+      - {effect: 15096311, event: "cast:self:ult", duration: {ref: "BuffValue,NoLevel,15096311,Time,10K"}}
+  1500464:   # Secret of Survival (T4)
+    buffs:
+      - {effect: 15096411, event: "mark_applied:element5", duration: {ref: "BuffValue,NoLevel,15096411,Time,10K"}}
+  1500580:   # Special Conviction (T5)
+    buffs:
+      - {attribute: 15096511, event: always}
+
+main:
+  untimed: true
+  mark: {hit: 150000001}
+
+  actions:
+    auto:
+      duration: 5.4                # GUESS: 1 s per strike
+      hits:
+        - {hit: 150100001, count: 2, offset: 0.4, interval: 0.2}
+        - {hit: 150100002, offset: 1.4}
+        - {hit: 150100003, offset: 2.4}
+        - {hit: 150100004, count: 2, offset: 3.4, interval: 0.2}
+        - {hit: 150100005, count: 2, offset: 4.4, interval: 0.1}
+        - {hit: 150100007, count: 6, offset: 4.6, interval: 0.1}
+
+    skill:                         # Thunderflare Strike: a sweep, then the laser
+      lock: 2.5                    # GUESS
+      hits:
+        - {hit: 150310001, offset: 0.5, tags: [sweep], triggers_mark: true}
+        - {hit: 150310002, offset: 1.5, tags: [laser], triggers_mark: true}
+        - {hit: 0, offset: 1.6, tags: [laser_done]}
+
+    ult:                           # Thunderfall Thrust
+      lock: 3.0                    # GUESS
+      hits:
+        - {hit: 150400001, offset: 1.0, tags: [thrust], triggers_mark: true}
+
+  buffs:
+    - {name: shock, event: "hit:self:laser", duration: 7, target: enemy, requires: [515002]}   # GUESS: the 20 hits come in about 7 s
+    - {name: sweep_stack, event: "hit:self:sweep", duration: 40, max_stacks: 3, reset_on: ["marker:self:laser_done"], requires: [515004]}
+
+  potentials:
+    515001:   # Aerial Suspension (pink): every 0.5 s for 10 s
+      add_hits:
+        skill: [{hit: 150310101, count: 20, offset: 2.0, interval: 0.5, tags: [domain]}]
+    515002:   # Arc Chain Laser (pink)
+      procs:
+        - {event: "hit:self:auto_dmg|hit:self:sweep|hit:self:laser", when: "while:status:shock", hit: 150310201, tags: [shock_hit]}
+        - {event: "hit:self:auto_dmg|hit:self:sweep|hit:self:laser", every: 20, when: "while:status:shock", hit: 150310203, tags: [shock_hit]}
+    515003:   # Lance Sweep (pink): 3 sweeps
+      add_hits:
+        skill:
+          - {hit: 150310301, offset: 0.9, tags: [sweep], triggers_mark: true}
+          - {hit: 150310302, offset: 1.3, tags: [sweep], triggers_mark: true}
+    515004:   # Lightning Lance Dance (pink): 3 sweeps make the next laser x12
+      procs:
+        - {event: "hit:self:laser", when: "while:status:sweep_stack>=3", hit: 150310401, count: 12, offset: 0.25, interval: 0.25, tags: [laser_x12]}
+      overrides:
+        - {index: 0, drop: true}
+        - {index: 1, hit_tags: [laser], event: "hit:self:sweep", duration: 40, max_stacks: 3, reset_on: ["marker:self:laser_done"]}
+    515005:   # Lance's Song
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+        - {index: 1, event: "cast:self:skill"}
+    515006:   # Sky Rend: per sweep, every 0.5 s for 5 s
+      procs:
+        - {event: "hit:self:sweep", hit: 150310601, count: 10, offset: 0.5, interval: 0.5, tags: [rend]}
+    515007:   # Piercing Sting
+      overrides:
+        - {index: 0, hit_tags: [], event: "hit:self:skill_dmg", duration: 2, max_stacks: 20}
+    515008:   # Lightbreaker
+      overrides:
+        - {index: 0, hit_tags: [sweep, laser], event: "hit:self:auto_dmg&while:mark:5", duration: inf, max_stacks: 8, reset_on: ["marker:self:laser_done"]}
+    515009:   # Electric Chain
+      procs:
+        - {event: "mark:self", hit: 150310901, icd: 0.33, tags: [chain]}
+    515010:   # Cracking Thunderbolt
+      overrides:
+        - {index: 0, hit_tags: [laser], event: "hit:self:sweep", duration: 15, max_stacks: 5}
+    515011:   # Swift Strike: needs a 2 s dash
+      note: "Needs a 2 s dash; not modelled."
+    515012:   # Holy Sigil
+      overrides:
+        - {index: 0, event: "mark:self"}
+    515013:   # Checkmate: once per boss fight
+      overrides:
+        - {index: 0, event: "damage:self&once"}
+    515041:   # Lancefall: Light Realm: every 0.5 s for 10 s
+      add_hits:
+        ult: [{hit: 150404101, count: 20, offset: 1.5, interval: 0.5, tags: [lancefall]}]
+    515042:   # Lancefall: Electro Bind: bosses count; 5 Energy per ult hit
+      procs:
+        - {event: "hit:self:thrust", hit: 0, energy: {param: Param3}}
+      overrides:
+        - {index: 0, hit_tags: []}
+    515043:   # Lancefall: Thunder Surge: one target, one stack
+      overrides:
+        - {index: 0, event: "cast:self:ult", max_stacks: 1}
+
+support:
+  untimed: true
+  on_field: {skill: 3.5, ult: 3.0}   # GUESS
+  mark: {hit: 150000001}             # text: Divine Thunderquake can trigger Lux Mark
+  actions:
+    skill:                         # Divine Thunderquake; GUESS: 2 of the 4 random Thunder Domains catch the boss
+      hits:
+        - {hit: 150320002, offset: 0.8, tags: [quake], triggers_mark: true}
+        - {hit: 150320003, count: 12, offset: 1.2, interval: 0.1, tags: [quake], triggers_mark: true}
+        - {hit: 150320001, count: 2, offset: 2.5, interval: 0.3, tags: [domain], triggers_mark: true}
+        - {hit: 0, offset: 3.2, tags: [skill_done]}
+    ult:
+      hits:
+        - {hit: 150400001, offset: 1.0, tags: [thrust], triggers_mark: true}
+
+  potentials:
+    515021:   # Radiant Flame: Cycle Restart (pink): every 0.3 s for 1 s, per domain
+      add_hits:
+        skill: [{hit: 150322101, count: 8, offset: 2.6, interval: 0.15, tags: [domain_erupt]}]
+    515022:   # Radiant Flame: Flash Point (pink): 2 more domains, so 1 more lands
+      add_hits:
+        skill: [{hit: 150320001, offset: 3.1, tags: [domain], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [domain]}
+    515023:   # Radiant Flame: Convergence (pink): per domain; the eruption part needs Cycle Restart
+      add_hits:
+        skill:
+          - {hit: 150322301, count: 2, offset: 2.5, interval: 0.3, tags: [domain_center]}
+          - {hit: 150322302, count: 8, offset: 2.6, interval: 0.15, tags: [domain_erupt], requires: [515021]}
+    515024:   # Radiant Flame: Pursuit (pink): a domain always lands
+      add_hits:
+        skill: [{hit: 150320001, offset: 2.4, tags: [domain], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: []}
+    515025:   # Radiant Downpour: every 0.3 s for 6 s
+      add_hits:
+        skill: [{hit: 150322501, count: 20, offset: 3.3, interval: 0.3, tags: [downpour]}]
+    515026:   # Light Unleashed
+      overrides:
+        - {index: 0, hit_tags: [domain], event: "hit:self:domain", duration: 15, max_stacks: 6}
+    515027:   # Radiant Ascent: bosses aren't knocked up
+      overrides:
+        - {index: 0, drop: true}
+    515028:   # Skybreak Raid: the cast, then constantly while infusing
+      add_hits:
+        skill:
+          - {hit: 150322801, offset: 0.8, tags: [raid]}
+          - {hit: 150322802, count: 6, offset: 1.2, interval: 0.2, tags: [raid]}
+    515029:   # Dawn Break
+      overrides:
+        - {index: 0, hit_tags: [], event: "cast:main:skill", duration: inf, max_stacks: 5, reset_on: ["marker:self:skill_done"]}
+    515030:   # Light Tempest: needs other targets
+      overrides:
+        - {index: 0, drop: true}
+    515031:   # Divine Baptism
+      overrides:
+        - {index: 0, event: "mark:self"}
+    515032:   # Lance Judgement
+      overrides:
+        - {index: 0, event: always}
+    515033:   # Holy Prayer
+      overrides:
+        - {index: 0, event: always, target: "element:5"}
+    515041:
+      add_hits:
+        ult: [{hit: 150404101, count: 20, offset: 1.5, interval: 0.5, tags: [lancefall]}]
+    515042:
+      procs:
+        - {event: "hit:self:thrust", hit: 0, energy: {param: Param3}}
+      overrides:
+        - {index: 0, hit_tags: []}
+    515043:
+      overrides:
+        - {index: 0, event: "cast:self:ult", max_stacks: 1}

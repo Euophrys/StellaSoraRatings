@@ -1,0 +1,170 @@
+# Firenze (110) — Umbra Vanguard. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Shadow Clones (minions) are skipped:
+# their damage, their Mark triggers and every clone-only potential are worth nothing here.
+char_id: 110
+
+talents:
+  1100116:   # Bleak Ruination (T1)
+    buffs:
+      - {effect: 11096111, event: "mark:self", duration: {ref: "BuffValue,NoLevel,11096111,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,11096111,LaminatedNum,Fixed"}}
+  1100232:   # Sorrowful Strength (T2): summons, counted at the skill casts only
+    buffs:
+      - {effect: 11096211, event: "cast:self:skill", duration: {ref: "BuffValue,NoLevel,11096211,Time,10K"}}
+  1100348:   # Tender Adamantine Heart (T3)
+    buffs:
+      - {effect: 11096311, event: "cast:self:skill", duration: {ref: "BuffValue,NoLevel,11096311,Time,10K"}}
+  1100464:   # Tough Rose (T4)
+    buffs:
+      - {effect: 11096411, event: "mark_applied:element6", duration: {ref: "BuffValue,NoLevel,11096411,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,11096411,LaminatedNum,Fixed"}}
+  1100580:   # Unique Individuals (T5)
+    buffs:
+      - {effect: 11096511, event: "while:squad:6:3"}
+
+main:
+  untimed: true
+  mark: {hit: 110000000}
+  procs:
+    - {event: "mark:self", hit: 110000001, count: 10, offset: 0.067, interval: 0.5, mult: 0.1, restart: true, tags: [dark_burn_tick]}   # Dark Burn, as Mistique's
+
+  actions:
+    auto:
+      duration: 4.4                # GUESS: 1 s per strike
+      hits:
+        - {hit: 110100001, offset: 0.4}
+        - {hit: 110100002, offset: 1.4}
+        - {hit: 110100003, count: 5, offset: 2.4, interval: 0.15}
+        - {hit: 110100004, offset: 3.4}
+        - {hit: 110100005, offset: 3.7}
+
+    skill:                         # Elegant Parade x3 (text); 2 uses (data)
+      lock: 2.5                    # GUESS
+      hits:
+        - {hit: 110300001, count: 3, offset: 0.5, interval: 0.3, tags: [parade], triggers_mark: true}
+        - {hit: 0, offset: 2.2, tags: [parade_done]}
+
+    ult:                           # Personal Tuition x5 and a big hit (text)
+      lock: 6.0                    # GUESS
+      hits:
+        - {hit: 110400001, count: 5, offset: 1.0, interval: 0.5, tags: [tuition], triggers_mark: true}
+        - {hit: 110400002, offset: 4.0, tags: [tuition], triggers_mark: true}
+        - {hit: 0, offset: 4.1, tags: [ult_done]}
+
+  buffs:
+    - {name: dark_burn, event: "mark:self", duration: {ref: "Buff,LevelUp,11090000,Time,10K"}, target: enemy}
+
+  potentials:
+    511001:   # Step Kicking (pink)
+      add_hits:
+        skill: [{hit: 110300005, count: 3, offset: 1.5, interval: 0.3, tags: [parade], triggers_mark: true}]
+    511002:   # Nimble Step (pink): a domain after 6 Parade hits
+      procs:
+        - {event: "hit:self:parade", every: 6, hit: 110300002, count: 14, offset: 0.5, interval: 0.5, restart: true, tags: [domain], triggers_mark: true}
+      overrides:
+        - {index: 0, event: "hit:self:parade", every: 6, duration: 7}
+    511003:   # Phantom Waltz (pink): clones
+      note: "Clones aren't modelled."
+    511004:   # Shadow Step (pink): clones
+      note: "Clones aren't modelled."
+    511005:   # High Risk: 2 per s; the 80% vs Dark Burn isn't counted
+      procs:
+        - {event: "hit:self:parade|hit:self:domain", hit: 110300003, chance: 0.4, icd: 0.5, tags: [high_risk]}
+      note: "40% at all times, not 80% vs Dark Burn."
+    511006:   # Dark Pirouette
+      overrides:
+        - {index: 0, event: "mark:self"}
+    511007:   # Flash Break: GUESS: that cast's hits still get it
+      overrides:
+        - {index: 0, event: "hit:self:auto_dmg", reset_on: ["marker:self:parade_done"]}
+    511008:   # Gloomy Veil: the clone limit does nothing here
+      overrides:
+        - {index: 0, event: always}
+    511009:   # Extended Shift: clones
+      overrides:
+        - {index: 0, drop: true}
+    511010:   # Accurate Coincidence: clones; the auto skip isn't modelled
+      overrides:
+        - {index: 0, drop: true}
+    511011:   # Hunting Command: per Umbra Trekker
+      overrides:
+        - {index: 0, max_stacks: 1, copies: [{event: "while:squad:6:1"}, {event: "while:squad:6:2"}, {event: "while:squad:6:3"}]}
+    511012:   # Clone Trick: clones
+      overrides:
+        - {index: 0, drop: true}
+    511013:   # Announcement Time
+      overrides:
+        - {index: 0, event: "dodge:main"}
+    511041:   # Instant Liquidation: needs clones
+      overrides:
+        - {index: 0, drop: true}
+    511042:   # Instant Peak
+      overrides:
+        - {index: 0, event: "damage:self"}
+    511043:   # Place Your Bets
+      overrides:
+        - {index: 0, event: "mark:self", reset_on: ["marker:self:ult_done"]}
+
+support:
+  untimed: true
+  on_field: {skill: 3.0, ult: 4.0}   # GUESS
+  mark: {hit: 110000000}             # text: Reign of Night can trigger Umbra Mark
+  procs:
+    - {event: "mark:self", hit: 110000001, count: 10, offset: 0.067, interval: 0.5, mult: 0.1, restart: true, tags: [dark_burn_tick]}
+  actions:
+    skill:                         # Reign of Night: the cane; clones skipped
+      hits:
+        - {hit: 110300004, offset: 1.0, tags: [cane], triggers_mark: true}
+    ult:
+      hits:
+        - {hit: 110400001, count: 5, offset: 1.0, interval: 0.5, tags: [tuition], triggers_mark: true}
+        - {hit: 110400002, offset: 4.0, tags: [tuition], triggers_mark: true}
+        - {hit: 0, offset: 4.1, tags: [ult_done]}
+
+  buffs:
+    - {name: dark_burn, event: "mark:self", duration: {ref: "Buff,LevelUp,11090000,Time,10K"}, target: enemy}
+
+  potentials:
+    511021:   # Shadow Nail (pink): 1/s for 6 s
+      add_hits:
+        skill: [{hit: 110300006, count: 6, offset: 2.0, interval: 1.0, tags: [cane], triggers_mark: true}]
+    511022:   # Shadow Flicker (pink): an explosion when the cane goes
+      add_hits:
+        skill:
+          - {hit: 110300004, offset: 3.0, tags: [cane], excludes: [511021]}
+          - {hit: 110300004, offset: 7.5, tags: [cane], requires: [511021]}
+    511023:   # Twin Shadow (pink): clones
+      note: "Clones aren't modelled."
+    511024:   # Shadownight Descendant (pink): clones
+      note: "Clones aren't modelled."
+    511025:   # Drinking Party: the CD cut isn't modelled
+      overrides:
+        - {index: 0, hit_tags: [cane]}
+    511026:   # Typical Case
+      overrides:
+        - {index: 0, hit_tags: [cane], event: "while:status:dark_burn"}
+    511027:   # Joyous Whip
+      overrides:
+        - {index: 0, event: "hit:self:cane"}
+    511028:   # Step Sync: clones
+      overrides:
+        - {index: 0, drop: true}
+    511029:   # Dark Resurgence: clones
+      note: "Clones aren't modelled."
+    511030:   # Flexible Operation: clones
+      overrides:
+        - {index: 0, drop: true}
+    511031:   # Shadow Waltz: clones
+      overrides:
+        - {index: 0, drop: true}
+    511032: {}   # Prime Stance
+    511033:   # Special Care
+      overrides:
+        - {index: 0, event: always, target: "element:6"}
+    511041:
+      overrides:
+        - {index: 0, drop: true}
+    511042:
+      overrides:
+        - {index: 0, event: "damage:self"}
+    511043:
+      overrides:
+        - {index: 0, event: "mark:self", reset_on: ["marker:self:ult_done"]}

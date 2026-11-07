@@ -1,0 +1,193 @@
+# Nazuka (133) — Ventus Versatile. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". GUESS: each tornado hits once.
+char_id: 133
+
+talents:
+  1330116:   # In the Name of Trekkers (T1): GUESS: the tornadoes last 9 s
+    buffs:
+      - {effect: 13396111, event: "cast:self:ult", duration: 9, target: team}
+  1330232:   # In the Name of Wisdom (T2): 20 Wind Chant make a Wind Roar
+    buffs:
+      - {effect: 13396211, event: "hit:self:skill_dmg", every: 20, icd: 12, duration: {ref: "BuffValue,NoLevel,13396211,Time,10K"}}
+  1330348:   # In the Name of Responsibility (T3)
+    buffs:
+      - {effect: 13396311, event: "hit:self:skill_dmg", duration: 6, max_stacks: {ref: "BuffValue,NoLevel,13396311,LaminatedNum,Fixed"}}
+  1330464:   # The Burden of a Role Model (T4)
+    buffs:
+      - {effect: 13396411, event: "mark:element4", duration: {ref: "BuffValue,NoLevel,13396411,Time,10K"}}
+  1330580:   # The Resolve of Companions (T5)
+    buffs:
+      - {attribute: 13396511, event: always}
+
+main:
+  untimed: true
+  mark: {hit: 133000001}
+
+  actions:
+    auto:
+      duration: 3.4                # GUESS: 1 s per strike
+      hits:
+        - {hit: 133100001, offset: 0.4}
+        - {hit: 133100002, offset: 1.4}
+        - {hit: 133100003, count: 3, offset: 2.4, interval: 0.2}
+
+    skill:                         # Blooming Draught x7 (text)
+      lock: 4.0                    # GUESS: she channels it
+      hits:
+        - {hit: 133310001, count: 7, offset: 0.6, interval: 0.5, tags: [pinwheel], triggers_mark: true}
+        - {hit: 0, offset: 4.0, tags: [pinwheel_stops]}
+
+    ult:                           # Aromatic Tempest: 3 tornados every 3 s
+      lock: 3.0                    # GUESS
+      hits:
+        - {hit: 133400001, count: 3, offset: 1.5, interval: 0, tags: [tornado]}
+        - {hit: 133400001, count: 3, offset: 4.5, interval: 0, tags: [tornado]}
+        - {hit: 133400001, count: 3, offset: 7.5, interval: 0, tags: [tornado]}
+
+  potentials:
+    513301:   # Blooming Gale (pink): interval -50%
+      add_hits:
+        skill: [{hit: 133310001, count: 7, offset: 0.85, interval: 0.5, tags: [pinwheel], triggers_mark: true}]
+    513302:   # Everlasting Elegance (pink): twice as long
+      add_hits:
+        skill: [{hit: 133310001, count: 7, offset: 4.1, interval: 0.5, tags: [pinwheel], triggers_mark: true}]
+    513303:   # Fierce Arrow (pink): when it stops
+      add_hits:
+        skill: [{hit: 133503001, offset: 4.1, tags: [fierce], triggers_mark: true}]
+    513304:   # Spiral Vortex (pink): x16 in 2 s
+      add_hits:
+        skill: [{hit: 133504001, count: 16, offset: 0.7, interval: 0.125, tags: [spiral]}]
+      overrides:
+        - {index: 0, event: "hit:self:spiral"}
+    513305:   # Wind Erosion Impact
+      overrides:
+        - {index: 0, event: "hit:self:pinwheel"}
+        - {index: 1, hit_tags: [pinwheel]}
+    513306:   # Gale Shield: while it's up (GUESS: 45% of the time)
+      procs:
+        - {event: "hit_taken:main", hit: 133506001, chance: 0.45, tags: [gale]}
+      overrides:
+        - {index: 0, drop: true}
+    513307:   # Unyielding Leaves: every 2nd hit = 1 s
+      overrides:
+        - {index: 0, hit_tags: [pinwheel], event: "hit:self:pinwheel", every: 2, duration: inf, max_stacks: 10, reset_on: ["marker:self:pinwheel_stops"]}
+    513308:   # Gale's Might
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+    513309:   # Storm Overturned: the Skill DMG needs 2 targets
+      overrides:
+        - {index: 1, drop: true}
+    513310:   # Whisper of Wind
+      overrides:
+        - {index: 0, event: "marker:self:pinwheel_stops"}
+    513311:   # Precision Control
+      mark_tags: [tornado]
+      overrides:
+        - {index: 0, event: always}
+    513312:   # Gale Fading: 30% chance per auto, as every 3rd
+      overrides:
+        - {index: 0, event: "hit:self:auto_dmg", every: 3}
+    513313:   # Willowy Grace
+      overrides:
+        - {index: 0, event: "dodge:main"}
+    513341:   # Multi-Hurricane: 1 more per batch
+      add_hits:
+        ult:
+          - {hit: 133400001, offset: 1.5, tags: [tornado]}
+          - {hit: 133400001, offset: 4.5, tags: [tornado]}
+          - {hit: 133400001, offset: 7.5, tags: [tornado]}
+      overrides:
+        - {index: 0, event: always}
+    513342:   # Aeolus's Blessing: lasting 66% longer: 2 more batches
+      add_hits:
+        ult:
+          - {hit: 133400001, count: 3, offset: 10.5, interval: 0, tags: [tornado]}
+          - {hit: 133400001, count: 3, offset: 13.5, interval: 0, tags: [tornado]}
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+    513343:   # Maelstrom
+      overrides:
+        - {index: 1, event: "hit:self:tornado"}
+
+support:
+  untimed: true
+  on_field: {skill: 3.0, ult: 3.0}   # GUESS
+  actions:
+    skill:                         # Bouquet Blast: the bouquet, 6 petals, a Flower Formation per second for 6 s (text)
+      hits:
+        - {hit: 133320001, offset: 0.8, tags: [bouquet], applies_mark: true}
+        - {hit: 133320002, count: 6, offset: 1.2, interval: 0.2, tags: [petal], applies_mark: true}
+        - {hit: 133320003, count: 6, offset: 1.8, interval: 1.0, tags: [formation], applies_mark: true}
+    ult:
+      hits:
+        - {hit: 133400001, count: 3, offset: 1.5, interval: 0, tags: [tornado], excludes: [513331]}
+        - {hit: 133400001, count: 3, offset: 1.5, interval: 0, tags: [tornado], applies_mark: true, requires: [513331]}
+        - {hit: 133400001, count: 3, offset: 4.5, interval: 0, tags: [tornado]}
+        - {hit: 133400001, count: 3, offset: 7.5, interval: 0, tags: [tornado]}
+
+  buffs:
+    - {name: formation_up, event: "cast:self:skill", duration: 7.8, excludes: [513323]}
+    - {name: formation_up, event: "cast:self:skill", duration: 10.8, requires: [513323]}
+
+  potentials:
+    513321:   # Youth: Dazzling (pink): 18 petals at the main
+      add_hits:
+        skill: [{hit: 133521001, count: 18, offset: 1.0, interval: 0.2, tags: [petal], applies_mark: true}]
+    513322:   # Youth: Hunting (pink)
+      overrides:
+        - {index: 0, hit_tags: [petal]}
+    513323:   # Flower Formation: Waves (pink): 50% longer; the extra Formations need a target outside
+      add_hits:
+        skill: [{hit: 133320003, count: 3, offset: 7.8, interval: 1.0, tags: [formation], applies_mark: true}]
+      overrides:
+        - {index: 0, drop: true}
+    513324:   # Flower Formation: Turbulent (pink): the main hitting a target in it, once per second
+      procs:
+        - {event: "hit:main:any", when: "while:status:formation_up", hit: 133524001, icd: 1.0, tags: [turbulent]}
+    513325:   # Youth: Weakness
+      overrides:
+        - {index: 0, event: "hit:self:petal"}
+    513326:   # Youth: Annihilation
+      overrides:
+        - {index: 0, hit_tags: [petal]}
+    513327:   # Youth: Blooming
+      overrides:
+        - {index: 0, event: "hit:self:petal"}
+        - {index: 1, hit_tags: [petal]}
+    513328:   # Flower Formation: Convergence: the rest needs 2 targets
+      overrides:
+        - {index: 0, hit_tags: [formation]}
+        - {index: 1, drop: true}
+    513329:   # Flower Formation: Erosion
+      overrides:
+        - {index: 0, event: "hit:self:formation"}
+    513330:   # Flower Formation: Blast
+      add_hits:
+        skill: [{hit: 133530001, offset: 7.8, tags: [blast], applies_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [formation]}
+    513331: {}   # Wind Demon Seed: the ult's Mark is in the hits above
+    513332:   # Self-Improvement
+      overrides:
+        - {index: 0, event: "while:status:formation_up"}
+    513333:   # Almighty Leader: all Ventus; Ventus Supports shouldn't get it, a small overrate
+      overrides:
+        - {index: 0, event: always, target: "element:4"}
+    513341:
+      add_hits:
+        ult:
+          - {hit: 133400001, offset: 1.5, tags: [tornado]}
+          - {hit: 133400001, offset: 4.5, tags: [tornado]}
+          - {hit: 133400001, offset: 7.5, tags: [tornado]}
+      overrides:
+        - {index: 0, event: always}
+    513342:
+      add_hits:
+        ult:
+          - {hit: 133400001, count: 3, offset: 10.5, interval: 0, tags: [tornado]}
+          - {hit: 133400001, count: 3, offset: 13.5, interval: 0, tags: [tornado]}
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+    513343:
+      overrides:
+        - {index: 1, event: "hit:self:tornado"}
