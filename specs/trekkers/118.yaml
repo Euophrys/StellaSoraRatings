@@ -158,7 +158,7 @@ support:
         - {index: 0, event: always}
     511832:   # Medical Research: 5% of the bar once per 12 s
       procs:
-        - {event: "hit:self:sweep", hit: 0, icd: 12, resilience: {param: Param1}}
+        - {event: "hit:self:sweep", hit: 0, icd: 12, resilience: {param: Param2}}
       overrides:
         - {index: 0, event: always}
     511833:   # Underground Healer

@@ -1,0 +1,171 @@
+# Springseek Coronis (159) — Terra Versatile. Hits scale with ATK (data).
+# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits".
+char_id: 159
+
+talents:
+  1590116:   # Guiding Lanterns (T1)
+    buffs:
+      - {effect: 15996111, event: "hit:self:skill_dmg", target: enemy, duration: {ref: "BuffValue,NoLevel,15996111,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,15996111,LaminatedNum,Fixed"}}
+  1590232:   # Eternal Flame (T2)
+    buffs:
+      - {attribute: 15996211, event: "mark_applied:element3", duration: {ref: "BuffValue,NoLevel,15996211,Time,10K"}}
+  1590348:   # Magical Touch (T3)
+    buffs:
+      - {effect: 15996311, event: "hit:self:ult_dmg", target: enemy, duration: {ref: "BuffValue,NoLevel,15996311,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,15996311,LaminatedNum,Fixed"}}
+  1590464:   # Healing Auspice (T4)
+    buffs:
+      - {effect: 15996411, event: "cast:self:skill", duration: {ref: "BuffValue,NoLevel,15996411,Time,10K"}}
+  1590580:   # Fresh Start (T5)
+    buffs:
+      - {attribute: 15996511, event: always}
+
+main:
+  untimed: true
+  mark: {hit: 159000001}
+
+  actions:
+    auto:
+      duration: 6.0                # GUESS: 15 shots, 0.3 s each, 1.5 s reload
+      hits:
+        - {hit: 159100001, count: 15, offset: 0.3, interval: 0.3, tags: [needle]}
+
+    skill:                         # Jade of Vitality; the Auspice's beam every 0.6 s for 8 s (text)
+      lock: 1.5                    # GUESS
+      hits:
+        - {hit: 159310001, offset: 0.6, tags: [jade], triggers_mark: true}
+        - {hit: 159310002, count: 13, offset: 1.2, interval: 0.6, tags: [beam], triggers_mark: true}
+
+    ult:                           # Burst of Blaze: the vial, then shards x8 (text)
+      lock: 4.0                    # GUESS
+      hits:
+        - {hit: 159400001, offset: 1.0, tags: [burst]}
+        - {hit: 159400002, count: 8, offset: 1.5, interval: 0.2, tags: [burst]}
+
+  buffs:
+    - {name: crystallized, event: "cast:self:skill", duration: 8}
+
+  potentials:
+    515901:   # Radiance of Auspice (pink): interval -25%
+      add_hits:
+        skill: [{hit: 159310002, count: 4, offset: 1.5, interval: 1.8, tags: [beam], triggers_mark: true}]
+    515902:   # Reflection of Auspice (pink): a second Auspice and the link
+      add_hits:
+        skill:
+          - {hit: 159310002, count: 13, offset: 1.3, interval: 0.6, tags: [beam], triggers_mark: true}
+          - {hit: 159310201, count: 13, offset: 1.4, interval: 0.6, tags: [beam], triggers_mark: true}
+    515903:   # Needle Shower (pink): the extra hit while Crystallized; the fire rate and bigger magazine aren't modelled
+      procs:
+        - {event: "hit:self:needle", when: "while:status:crystallized", hit: 159310301, tags: [crystal_bullet], triggers_mark: true}
+    515904:   # Echo of Earth (pink): a pulse per 1.5 s, landing 2.5 s later
+      procs:
+        - {event: "cast:self:skill", hit: 159310402, count: 5, offset: 2.5, interval: 1.5, tags: [pulse], triggers_mark: true}
+      overrides:
+        - {index: 0, hit_tags: [pulse]}
+    515905:   # Catalyst: the per-Auspice part isn't modelled
+      overrides:
+        - {index: 0, hit_tags: [beam]}
+        - {index: 1, drop: true}
+    515906:   # Exquisite Cut
+      overrides:
+        - {index: 0, hit_tags: [beam], event: "hit:self:auto_dmg", duration: 5, max_stacks: 6}
+    515907: {}   # Jade Chime
+    515908:   # Expanse: Everlasting Peace: she fights from range
+      overrides:
+        - {index: 1, hit_tags: []}
+    515909:   # Inner Stagnation
+      overrides:
+        - {index: 0, event: "hit:self:auto_dmg"}
+    515910: {}   # Fortune's Flow
+    515911:   # Iridescent Robe
+      mark_tags: [burst]
+      overrides:
+        - {index: 0, event: "mark:self"}
+    515912:   # Omen Breaker
+      overrides:
+        - {index: 0, event: "dodge:main"}
+    515913:   # Shifting Brilliance: while the beam is up
+      overrides:
+        - {index: 1, hit_tags: [needle], event: "while:status:crystallized"}
+    515941:   # Dream Shock
+      overrides:
+        - {index: 0, hit_tags: []}
+    515942:   # Lingering Grace: nearly always; Terra Supports shouldn't get it, a small overrate
+      overrides:
+        - {index: 1, hit_tags: [], target: "element:3"}
+    515943:   # United Flame
+      overrides:
+        - {index: 0, hit_tags: [], event: "hit:self:ult_dmg", duration: 20, max_stacks: 6}
+
+support:
+  untimed: true
+  on_field: {skill: 3.0, ult: 4.0}   # GUESS
+  actions:
+    skill:                         # Instant Blossom: 6 Rose and 1 Wither Vial, a tick per 0.8 s for 6 s (text)
+      hits:
+        - {hit: 159320001, count: 42, offset: 1.8, interval: 0.133, tags: [rose], applies_mark: true, excludes: [515923]}
+        - {hit: 159320001, count: 28, offset: 1.8, interval: 0.2, tags: [rose], applies_mark: true, requires: [515923]}
+        - {hit: 159320002, count: 7, offset: 1.8, interval: 0.8, tags: [wither], applies_mark: true, excludes: [515923]}
+        - {hit: 159320002, count: 21, offset: 1.8, interval: 0.267, tags: [wither], applies_mark: true, requires: [515923]}
+    ult:
+      hits:
+        - {hit: 159400001, offset: 1.0, tags: [burst], excludes: [515932]}
+        - {hit: 159400001, offset: 1.0, tags: [burst], applies_mark: true, requires: [515932]}
+        - {hit: 159400002, count: 8, offset: 1.5, interval: 0.2, tags: [burst]}
+
+  procs:
+    - {event: "hit:self:wither", every: 5, hit: 159320004, tags: [wither_burst]}   # Wither at 5 stacks
+
+  buffs:
+    - {name: earth_vein, event: "hit:self:rose", duration: 10, target: enemy, requires: [515927]}
+
+  potentials:
+    515921:   # Essence Extraction (pink): the first 3.5 s; and 6 hits as the vials expire
+      add_hits:
+        skill: [{hit: 159321101, count: 6, offset: 7.8, interval: 0.1, tags: [rose_end]}]
+      overrides:
+        - {index: 0, hit_tags: [rose], event: "cast:self:skill", duration: 3.5}
+    515922:   # Vernal Breath (pink): per Terra Trekker; Rapid Bloom only moves the hits
+      overrides:
+        - {index: 0, hit_tags: [rose], max_stacks: 1, copies: [{event: "while:squad:3:1"}, {event: "while:squad:3:2"}, {event: "while:squad:3:3"}]}
+    515923:   # Return to Earth (pink): 3 Wither, 4 Rose (hits above)
+      overrides:
+        - {index: 0, hit_tags: [wither], max_stacks: 1, copies: [{event: "while:squad:3:1"}, {event: "while:squad:3:2"}, {event: "while:squad:3:3"}]}
+    515924:   # Lasting Aftertaste (pink): 50% longer
+      add_hits:
+        skill:
+          - {hit: 159320001, count: 18, offset: 7.8, interval: 0.17, tags: [rose], applies_mark: true}
+          - {hit: 159320002, count: 3, offset: 7.8, interval: 0.8, tags: [wither], applies_mark: true}
+    515925:   # Perfect Touch: 6 Rose Vials
+      overrides:
+        - {index: 0, hit_tags: [rose], event: "cast:self:skill", duration: 7.8, stacks: 6}
+    515926:   # Symptom Sight
+      overrides:
+        - {index: 0, event: "hit:self:rose"}
+    515927:   # Reciprocity
+      procs:
+        - {event: "mark:element3", when: "while:status:earth_vein", hit: 159327101, tags: [reciprocity]}
+    515928:   # Faded Splendor: one Wither Vial
+      overrides:
+        - {index: 0, hit_tags: [wither]}
+    515929:   # Aromatic Room: while a vial is out
+      overrides:
+        - {index: 0, hit_tags: [], event: "cast:self:skill", duration: 7.8, target: "element:3"}
+    515930:   # Waning Year: the per-stack bonus isn't modelled
+      procs:
+        - {event: "hit:self:wither", hit: 159330101, tags: [waning]}
+      overrides:
+        - {index: 0, drop: true}
+    515931: {}   # Herbal Tempering
+    515932: {}   # Flying Fire: the ult's Mark is in the hits above
+    515933:   # Terra Chorus: all Terra
+      overrides:
+        - {index: 0, event: "hit:self:rose&while:squad:3:3"}
+    515941:
+      overrides:
+        - {index: 0, hit_tags: []}
+    515942:
+      overrides:
+        - {index: 1, hit_tags: [], target: "element:3"}
+    515943:
+      overrides:
+        - {index: 0, hit_tags: [], event: "hit:self:ult_dmg", duration: 20, max_stacks: 6}

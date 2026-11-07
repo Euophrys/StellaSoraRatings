@@ -85,7 +85,7 @@ main:
         - {index: 0, drop: true}
     511111:   # Keep Strangers at Bay: every time she's hit (hit_taken_interval), though it needs a melee strike
       procs:
-        - {event: "hit_taken:main", hit: 111511001, icd: {param: Param3}, tags: [strangers]}
+        - {event: "hit_taken:main", hit: 111511001, icd: 12, tags: [strangers]}
     511112:   # Lady Essence: the school bag only swings up close and isn't in the string
       overrides:
         - {index: 0, drop: true}

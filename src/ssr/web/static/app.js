@@ -282,7 +282,9 @@ function memberPanel(i) {
     ? h("div", { class: "msg err" }, `${t.name} has no ${role} kit; this can't be simulated.`)
     : kit === "stub"
       ? h("div", { class: "msg warn small" }, `${t.name}'s ${role} kit is a placeholder, not timed in game, and its potentials aren't modelled. Don't trust these numbers.`)
-      : null;
+      : kit === "untimed"
+        ? h("div", { class: "msg warn small" }, `${t.name}'s ${role} kit isn't timed in game: its animations are conservative guesses and minions are skipped. Expect it to rate low.`)
+        : null;
   const skills = h("div", { class: "field" }, SKILLS[role].map((sk) => h("label", {}, sk,
     select(String(m.skill_levels[sk] ?? 10), Array.from({ length: 10 }, (_, k) => ({ value: String(k + 1), label: String(k + 1) })),
       (v) => setState((s) => { s.members[i].skill_levels[sk] = Number(v); })))));

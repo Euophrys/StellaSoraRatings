@@ -152,8 +152,10 @@ support:
     513028:   # Coast Crusher: crits as every 2nd wave (GUESS: 50% Crit Rate)
       overrides:
         - {index: 0, event: "hit:self:wave", every: 2, target: "element:1"}
-        - {index: 1, hit_tags: [wave]}
-        - {index: 2, hit_tags: [wave]}
+        - {index: 1, drop: true}   # duplicate Lv1 rows
+        - {index: 2, drop: true}
+        - {index: 3, hit_tags: [wave]}
+        - {index: 4, hit_tags: [wave]}
     513029:   # Aquatic Assault: needs different targets
       overrides:
         - {index: 0, drop: true}
