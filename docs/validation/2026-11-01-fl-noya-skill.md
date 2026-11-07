@@ -1,14 +1,21 @@
 # Validation: Firstlight Noya skill build vs Maygi (2026-11-01)
 
-Run: `python -m ssr teams/fl_noya_skill.yaml -o out/` → `out/fl_noya_skill.xlsx` (~35 s).
-Compared with the left half of `example.jpeg`. Enemy RES 145 (calibrated, see `docs/assumptions.md`), DEF 0, skill levels 10, discs at C1 unless stated.
+Run: `python -m ssr teams/fl_noya_skill.yaml -o out/` → `out/fl_noya_skill.xlsx` (~35 s). Compared with the left half of `example.jpeg`. Enemy RES 145 (calibrated, see `docs/assumptions.md`), DEF 0, skill levels 10, discs at C1 unless stated.
+
+> **Update 2026-11-07: enemy RES is now the raw 250, not 145.** The 105 was FL Noya's Astral Brilliance Lv6, not an enemy property (`docs/assumptions.md`). The tables below are the original 2026-11-01 run at RES 145. For regressions, use these numbers (`fl_noya_skill`, 120 s, current code):
+>
+> - **Pinks-only total:** 203.1M (250.3M at RES 145 on the same code).
+> - **Reference build:** Argent Mirage, Astral Brilliance, Resolve: Blitz, Prism Warp (Noya); Domain of Purity, Stellar Crash (Firefly); Enemy Counter, Trick Boost (Tilia).
+> - **Noya potentials, Lv6:** Argent Mirage 36.74%, Resolve: Blitz 20.85%, Astral Brilliance 18.75%, Prism Warp 18.35%, Guiding Star 12.93%, Lucent Tide 10.42%, Searing Sun 9.70%, Veteran's Grit 7.59%.
+> - **Discs:** Spearman against Maygi's 11 discs is 0.818 (main C1), 0.809 (main C6), 1.0 (support C1).
+> - **Lux PEN emblem:** 9.79% / 0.69% against the reference build, which is what `python -m ssr` rates against (Maygi 8.65% / 0.05%); 24.34% / 7.12% against pinks only.
 
 **Summary.** Disc rank order matches well: Spearman 0.84 (main C1), 0.78 (main C6), 1.0 (support C1). My Guiding Star lands within 2 points at C1. Potential order mostly matches; Lucent Tide and Stellar Crash come out too low. Emblem order is close, and Skill Crit Rate matches exactly (4.73%).
 
 ## Discs
 
 | Disc | Maygi main C1 / C6 | Ours main C1 / C6 | Maygi support C1 / C6 | Ours support C1 / C6 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | My Guiding Star | 78.4% / 140.8% | 76.6% / 124.3% | 7.5% / 8.1% | 9.6% / 10.5% |
 | Ripples of Nostalgia | 32.9% / 51.3% | 40.5% / 57.4% | 7.5% / 8.1% | 9.6% / 10.5% |
 | A Moment in the Afternoon | 21.9% / 27.4% | 26.6% / 37.6% | 7.4% / 8.0% | 9.5% / 10.5% |
@@ -20,9 +27,9 @@ Compared with the left half of `example.jpeg`. Enemy RES 145 (calibrated, see `d
 | Prayer Beneath Light | 13.9% / 15.7% | 18.1% / 20.9% | 6.1% / 6.6% | 6.6% / 7.5% |
 | Eternal Brilliance | 13.2% / 18.6% | 10.5% / 18.8% | 5.2% / 5.8% | -0.9% / 0.0% |
 | Seed Alike | 11.7% / 13.6% | 9.5% / 11.6% | 6.1% / 6.6% | 6.6% / 7.5% |
-main C1 spearman 0.836
-main C6 spearman 0.782
-support C1 spearman 1.0
+| main C1 spearman 0.836 |
+| main C6 spearman 0.782 |
+| support C1 spearman 1.0 |
 
 Rank correlation is computed over Maygi's 11 discs. Our support values run about 1–2 points high for discs with a Lux DMG substat; the order is the same.
 
@@ -30,24 +37,24 @@ Rank correlation is computed over Maygi's 11 discs. Our support values run about
 
 Glimmer is modelled as of the second pass (see below). Our reference build (2 steps, top 2 main / top 1 per support at Lv6): Empyrean Starfall, Argent Mirage, Prism Warp, Guiding Star (Noya); Domain of Purity, Blade Flash (Firefly); Enemy Counter, Trick Boost (Tilia). For a potential that's in the reference, the gain is measured against the reference with it removed.
 
-| Potential | Maygi | Ours Lv6 | In ref |
-|---|---|---|---|
-| Argent Mirage: Legion's End | S | 19.60% | yes |
-| Prism Warp | A | 19.35% | yes |
-| Resolve: Blitz | B+ | 12.39% |  |
-| Astral Brilliance | B+ | 7.13% |  |
-| Guiding Star | B+ | 12.70% | yes |
-| Lucent Tide | B | 5.69% |  |
-| Searing Sun | B | 8.57% |  |
-| Veteran's Grit | C | 6.54% |  |
-| Domain of Purity | S | 25.58% | yes |
-| Stellar Crash | A | 4.08% |  |
-| Blade of Falling Petals | C | 0.80% |  |
-| Lightforged Blade | C | 0.76% |  |
-| Enemy Counter | S | 51.37% | yes |
-| Blinding Beam | C | 2.18% |  |
-| Knight's Seal | varies | 2.32% |  |
-| Banner of Glory | (thumb) | 0.00% |  |
+| Potential                   | Maygi   | Ours Lv6 | In ref |
+| --------------------------- | ------- | -------- | ------ |
+| Argent Mirage: Legion's End | S       | 19.60%   | yes    |
+| Prism Warp                  | A       | 19.35%   | yes    |
+| Resolve: Blitz              | B+      | 12.39%   |        |
+| Astral Brilliance           | B+      | 7.13%    |        |
+| Guiding Star                | B+      | 12.70%   | yes    |
+| Lucent Tide                 | B       | 5.69%    |        |
+| Searing Sun                 | B       | 8.57%    |        |
+| Veteran's Grit              | C       | 6.54%    |        |
+| Domain of Purity            | S       | 25.58%   | yes    |
+| Stellar Crash               | A       | 4.08%    |        |
+| Blade of Falling Petals     | C       | 0.80%    |        |
+| Lightforged Blade           | C       | 0.76%    |        |
+| Enemy Counter               | S       | 51.37%   | yes    |
+| Blinding Beam               | C       | 2.18%    |        |
+| Knight's Seal               | varies  | 2.32%    |        |
+| Banner of Glory             | (thumb) | 0.00%    |        |
 
 FL Noya order. Ours: Argent Mirage > Prism Warp > Guiding Star > Resolve: Blitz > Searing Sun > Astral Brilliance > Veteran's Grit > Lucent Tide. Maygi: S > A > B+ (Resolve, Astral, Guiding) > B (Lucent Tide, Searing) > C (Veteran's). The top two and the bottom group are in the right place. **Lucent Tide** is too low, and **Astral Brilliance** is a bit low.
 
@@ -55,18 +62,18 @@ Supports: Domain of Purity and Enemy Counter are S for us too, by a wide margin.
 
 ## Emblems (FL Noya, Lv70 stat lines, personal gain)
 
-| Line | Maygi | Ours |
-| --- | --- | --- |
-| HP% | 11.03% | 10.43% |
-| Crit Rate | 10.25% | 8.48% |
-| Lux PEN | 8.65% | 8.65% (calibrated) |
-| Skill DMG | 7.29% | 8.05% |
-| Skill Crit | 4.73% | 4.73% |
-| Lux DMG | 3.99% | 6.65% |
-| Crit DMG | 3.86% | 6.50% |
-| Lux PEN 2nd line | 0.05% | 0.49% |
-| Skill +3 (Lv80) | 10.23% (team) | 9.65% (team) |
-| Ult +3 (Lv80) | 6.07% (team) | 4.33% (team) |
+| Line             | Maygi         | Ours               |
+| ---------------- | ------------- | ------------------ |
+| HP%              | 11.03%        | 10.43%             |
+| Crit Rate        | 10.25%        | 8.48%              |
+| Lux PEN          | 8.65%         | 8.65% (calibrated) |
+| Skill DMG        | 7.29%         | 8.05%              |
+| Skill Crit       | 4.73%         | 4.73%              |
+| Lux DMG          | 3.99%         | 6.65%              |
+| Crit DMG         | 3.86%         | 6.50%              |
+| Lux PEN 2nd line | 0.05%         | 0.49%              |
+| Skill +3 (Lv80)  | 10.23% (team) | 9.65% (team)       |
+| Ult +3 (Lv80)    | 6.07% (team)  | 4.33% (team)       |
 
 Order: ours HP% > Lux PEN > Crit Rate > Skill DMG > Lux DMG > Crit DMG > Skill Crit. Maygi: HP% > Crit Rate > Lux PEN > Skill DMG > Skill Crit > Lux DMG > Crit DMG.
 
@@ -100,25 +107,17 @@ Order: ours HP% > Lux PEN > Crit Rate > Skill DMG > Lux DMG > Crit DMG > Skill C
 
 The sim now models resilience breaks (`docs/validation/2026-11-03-boss-blitz-breaks.md`). With the bar off (`enemy.resilience: 0`), every number above reproduces exactly (pinks-only total 239,320,242.148, tested). The new baseline is Generic, with a 250M bar, a 10 s ×1.5 break and the lock defaults:
 
-| Run (120 s) | Bar off | Bar on | Breaks (start, s) |
-| --- | --: | --: | --- |
-| pinks only | 239.3M | 252.1M (+5.3%) | 1 (85.2) |
+| Run (120 s)     |  Bar off |            Bar on | Breaks (start, s)    |
+| --------------- | -------: | ----------------: | -------------------- |
+| pinks only      |   239.3M |    252.1M (+5.3%) | 1 (85.2)             |
 | reference build | 1,078.8M | 1,258.0M (+16.6%) | 3 (24.5, 58.6, 92.9) |
 
 The reference build's picks are unchanged by the bar.
 
 ## Update 2026-11-03: no passive energy
 
-The user tested in game: standing in a boss fight without attacking gains no ult energy. Every kit's
-`energy_per_second` went from 2.0 (GUESS) to 0. This team, pinks only, bar off: 239.32M -> 223.70M (−6.5%). Ult casts
-went from 3/2/3 to 2/1/2. Other teams, pinks only: Noya (Ventus) / Ann / Canace −7.6%, FL Noya / Shia / Tilia −9.6%,
-Chitose −8.7%, Gerie / Nazuna / Ridge −17.5%, Amber / Laru / Flora −3.0%, Mistique −4.2%. Numbers above this section
-predate the change.
+The user tested in game: standing in a boss fight without attacking gains no ult energy. Every kit's `energy_per_second` went from 2.0 (GUESS) to 0. This team, pinks only, bar off: 239.32M -> 223.70M (−6.5%). Ult casts went from 3/2/3 to 2/1/2. Other teams, pinks only: Noya (Ventus) / Ann / Canace −7.6%, FL Noya / Shia / Tilia −9.6%, Chitose −8.7%, Gerie / Nazuna / Ridge −17.5%, Amber / Laru / Flora −3.0%, Mistique −4.2%. Numbers above this section predate the change.
 
 ## Update 2026-11-04: every disc specced
 
-`docs/validation/2026-11-04-disc-pass.md`. This team's discs changed in two ways. Ripples of Nostalgia's harmony 1 bonus
-(+4.5% Auto/Skill DMG for 6 s after the main's Skill DMG) used to be assumed always on and now has its real trigger.
-A Moment in the Afternoon's Shock is now a named status, so "Skill DMG vs Shocked targets" is tested against it instead
-of assumed. Pinks only, bar on: 261.05M -> 259.68M (−0.53%). Bar off, no notes (the regression anchor): 223.70M ->
-222.42M (−0.57%). Ult casts unchanged.
+`docs/validation/2026-11-04-disc-pass.md`. This team's discs changed in two ways. Ripples of Nostalgia's harmony 1 bonus (+4.5% Auto/Skill DMG for 6 s after the main's Skill DMG) used to be assumed always on and now has its real trigger. A Moment in the Afternoon's Shock is now a named status, so "Skill DMG vs Shocked targets" is tested against it instead of assumed. Pinks only, bar on: 261.05M -> 259.68M (−0.53%). Bar off, no notes (the regression anchor): 223.70M -> 222.42M (−0.57%). Ult casts unchanged.

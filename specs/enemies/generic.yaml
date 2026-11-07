@@ -1,7 +1,7 @@
-# Generic enemy: today's calibrated RES/DEF (docs/assumptions.md) plus the Boss Blitz resilience bar (user).
+# Generic enemy: weak-element RES, base DEF (docs/assumptions.md) plus the Boss Blitz resilience bar (user).
 # `resilience: 0` in a team file turns the bar off.
 label: Generic
-res: 145        # CALIBRATED: weak 250 minus ~105 build PEN
+res: 250        # the formula's weak band; PEN comes from the build
 defense: 500    # GUESS: base enemy DEF (user)
 resilience: 250000000
 break_time: 10

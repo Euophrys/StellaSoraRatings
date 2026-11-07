@@ -97,10 +97,10 @@ main:
       overrides:
         - {index: 0, event: "hit:self:sonic"}
 
-    511208:   # Flurry Stance: ATK SPD stacks
+    511208:   # Flurry Stance: within 7 s after the skill or Dragon Slash, each auto hit stacks ATK SPD
       overrides:
-        - {index: 0, drop: true}
-      note: "ATK SPD isn't modelled (auto string timing is fixed)."
+        - {index: 0, event: "hit:self:auto&while:cast_within:0:skill:7|hit:self:auto&while:cast_within:0:dragon:7"}
+      note: "Counts each auto hit as an Auto Attack. Member 0 in the event: only as the main."
 
     511209:   # Sandstorm Crush: each auto hit -> Ultimate DMG, 10 stacks, spent by the ult (reset after its hits)
       overrides:

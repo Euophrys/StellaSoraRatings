@@ -118,10 +118,11 @@ main:
 
     510307:   # Confident Mode: after skill, ATK SPD + Auto DMG
       overrides:
-        - {index: 0, drop: true}                                    # ATK SPD: not modelled
+        # User, frame-timed: 12 shots take 60 frames (2,26 -> 4,26), and 43 after the skill (12,26 -> 14,09): +39.5%. The text says 35%, and the user sees no other ATK SPD source. The video is 29.97 fps and the game 60 fps, so a frame off is possible.
+        - {index: 0, event: "cast:self:skill|cast:self:recast", value: 0.395}
         - {index: 1, event: "cast:self:skill|cast:self:recast", hit_tags: [auto]}
         - {index: 2, drop: true}                                    # name-only row (Param4), duplicate
-      note: "ATK SPD not modelled (the auto string is user-timed at base speed)."
+      note: "ATK SPD from the user's frame timing (+39.5%, text 35%). It speeds up the shots (timed) and the reload (GUESS)."
 
     510308:   # Weakness Mark: skill cast -> ATK, stacking
       overrides:
@@ -162,9 +163,12 @@ main:
 
     510342:   # Overloaded Spark: ult resets skill CD; for a while after, skill CD -50% and Skill DMG
       reset_cd: {ult: skill}
+      # 8 s after the ult ends (Param1), and its lock is 1.167 s. User: ult, skill, recast, and the CD is 4 s instead of 8.
+      cd_when:
+        - {action: skill, scale: 0.5, when: "while:cast_within:self:ult:9.167"}
       overrides:
-        - {index: 0, event: "cast:self:ult", duration: {ref: "ScriptParameterValue,NoLevel,10354211,CommonData,10K"}}
-      note: "The 50% skill cooldown cut after the ult is not modelled (only the reset)."
+        - {index: 0, event: "while:cast_within:self:ult:9.167"}
+      note: "A skill CD starting within 8 s after the ult ends is halved. With the recast, that is one CD per ult (user). Without it, the sim can halve more than one (untested, GUESS)."
 
     510343:   # Soul-Hunting Spark: after the ult hits (no kill), Ignis DMG vs that target
       overrides:

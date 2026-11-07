@@ -37,18 +37,18 @@ def monster_values(gd: GameData, monster_id: int) -> dict:
 
 ENEMY_SPECS = REPO_ROOT / "specs" / "enemies"
 _ELEMENT_IDS = {"aqua": 1, "ignis": 2, "terra": 3, "ventus": 4, "lux": 5, "umbra": 6}
-PRESET_DEFAULTS = dict(break_ratio=1.5, lock_delay=1.3, lock_time=4.7, baseline_pen=105)
+PRESET_DEFAULTS = dict(break_ratio=1.5, lock_delay=1.3, lock_time=4.7)
 _FLOAT_KEYS = ("resilience", "break_time", "break_ratio", "lock_delay", "lock_time")
 
 
 def _res_by_element(e: dict) -> dict[int, float]:
-    """`weak: [Umbra]` + `res_neutral: 645`: the weak elements keep `res`, every other element gets `res_neutral`.
+    """`weak: [Umbra]` + `res_neutral: 750`: the weak elements keep `res`, every other element gets `res_neutral`.
     Without `weak`, every element uses `res`."""
     weak = e.get("weak")
     if not weak:
         return {}
     ids = {w if isinstance(w, int) else _ELEMENT_IDS[str(w).lower()] for w in weak}
-    neutral = float(e.get("res_neutral", 645))
+    neutral = float(e.get("res_neutral", 750))
     return {el: neutral for el in range(1, 7) if el not in ids}
 
 
@@ -73,12 +73,11 @@ def _resolve_refs(gd: GameData, entry: dict) -> dict:
 def _preset(gd: GameData, name: str) -> dict:
     """The preset's values: defaults, then monster data, then the preset file's own keys."""
     doc = _preset_doc(name)
-    out = dict(PRESET_DEFAULTS, res=145.0, defense=500.0, resilience=0.0, break_time=10.0,
+    out = dict(PRESET_DEFAULTS, res=250.0, defense=500.0, resilience=0.0, break_time=10.0,
                res_by_element={}, fight_length=None)
-    pen = float(doc.get("baseline_pen", out["baseline_pen"]))
     if "monster" in doc:
         mv = monster_values(gd, int(doc["monster"]))
-        by_el = {el: float(raw) - pen for el, raw in mv["res"].items()}
+        by_el = {el: float(raw) for el, raw in mv["res"].items()}
         out.update(res=min(by_el.values()), defense=mv["defense"], resilience=mv["resilience"],
                    break_time=mv["break_time"], res_by_element=by_el)
     for k in ("res", "defense", "fight_length", *_FLOAT_KEYS):

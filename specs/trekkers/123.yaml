@@ -97,9 +97,9 @@ support:
 
     512329:   # Speed Surge: main passes through the wall -> ATK SPD + Ventus DMG 5 s
       overrides:
-        - {index: 0, drop: true}
+        - {index: 0, event: "while:status:wall", target: main}
         - {index: 1, event: "while:status:wall", target: main}
-      note: "ATK SPD not modelled; assumes the main is in the wall whenever one stands."
+      note: "Assumes the main is in the wall whenever one stands."
 
     512333:   # Forest Princess' Blessing: 35% chance a random ally gets Ventus DMG
       overrides:

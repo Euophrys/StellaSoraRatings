@@ -19,11 +19,12 @@ The slow commands (pink search, full rating) should run in the background, two a
 
 ## What to ask the user
 
-They play the game and can time things frame by frame (they report `seconds,frames` at 30 fps: `04,15` = 4.5 s). Ask for:
+They play the game and can time things frame by frame (they report `seconds,frames` at 30 fps: `04,15` = 4.5 s; the video is really 29.97 fps and the game 60 fps, so allow a frame of error). Ask for:
 
 - **Main, per action (skill, ult, any follow-up):** how long until autos resume (`lock`), when each hit lands relative to the cast, and how many hits there are. Hit counts in the text can be wrong: Amber's skill text says "x4" small hits, but there are 8. Ask for a cast **with no potentials** and one with each hit-adding potential, so the base and the potential's extra hits can be told apart.
 - **Main auto string:** duration of one full string, hits per strike, reload or pause times (Amber: 12 shots in 2.03 s + 0.77 s reload).
 - **Cooldown timing:** does the CD start at cast or after the action ends? Amber's skill CD starts after the Precise Temperature Control recast ends (`starts_cd`).
+- **ATK SPD:** time the same shots with and without the buff. Amber's Confident Mode measured +39.5% against 35% in the text.
 - **Supports:** seconds on the battlefield per skill and per ult (`on_field`; Laru 14 s, most 4 s). Does the CD tick while they're there? Is the ult actually used? (Laru's isn't, so her kit leaves `ult` out.)
 - **Which pinks the community uses**, to check the pink search against.
 - **Mechanics the data can't explain:** ICDs, how statuses convert or stack, what "enters combat" means, what a scripted disc does (Voyage Blueprint's shield → Ignis DMG 12 s every 20 s came from the user).
@@ -58,8 +59,9 @@ All are documented in `specs/README.md`:
 - **Statuses:** a named buff, tested with `while:status:<name>`. `per_stack` scales with stacks, `stacks_from` adds stacks from another status, `add` adds N stacks per event (e.g. 3 butterflies per cast).
 - **Events:** `cast:<who>:<action>`, `hit:<who>:<tag|any|slot_dmg>`, `mark:<who>`, joined with `|`.
 - **Buff timing:** `icd`, `every`, `reset_on` (Ardent Trigger resets on reload).
+- **ATK SPD:** stat 47 runs the main's auto string faster, reload included (`specs/README.md`).
 - **Gating:** `requires` / `excludes` / `requires_all` on hits and buffs, for potential-dependent variants. Amber's auto string has one variant per magazine pink.
-- **Actions:** `add_actions` with a `followup` (after an action, or every N events). `starts_cd` sets when a cooldown begins. `reset_cd` and `cd_reduce` also exist.
+- **Actions:** `add_actions` with a `followup` (after an action, or every N events). `starts_cd` sets when a cooldown begins. `reset_cd`, `cd_reduce`, `cd_scale` and `cd_when` (a cooldown cut within a time window) also exist.
 - **Procs:** with `icd`, `every` and `when` (only while a status holds); `chance` (expected value) and `resilience` (removes a fraction of the enemy's bar).
 - **Enemy:** for a Boss Blitz team, set `enemy: {preset: <boss>}` (`specs/enemies/`), which brings the boss's RES, resilience bar and ability, and a 180 s fight. Use `while:broken` for "against a broken / stunned target" effects.
 - **Supports:** an `on_field` window per action; `while:on_field:<who>` effects use it.

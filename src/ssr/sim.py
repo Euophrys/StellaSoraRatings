@@ -15,7 +15,7 @@ from .formula import Enemy, hit_damage, slot_of
 from .game import toughness_adjust, char_base_stats, disc_base_stats, hit, hit_level, skill_cd, talent_nodes, ult_energy
 from .kit import ActionSpec, HitSpec, MinionSpec, ResolvedPotential, kit_buffs, resolve_buffs, resolve_potential
 from .resilience import ExpectedICD, ResilienceBar
-from .stats import CHARGE_EFF, DEF, ELEM_TAKEN_BASE, RES_BREAK_EFF, START_ENERGY, StatBlock
+from .stats import ATK_SPD, CHARGE_EFF, DEF, ELEM_TAKEN_BASE, RES_BREAK_EFF, START_ENERGY, StatBlock
 from .emblems import EmblemChargeEfficiency, EmblemPotentialLevel, line_relevant
 from .team import FILLER, FILLER_SOURCE_DISC, Build, EmblemLine, EmblemSkillLevel, TeamConfig
 
@@ -174,6 +174,7 @@ class _Member:
     reset_cd: dict
     cd_reduce: list
     procs: list
+    cd_when: list = field(default_factory=list)   # (action, scale, condition): see cooldown() in simulate
     static: StatBlock = None
     minion_static: StatBlock = None   # what the member's minions get: stat sheet + buffs that reach minions
     cd_ready: dict = field(default_factory=dict)
@@ -285,6 +286,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             extra_casts={k: v for rp in resolved for k, v in rp.extra_casts.items()},
             reset_cd={**kit.reset_cd, **{k: v for rp in resolved for k, v in rp.reset_cd.items()}},
             cd_reduce=[rp.cd_reduce for rp in resolved if rp.cd_reduce],
+            cd_when=[(c["action"], float(c["scale"]), _norm_event(c["when"], i)) for rp in resolved for c in rp.cd_when],
             procs=[(_norm_event(_expand_who(p.event, n, classes, elements), i), p)
                    for p in [*kit.procs, *(p for rp in resolved for p in rp.procs)] if keep(p)],
         )
@@ -732,6 +734,14 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             m.recharge[name] = [x - shift for x in q]
             m.charges[name] += 1
 
+    def cooldown(m: _Member, name: str, start: float) -> float:
+        """The cooldown of an action starting at `start`: a `cd_when` window scales it if it holds at that moment."""
+        cd = m.cd.get(name, 0.0)
+        for action, scale, when in m.cd_when:
+            if action == name and condition(when, start):
+                cd *= scale
+        return cd
+
     def cast(m: _Member, name: str, t: float, from_cd: bool = True):
         a = m.actions[name]
         m.cast_count[name] += 1
@@ -759,15 +769,16 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             m.charges[name] -= 1
             m.last_use[name] = t
             q = m.recharge[name]
-            cd = m.cd.get(name, 0.0) - sum(cr["seconds"] * cr["times"] for cr in m.cd_reduce if cr["action"] == name)
+            cd = cooldown(m, name, t) - sum(cr["seconds"] * cr["times"] for cr in m.cd_reduce if cr["action"] == name)
             q.append(max(t, q[-1] if q else t) + cd)   # one recharge timer, progress kept across casts (user)
         elif from_cd:
-            m.cd_ready[name] = t + a.cd_start + m.cd.get(name, 0.0)
+            m.cd_ready[name] = t + a.cd_start + cooldown(m, name, t + a.cd_start)
             for cr in m.cd_reduce:
                 if cr["action"] == name:
                     m.cd_ready[name] -= cr["seconds"] * cr["times"]
         if a.starts_cd and a.starts_cd in m.cd:
-            m.cd_ready[a.starts_cd] = t + min(lock, cut_at) + m.cd[a.starts_cd]   # user: a dodge starts it at once
+            start = t + min(lock, cut_at)   # user: a dodge starts it at once
+            m.cd_ready[a.starts_cd] = start + cooldown(m, a.starts_cd, start)
         if name == "ult":
             m.energy = 0.0
         if name in m.kit.on_field:
@@ -818,6 +829,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
 
     energy_used: dict = defaultdict(float)
     has_charge_mods = any(md.mod.stat == CHARGE_EFF for md in mods)
+    has_atk_spd = any(md.mod.stat == ATK_SPD and 0 in md.receivers for md in mods)
 
     def land(t: float, mi: int, h: HitSpec, action: str, cid: str):
         m = members[mi]
@@ -998,7 +1010,9 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                 cast(m, "skill", t)
         # main autos: a string that restarts after every cast
         if auto_hits and t >= lock_until[0] - 1e-9:
-            c0, c1 = auto_clock[0], auto_clock[0] + dt
+            # ATK SPD runs the whole string faster, shots and reload (user-timed shots; the reload is a GUESS).
+            speed = 1.0 + (stat_for(main.static, 0, set(), t).get(ATK_SPD) if has_atk_spd else 0.0)
+            c0, c1 = auto_clock[0], auto_clock[0] + dt * speed
             for off, h in auto_hits:
                 if c0 - 1e-9 <= off < c1 - 1e-9:
                     seq[0] += 1

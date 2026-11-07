@@ -98,6 +98,10 @@ A buff without `effect` or `attribute` is a **pure status**: no stat, only stack
 
 Buffs also take `name` (makes a status other rules can test with `while:status:<name>`), `max_stacks`, `add` (stacks added per event, e.g. 3 butterflies per cast), and `requires` / `excludes` / `requires_all` (potential ids).
 
+## ATK SPD
+
+Stat 47 (ATK SPD) runs the main's auto string faster: its clock advances at `1 + ATK SPD`, so every offset in the string, the reload and an auto `dodge_cancel` scale together. Treat it like any other stat: give the potential's modifier an `event` and, for a support's buff, `target: main`. It does not change skill or ult locks, or minions (those use a pool's `speed`).
+
 ## Minion pools
 
 For minions with their own lifetimes and attack loops (Mistique's Pumpka Phantoms), a kit section can have `minions:`:
@@ -158,6 +162,7 @@ potentials:
 | `reset_cd` | `{ult: skill}`: casting the ult makes the skill ready |
 | `add_charges` | `{skill: 1}`: more stored uses of that action ("increases initial uses by 1") |
 | `cd_scale` | `{skill: 0.5}`: that action's cooldown is multiplied by the value ("reduces the Cooldown by 50%") |
+| `cd_when` | `[{action: skill, scale: 0.5, when: "while:cast_within:self:ult:9.167"}]`: a cooldown is multiplied by `scale` if `when` holds as it starts. A cooldown already running doesn't change |
 | `cd_reduce` | `{action: skill, seconds: <value>, times: <value>}`: each cast refunds `seconds × times` of its own cooldown |
 | `minion_rules` | `{pool: {key: value}}`: changes a minion pool (see Minion pools) |
 | `procs` | `[{event: "hit:main:skill_dmg", hit: <id>, icd: <value>, every: <value>, tags: [...]}]` extra hits fired by events; `every: N` fires on every Nth matching event. Proc hits take all `HitSpec` fields (`count`, `offset`, `triggers_mark`, `requires`, ...) and emit their own tag events |
@@ -212,14 +217,13 @@ A team file picks one with `enemy: {preset: <id>}` (default `generic`); the buil
 label: "Lithe Beauty (Boss Blitz)"
 monster: 6310280 # data: resilience (Toughness), break time, refill, DEF, RES per element
 fight_length: 180 # used when the team file has no fight_length
-res: 145 # instead of monster data (generic)
+res: 250 # instead of monster data (generic)
 defense: 500
 resilience: 250000000 # 0 = no bar
 break_time: 10 # seconds broken per break
 break_ratio: 1.5 # damage x while broken (unverified)
 lock_delay: 1.3 # GUESS: seconds from refill to the resilience lock
 lock_time: 4.7 # GUESS: seconds the bar can't be lowered
-baseline_pen: 105 # RES per element = data {W,F,S,A,L,D}ERFix - baseline_pen (docs/assumptions.md)
 ability: # the boss's ability: disc-spec entry syntax; values may be {ref: ...}
   - {
       stat: 61,
@@ -241,9 +245,9 @@ Resilience per hit = the hit's damage without the break ratio × the hitter's `A
 enemy:
   preset: lithe_beauty # specs/enemies/<id>.yaml (default generic); any key below overrides the preset
   resilience: 0 # e.g. turn the bar off
-  res: 145 # RES of the weak element(s) (docs/assumptions.md)
+  res: 250 # RES of the weak element(s) (docs/assumptions.md)
   weak: [Umbra] # optional: other elements use res_neutral
-  res_neutral: 645
+  res_neutral: 750
 hold: # optional rotation timing: a ready action waits for a condition, at most max_wait s
   - {
       member: 0,

@@ -3,7 +3,7 @@ fight_length: 120
 tick: 0.05
 mark_icd: 1
 enemy:
-  res: 145
+  res: 250        # weak-element RES (docs/assumptions.md)
   defense: 500
   broken: 1
 members:

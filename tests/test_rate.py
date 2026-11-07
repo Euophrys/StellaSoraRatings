@@ -81,3 +81,17 @@ def test_emblem_rows_include_second_pen_line(gd, team):
 def test_disc_row_carries_decode_notes(gd, team):  # Review Focus 2: undecodable/scripted parts reach the sheet
     row = rate_discs(gd, team, disc_ids=[214009, 214013])   # New Star Prelude / Voyage Blueprint: EffectType 42 shields
     assert any("shield" in n for r in row for n in r.notes)
+
+
+def test_cli_rates_emblems_on_reference_build(gd, tmp_path, monkeypatch):
+    import ssr.__main__ as cli
+    ref = Build({(162, 516212): 6})
+    seen = []
+    monkeypatch.setattr(cli, "GameData", lambda _root: gd)
+    monkeypatch.setattr(cli, "rate_discs", lambda *a, **k: [])
+    monkeypatch.setattr(cli, "build_reference", lambda *a, **k: ref)
+    monkeypatch.setattr(cli, "rate_emblems", lambda _gd, _team, build: seen.append(build) or [])
+    monkeypatch.setattr(cli, "rate_potentials", lambda *a, **k: [])
+    monkeypatch.setattr(cli, "write_xlsx", lambda *a, **k: None)
+    cli.main(["teams/fl_noya_skill.yaml", "-o", str(tmp_path)])
+    assert seen == [ref]

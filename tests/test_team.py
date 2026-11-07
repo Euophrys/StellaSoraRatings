@@ -17,7 +17,7 @@ def test_team_discs(gd, team):
 
 
 def test_enemy_and_reference(team):
-    assert team.enemy.res == 145 and team.reference["steps"] == 2 and team.fight_length == 120
+    assert team.enemy.res == 250 and team.reference["steps"] == 2 and team.fight_length == 120
 
 
 def test_build_is_immutable():

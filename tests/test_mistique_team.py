@@ -121,14 +121,14 @@ def test_main_element_drops_for_other_mains(gd, mcc):
 
 
 def test_weak_element_res(gd, mcc):
-    # Umbra-weak boss: Umbra keeps `res` (145), other elements get `res_neutral` (645): Chixia (Ignis) loses ~46%
+    # Umbra-weak boss: Umbra keeps `res` (250), other elements get `res_neutral` (750): Chixia (Ignis) loses ~47%
     from ssr.formula import Enemy, er_amend
-    assert mcc.enemy.res_by_element.get(6, mcc.enemy.res) == 145 and mcc.enemy.res_by_element[2] == 645
-    assert er_amend(645, 0) / er_amend(145, 0) == pytest.approx(0.54, abs=0.01)
+    assert mcc.enemy.res_by_element.get(6, mcc.enemy.res) == 250 and mcc.enemy.res_by_element[2] == 750
+    assert er_amend(750, 0) / er_amend(250, 0) == pytest.approx(0.533, abs=0.01)
     flat = replace(mcc, enemy=replace(mcc.enemy, res_by_element={}))
     a, b = simulate(gd, mcc, Build()), simulate(gd, flat, Build())
     assert a.by_member[0] == pytest.approx(b.by_member[0])          # Umbra main unchanged
-    assert a.by_member[1] == pytest.approx(b.by_member[1] * 0.54, rel=0.02)   # Ignis Chixia
+    assert a.by_member[1] == pytest.approx(b.by_member[1] * 0.533, rel=0.02)   # Ignis Chixia
 
 
 def test_hold_waits_for_condition_up_to_max_wait(gd, mcc):

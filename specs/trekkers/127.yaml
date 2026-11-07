@@ -65,9 +65,8 @@ support:
 
     512725:   # Isn't It Awesome!: while shielded, the Aqua main's ATK and ATK SPD
       overrides:
-        - {index: 0, drop: true}   # ATK SPD: not modelled
+        - {index: 0, event: "while:status:surging_shield", target: main}
         - {index: 1, event: "while:status:surging_shield", target: main}
-      note: "ATK SPD not modelled (auto string is user-timed at base speed)."
 
     512726:   # Hold On!: while shielded, the main's ATK; CD cut when the main is attacked (ignored)
       overrides:

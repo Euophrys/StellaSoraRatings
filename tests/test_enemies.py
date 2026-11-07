@@ -33,7 +33,7 @@ def test_preset_names():
 def test_lithe_beauty_preset(gd):
     e = enemy_from_doc(gd, {"preset": "lithe_beauty"})
     assert e.resilience == 250e6 and e.break_time == 10 and e.break_ratio == 1.5 and e.fight_length == 180
-    assert e.res_by_element[5] == 145 and e.res_by_element[2] == 1895 and e.res_by_element[1] == 645
+    assert e.res == 250 and e.res_by_element[5] == 250 and e.res_by_element[2] == 2000 and e.res_by_element[1] == 750
     vals = sorted((m.stat, m.value, m.trigger.duration, m.trigger.max_stacks) for m in e.ability)
     assert vals == [(61, pytest.approx(0.12), 15.0, 4), (65, pytest.approx(0.04), 15.0, 4)]
 
@@ -47,8 +47,8 @@ def test_count_preset_ability(gd):
 
 
 def test_legacy_enemy_is_generic(gd):
-    e = enemy_from_doc(gd, {"res": 145, "defense": 500, "broken": 1.0})
-    assert e.name == "generic" and e.resilience == 250e6 and e.res == 145
+    e = enemy_from_doc(gd, {"res": 250, "defense": 500, "broken": 1.0})
+    assert e.name == "generic" and e.resilience == 250e6 and e.res == 250
 
 
 def test_bar_off_and_overrides(gd):

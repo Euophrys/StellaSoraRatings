@@ -4,7 +4,7 @@ fight_length: 120
 tick: 0.05
 mark_icd: 1.0
 enemy:
-  res: 145        # CALIBRATED (docs/assumptions.md): makes the 1st Lux PEN emblem line +8.65% like Maygi (weak 250 minus ~105 build PEN)
+  res: 250        # weak-element RES (docs/assumptions.md)
   defense: 500      # GUESS: base enemy DEF (user)
   broken: 1.0     # resilience-break multiplier (1.5 while broken); not modelled
 

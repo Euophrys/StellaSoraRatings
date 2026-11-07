@@ -6,7 +6,7 @@ fight_length: 120
 tick: 0.05
 mark_icd: 1
 enemy:
-  res: 145
+  res: 250        # weak-element RES (docs/assumptions.md)
   defense: 500
   broken: 1
 members:
@@ -14,7 +14,7 @@ members:
   role: main
   pinks:
   - Precise Temperature Control
-  - Dominant Firepower
+  - Echo of Hospitality
   skill_levels:
     auto: 10
     skill: 10
@@ -41,12 +41,14 @@ members:
     - line: Crit Rate
       tier: blue
   targets:
+    Confident Mode: 1
+    Weakness Mark: 1
     Grand Finale: 5
     Fiery Rhythm: 1
     Keen Accent: 6
-    Bursting Spark: 1
+    Bursting Spark: 4
     Overloaded Spark: 1
-    Soul-Hunting Spark: 6
+    Soul-Hunting Spark: 1
   talents: 1
 - trekker: Flora
   role: support
@@ -59,12 +61,11 @@ members:
   emblems: []
   targets:
     Foreshadowing Verification: 1
-    Perfect Acting: 1
-    Visual Impact: 1
+    Perfect Acting: 3
+    Visual Impact: 2
     Reinforced Impression: 1
-    Guest Performer: 3
+    Guest Performer: 6
     Lethal Inferno: 6
-    Weave of Annihilation: 1
     Reincarnation of Fire: 1
 - trekker: Chixia
   role: support
@@ -76,18 +77,16 @@ members:
     ult: 10
   emblems: []
   targets:
-    'Ink Sigil: Horn Call': 1
+    'Ink Sigil: Horn Call': 4
     'Ink Sigil: Trail Seeker': 6
     'Ink Sigil: Blood Fed': 6
     'Ink Sigil: Ambush': 1
-    'Ink Sigil: Raid': 4
-    Prayer of Raging Flame: 6
-    Dragon Breath: 1
+    'Sigil Unleashed: Flame Glow': 3
 discs:
   main:
   - name: A Gift for the Journey
     copies: 6
-  - name: Fist of Courage
+  - name: Meowing Cat God
     copies: 1
   - name: Mystic Brushstrokes
     copies: 1
@@ -104,6 +103,7 @@ assumptions:
   unknown_trigger_uptime: 1
   disc_stats_target: team
 budget:
+- 30
 - 20
-- 15
-- 25
+- 20
+budget_total: 60

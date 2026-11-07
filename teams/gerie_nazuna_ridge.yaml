@@ -5,7 +5,7 @@ fight_length: 120
 tick: 0.05
 mark_icd: 1.0
 enemy:
-  res: 145        # same calibration as the other teams (docs/assumptions.md)
+  res: 250        # weak-element RES (docs/assumptions.md)
   defense: 500
   broken: 1.0
   resilience: 0   # bar off: one break in 120 s makes totals hinge on whether an ult lands in the window

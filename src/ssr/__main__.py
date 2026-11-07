@@ -31,13 +31,13 @@ def main(argv=None) -> None:
 
     print(f"[{team.name}] rating discs ...", flush=True)
     discs = rate_discs(gd, team)
-    print("rating emblems ...", flush=True)
-    emblems = rate_emblems(gd, team, Build())
     base = Build()
     if any(m.emblems for m in team.members):
         print("(chosen emblem lines are in the baseline for potentials)")
     print("building reference ...", flush=True)
     ref = build_reference(gd, team, base)
+    print("rating emblems ...", flush=True)
+    emblems = rate_emblems(gd, team, ref)
     print("rating potentials ...", flush=True)
     pots = rate_potentials(gd, team, ref)
     baseline = simulate(gd, team, base)

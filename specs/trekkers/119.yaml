@@ -98,9 +98,8 @@ main:
 
     511905:   # Gale Rage: each throw -> ATK SPD + Auto DMG, 5 s, 3 stacks
       overrides:
-        - {index: 0, drop: true}
+        - {index: 0, event: "marker:self:throw"}
         - {index: 1, event: "marker:self:throw"}
-      note: "ATK SPD isn't modelled (auto string timing is fixed)."
 
     511906:   # Phantom Follower: Auto DMG per clone (2 max); Auto DMG while the ult is on cooldown
       overrides:
@@ -109,9 +108,9 @@ main:
 
     511907:   # Sun Chaser: 30% on DMG -> ATK SPD + ATK 5 s
       overrides:
-        - {index: 0, drop: true}
+        - {index: 0, event: "hit:self:any"}
         - {index: 1, event: "hit:self:any"}
-      note: "Treated as a proc on every hit (several hits a second: ~always up). ATK SPD isn't modelled."
+      note: "Treated as a proc on every hit (several hits a second: ~always up)."
 
     511908:   # Distant Prayer: shuriken Skill DMG while far from Nanoha
       overrides:

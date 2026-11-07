@@ -11,10 +11,10 @@ hold:
   only_if: while:cd_within:2:skill:7
   max_wait: 15
 enemy:
-  res: 145
+  res: 250        # weak-element RES (docs/assumptions.md)
   weak:
   - Umbra
-  res_neutral: 645
+  res_neutral: 750
   defense: 500
   broken: 1
 members:

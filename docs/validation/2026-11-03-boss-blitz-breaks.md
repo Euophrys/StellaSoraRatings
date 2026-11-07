@@ -17,6 +17,8 @@ Spec: `docs/superpowers/specs/2026-11-03-resilience-break-design.md`. Plan: `doc
 
 RES = data `{W,F,S,A,L,D}ERFix` − 105 baseline PEN, the same convention as the hand-written enemies.
 
+> **Update 2026-11-07:** the 105 is gone; presets now use the raw data RES (250 / 750 / 2000) and Generic 250 (`docs/assumptions.md`). This doc's tables are from RES 145. On current code, `bb_noya_shia_tilia_ingame` gives 1,663.0M and 5 breaks (+2.7% vs the in-game 1,620M), against 1,779.2M and 6 breaks at the old RES.
+
 - **Team files:** `bb_noya_shia_tilia` (copy of `fl_noya_t1_shia_tilia` at T0, vs Lithe Beauty, 180 s); `bb_noya_shia_tilia_ingame` (the user's calibration build, Trekker and disc levels 70/80, build-level ATK/HP and emblem rolls as `bonus_stats`, fixed potentials); `chitose_freesia_teresa` now vs Count of the Duloos, 180 s. `fl_noya_skill` stays on Generic.
 
 ## Regression anchor: `fl_noya_skill`

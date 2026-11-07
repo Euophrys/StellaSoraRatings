@@ -40,29 +40,35 @@ A running log of every modelling choice that isn't read straight from the game d
 - **Hit levels:** `levelTypeData` 1 → that potential's level (pinks Lv1); 3 → skill level of `LevelData` slot (5 auto, 2/1 skill, 4 ult) incl. emblem +N; 4 → ascension (9th entry); none → the casting action's skill level.
 - **Modifiers:** triggered buffs add a stack per matching event (refreshing the oldest past `max_stacks`) and expire after their duration. Unknown triggers are a constant `uptime × max_stacks`. Disc stats and disc effects go to the whole team (`disc_stats_target: team`).
 
-## Enemy RES calibration (Task 9)
+## Enemy RES (corrected 2026-11-07)
 
-Noya's Lux PEN emblem lines (110 PEN each, best roll) against the baseline team (pinks, Maygi's top-3 discs at C1, no emblems):
+Enemies use their raw RES: **250 weak**, 750 neutral, 2000 own element. PEN comes only from the build.
 
-| enemy RES | 1st line | 2nd line |
-| --- | --- | --- |
-| 110 | 5.09% | 0.00% |
-| 140 | 8.12% | 0.36% |
-| **145** | **8.65%** | **0.49%** |
-| 150 | 9.19% | 0.64% |
-| 250 (weak) | 22.88% | 8.12% |
-| 570 (raid) | 10.64% | 5.61% |
+Until 2026-11-07 every enemy had 105 taken off (weak 145, neutral 645, own element 1895) to match Maygi's first Lux PEN emblem line (8.65%) from a pinks-only baseline. That 105 was never an enemy property. It's FL Noya's Astral Brilliance at Lv6: 35 Lux PEN × 3 Lux Trekkers (user, 2026-11-07), so Maygi's emblems were most likely measured on a finished build. The old offset also gave every team that PEN whether or not it had the potential, and counted it twice on builds that took Astral Brilliance.
 
-Maygi: 8.65% / 0.05%. **Chosen: RES 145**, i.e. a "weak" enemy (250) with ~105 PEN already in the build (the gist's "weak + 1 rainbow PEN" ≈ 140). The first line matches exactly; the second line can't get closer than ~0.4% on this curve without breaking the first, since RES − 2×110 is below zero at any RES that gives 8.65% for the first line. Not forced further: the near-zero second line likely means Maygi's baseline already had more PEN or he measured differently. Enemy DEF 500 (user, 2026-11-01: base enemy DEF; ×0.5 damage). DEF only scales everything equally unless a DEF PEN source is rated. Enemy DEF reductions (Ridge's Corrosive Vines / Root Grasp) are flat and subtract from the 500 before defAmend (user confirmed the 500, 2026-11-03), so they're worth more as DEF drops: −150 = +20.5%, −301 = +47.6%.
+Noya's Lux PEN emblem lines (110 PEN each) at RES 250, `fl_noya_skill`, Maygi's top-3 discs at C1, no emblems (Maygi: 8.65% / 0.05%):
 
-**Element weakness** (user, 2026-11-02): the reference formula's RES bands are 250 weak, 570 raid, 750 neutral, 2000 resisted. Maygi's PEN numbers fit "weak" (above), so a boss is weak to the team's main element, and off-element Trekkers hit a neutral RES. A team file's `enemy.weak: [Umbra]` keeps `res` (145) for the weak elements and gives every other element `res_neutral` (default 645 = 750 minus the same ~105 baseline PEN). Off-element hits then deal ~0.54× (0.494 vs 0.916 RES multiplier). Without `weak`, every element uses `res` (all earlier teams are single-element, so nothing changes for them).
+| build                                       | 1st line | 2nd line |
+| ------------------------------------------- | -------- | -------- |
+| pinks only                                  | 24.34%   | 7.12%    |
+| pinks + Astral Brilliance Lv6               | 8.03%    | 0.43%    |
+| reference build without Astral Brilliance   | 23.39%   | 9.14%    |
+| reference build (has Astral Brilliance Lv6) | 9.79%    | 0.69%    |
+
+The emblem sheet from `python -m ssr` is rated against the reference build (user, 2026-11-07), so PEN lines are valued on top of the PEN the finished build already has.
+
+Check against the in-game Boss Blitz run (1,620M, 4–5 breaks; `bb_noya_shia_tilia_ingame`, whose build has no Astral Brilliance): raw RES gives 1,663M and 5 breaks (+2.7%); the old offset gave 1,779M and 6 breaks (+9.8%).
+
+Enemy DEF 500 (user, 2026-11-01: base enemy DEF; ×0.5 damage). DEF only scales everything equally unless a DEF PEN source is rated. Enemy DEF reductions (Ridge's Corrosive Vines / Root Grasp) are flat and subtract from the 500 before defAmend (user confirmed the 500, 2026-11-03), so they're worth more as DEF drops: −150 = +20.5%, −301 = +47.6%.
+
+**Element weakness** (user, 2026-11-02): the reference formula's RES bands are 250 weak, 570 raid, 750 neutral, 2000 resisted. Maygi's PEN numbers fit "weak" (above), so a boss is weak to the team's main element, and off-element Trekkers hit a neutral RES. A team file's `enemy.weak: [Umbra]` keeps `res` (250) for the weak elements and gives every other element `res_neutral` (default 750). Off-element hits then deal ~0.53× with no PEN (0.40 vs 0.75 RES multiplier). Without `weak`, every element uses `res` (all earlier teams are single-element, so nothing changes for them).
 
 ## Harmony notes
 
 Each main disc's harmonies are assumed at **Lv1**, and the team gets the notes those harmonies need (user, 2026-11-03). Notes are shared across the run, so each note type's count is the largest any one harmony asks for (not the sum). Requirements come from `SecondarySkill.NeedSubNoteSkills`: 10 of each of 3 types, or 15 of each of 2 types, at Lv1 (25/30 at Lv2 … 70/75 at Lv5). A note's bonus is its `EffectValue` Lv1 value × count. Linear scaling past the 9 levels in data was checked in game by the user. Notes are squad-wide (they follow `disc_stats_target`) and always on.
 
 - Real runs vary a lot. The user's Noya run had 36 Lux and roughly 35–43 of the main types, which put 5 harmonies at Lv2 and 1 at Lv1. Lv1 notes (15 each for that team) are conservative.
-- Team assumption `harmony_notes: N` grants the notes for harmony Lv N. `0` turns notes off (the earlier behaviour). Harmony *effects* stay at Lv1 either way.
+- Team assumption `harmony_notes: N` grants the notes for harmony Lv N. `0` turns notes off (the earlier behaviour). Harmony _effects_ stay at Lv1 either way.
 - Support-disc starting notes aren't counted on top. They only help reach the requirement, which is already assumed met.
 
 ## Discs with scripted effects
@@ -81,7 +87,7 @@ Each main disc's harmonies are assumed at **Lv1**, and the team gets the notes t
 
 ## Amber / Snowish Laru / Flora (2026-11-01)
 
-- **Negative "DMG Taken"** ("reduces DMG taken by the main") is defensive and goes on the owner, not the enemy. It used to decode as an enemy debuff that *lowered* team damage (10 discs, incl. A Moment in the Afternoon and Sparkling Moment).
+- **Negative "DMG Taken"** ("reduces DMG taken by the main") is defensive and goes on the owner, not the enemy. It used to decode as an enemy debuff that _lowered_ team damage (10 discs, incl. A Moment in the Afternoon and Sparkling Moment).
 - **Duplicate Lv1 rows:** when a potential's Param names a stat through a `NoLevel` ref to the Lv1 row (e.g. Two-Gun Salute `15825011`), that row also decodes as a modifier. Such duplicates are dropped in the kit spec (Lv1 value = the leveled ref's first value).
 - **Amber's auto:** 12 shots in ~2 s + ~0.5 s reload (user-timed); every cast restarts it with a full magazine.
 - **Supports can skip their ult** (kit leaves it out): Snowish Laru's ult isn't used in the reference video.
@@ -90,7 +96,7 @@ Each main disc's harmonies are assumed at **Lv1**, and the team gets the notes t
 ## Amber / Flora / Chixia: minions (2026-11-01)
 
 - **Which buffs reach minions** (user, from community knowledge of the "minion bug"): buffs scoped to "Trekkers" (e.g. "all Ignis Trekkers' Ignis DMG", "the squad's ATK") **don't** reach minions. Buffs that say "minions" or "friendly/all units" do. Enemy debuffs (DMG Taken) always count. Minion hits get the summoner's stat sheet (base stats, disc stats and emblems), Minion DMG/Crit stats, enemy debuffs and modifiers that reach minions.
-- The flag is read from the text (`effects.text_reaches_minions`): it looks at what the sentence naming the stat *increases* (the part after "increase"), or at the whole text when the stat is only a `&ParamN&` placeholder. Specs set `minions: true|false` where the text names minions differently (Laru's Heart's Edict: "their Crit DMG" = Walnut's and Curly's).
+- The flag is read from the text (`effects.text_reaches_minions`): it looks at what the sentence naming the stat _increases_ (the part after "increase"), or at the whole text when the stat is only a `&ParamN&` placeholder. Specs set `minions: true|false` where the text names minions differently (Laru's Heart's Edict: "their Crit DMG" = Walnut's and Curly's).
 - Team assumption `minion_buffs: all` gives minions every buff again, for comparison. Before the battle-start snapshot rule (below) and the Prayer of Raging Flame drop, the text rule took Chixia's share from 68% to 62%. Since then (2026-11-02) `text` and `all` give the same shares on both minion teams: Chixia 65.1% (test fixture build) / 62.9% (saved build), Laru 54.3%. Every triggered buff in those kits and discs either names minions or doesn't apply to them.
 - **Battle-start snapshot** (user, in-game, 2026-11-01): minions summon with the summoner's stat sheet as it was at the start of the battle. So every always-on buff on the summoner reaches minions, whatever its wording (e.g. a disc melody's "Ignis Trekkers' Ignis DMG"). Buffs that come and go (on cast, on hit, while X) reach minions only if they name minions / friendly units, per the rule above. Chixia's triggered self-buffs ("Chixia's ATK", Dragon Blaze) don't reach them. Buffs averaged as `uptime × stacks` (a GUESS uptime or an unknown trigger) count as coming and going, not as always on.
 - **Prayer of Raging Flame's ATK buff is not modelled**: in game it only stacks when hitting multiple targets and never fires on a single boss (user-checked, plus community reports). The text doesn't say so. Its ult Ignis Mark still applies.
@@ -121,7 +127,7 @@ Spec: `docs/superpowers/specs/2026-11-03-resilience-break-design.md`. Validation
 - **Resilience per hit (inferred, no per-hit table found):** the hit's damage without the break ratio × the hitter's `Attribute.ToughnessDamageAdjust`/10000 (15000 = ×1.5 for Tilia, Firefly, Freesia, Teresa, Cosette, Chitose, Shia, Snowish Laru, FL Noya; ×1.0 otherwise; minions use their owner's) × (1 + Resilience Break Efficiency, EAT 43). Evidence: Noya's ~7.7M DPS × 1.5 fills 250M in ~22 s (user measured ~22–25 s of active time per break); Chitose's team broke once on 239M.
 - **Break ratio ×1.5** (`break_ratio`), unverified: the reference tester's "150%"; ×2.5 is the other reading (validation doc compares them). The hit that breaks the bar isn't boosted; only later hits are.
 - **Lock (GUESS):** after a break ends, the bar can't be lowered from `lock_delay` 1.3 s for `lock_time` 4.7 s (fight time: the recorded 8.86 s lock minus a 4.2 s frozen Tilia-ult animation inside it). **Open question:** the second recorded lock lasted only ~0.3 s; no rule in the data explains either.
-- **Preset RES** = data `{W,F,S,A,L,D}ERFix` − `baseline_pen` 105 (weak 250 → 145, neutral 750 → 645, own element 2000 → 1895), following the RES calibration above. A team-file `res` override moves the preset's weak elements with it.
+- **Preset RES** = data `{W,F,S,A,L,D}ERFix` as is (weak 250, neutral 750, own element 2000). A team-file `res` override moves the preset's weak elements with it.
 - **Boss abilities** use the stats the ability text names (Mark / Skill DMG Taken); the data's EffectType subtype is 53 (generic DMG Taken) on all of them. Count of the Duloos' "main takes +10% DMG" is defensive and not modelled; its Max HP +20% is.
 - **Chance procs** use exact expected values: a proc with `chance` p and ICD has, per trigger, p × (1 − proc mass already spent in the ICD window) (`ExpectedICD`). Cosette's Form Breaker: 30% per claw, ICD 0.5 s → ~3.05 procs per 13-claw cast, each removing 0.4/0.5/0.6% of the bar.
 - **`while:broken`** with the bar off falls back to `unknown_trigger_uptime` (spec). "Stunned" alternatives count as broken; bosses are stun-immune (Tilia's Enemy Counter already assumes so), so stun-applying potentials (Flora 512642, Tilia 510741, Shia 515528, Mistique 513508, Cosette 514228) don't break or stun the boss.
@@ -153,3 +159,11 @@ Spec: `docs/superpowers/specs/2026-11-03-resilience-break-design.md`. Validation
 - **Status stacks shared per team:** Touch of Miracle's Assembly and Little Paradise's Loaded are one status for all Terra Vanguards. "Has N stacks" is read as N or more. Their max is 3 because both harmonies are always active in the sim.
 - **Chance-based debuffs** (Laceration, Shock: 35% per non-Auto hit, 8 s) fire on every 3rd such hit, so they're near-permanent in practice. Both are named statuses, so their "vs Lacerated / Shocked targets" harmonies test them.
 - **One Shot, One Down's ATK ramp** is now simulated (+1 stack every 8 s from 0 s, max 10) instead of the 120 s average. That gives one stack early.
+
+## ATK SPD and windowed cooldown cuts (2026-11-06)
+
+- **ATK SPD** (stat 47) runs the main's whole auto string faster: its clock advances at `1 + ATK SPD`. Skill and ult locks don't change. Only the shots are timed, so the reload scaling with it is a GUESS.
+- **Confident Mode** (user, 30 fps): 12 shots take 60 frames at base (12 -> 11 at 2,26, 1 -> 0 at 4,26) and 43 after the skill (36 -> 35 at 12,26, 25 -> 24 at 14,09). That's +39.5%, against 35% in the text and data, and the kit uses the timing. The clip has no other ATK SPD source (user), but the video is 29.97 fps and the game runs at 60 fps, so a reading can be a frame off. The string's base timing stays at the earlier 61 frames, which gives 43.7 frames buffed.
+- **Other ATK SPD potentials** use their data values and aren't timed: Flurry Stance (Noya), Gale Rage and Sun Chaser (Nanoha), Speed Surge (Ann), Isn't It Awesome! (Teresa). Minion ATK SPD (Chixia's Crimson Dragon: Chant, Laru's Heart's Trumpet) still isn't modelled, because those summons run on fixed hit timelines.
+- **Overloaded Spark** (user): ult, skill, recast, then a 4 s CD instead of 8. The window is 8 s after the ult ends (9.167 s from its cast), and it's checked when the CD starts. With the recast, the first CD after the ult is halved and the next one starts too late, which matches the user's one halved CD per ult. Without the recast the sim can halve more than one per ult: the user has no such build to test, so that case is a GUESS. Its Skill DMG now uses the same window, which it previously started at the ult's cast.
+- **The CD cut shifts when ults land**, which can outweigh the extra skill cast. `amber_flora_chixia` gains one skill per 120 s, but its total moves -1.7% (120 s), +1.6% (180 s), -0.6% (300 s) and +2.0% (600 s): the ults catch or miss Flora's and Chixia's buff windows.
