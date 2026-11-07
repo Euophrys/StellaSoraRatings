@@ -244,6 +244,8 @@ ability: # the boss's ability: disc-spec entry syntax; values may be {ref: ...}
 
 Resilience per hit = the hit's damage without the break ratio × the hitter's `Attribute.ToughnessDamageAdjust`/10000 (minions use their owner's) × (1 + Resilience Break Efficiency, EAT 43). The hit that breaks the bar isn't boosted; damage while broken or locked doesn't lower the bar, and a hit bigger than what's left breaks it once (the excess is lost). Procs can remove a fraction of the bar (`resilience`).
 
+The optimizer on the web page runs without breaks unless "Include breaks" is ticked (`Enemy.breaks = False`, code only, not a team file key). There's no bar, and unlike `resilience: 0`, `while:broken` is never true instead of falling back to `unknown_trigger_uptime`.
+
 # Team file extras
 
 ```yaml

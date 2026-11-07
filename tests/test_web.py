@@ -176,6 +176,10 @@ def test_optimize_and_pinks_jobs(client):
     sums = [sum(t.values()) for t in s["result"]["targets"]]
     assert sum(sums) == 3 and max(sums) <= 2
     client.json("POST", "/api/jobs", {"kind": "optimize", "state": doc, "split": [2, 2, 2], "total": -1}, expect=400)
+    client.json("POST", "/api/jobs", {"kind": "optimize", "state": doc, "split": [2, 2, 2], "breaks": "no"}, expect=400)
+    s = client.wait(client.json("POST", "/api/jobs", {"kind": "optimize", "state": doc, "split": [1, 0, 0],
+                                                      "max_level": 1, "breaks": True})["id"])
+    assert s["state"] == "done", s
     doc["members"][2]["pinks"] = []          # the searched member's own pinks don't matter
     s = client.wait(client.json("POST", "/api/jobs", {"kind": "pinks", "state": doc, "member": 2})["id"])
     assert s["state"] == "done", s

@@ -67,6 +67,20 @@ def test_while_broken_condition(gd, team):
     assert simulate(gd, team, Build()).total < on < simulate(gd, off, Build(), extra=[(0, _rp(modifiers=[mod]))]).total
 
 
+def test_no_breaks_mode(gd, team):
+    from test_sim import _rp
+    assert simulate(gd, team, Build()).breaks
+    never = replace(team, enemy=replace(team.enemy, breaks=False))
+    r = simulate(gd, never, Build())
+    assert not r.breaks and r.broken_time == 0.0
+    assert r.total == pytest.approx(simulate(gd, _with_enemy(team, resilience=0), Build()).total)
+    # unlike the bar-off fallback, a while:broken line is off rather than always on, and while:not:broken stays on
+    broken = Modifier(stat=SKILL_DMG, value=1.0, target="self", trigger=Trigger(event="while:broken", duration=0))
+    assert simulate(gd, never, Build(), extra=[(0, _rp(modifiers=[broken]))]).total == pytest.approx(r.total)
+    unbroken = Modifier(stat=SKILL_DMG, value=1.0, target="self", trigger=Trigger(event="while:not:broken", duration=0))
+    assert simulate(gd, never, Build(), extra=[(0, _rp(modifiers=[unbroken]))]).total > r.total
+
+
 def test_enemy_ability_applies(gd):
     t = load_team(gd, TEAMS / "fl_noya_skill.yaml")
     from ssr.enemies import enemy_from_doc

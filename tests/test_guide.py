@@ -63,8 +63,19 @@ def test_optimize_respects_split_and_is_at_least_greedy(gd, short_team):
     assert dict(per) == {103: 3, 126: 1, 141: 1}
     assert max(r.build.potentials.values()) <= 2
     assert r.total >= greedy_build(gd, short_team, max_level=2, split=[3, 1, 1]).totals[-1]
-    assert r.total == pytest.approx(simulate(gd, short_team, r.build).total)
     assert r.method.startswith("greedy") and r.base_total < r.total
+
+
+def test_optimize_leaves_breaks_out_unless_asked(gd, short_team):
+    team = replace(short_team, enemy=replace(short_team.enemy, resilience=1e6))   # breaks within the 20 s fight
+    assert simulate(gd, team, Build()).breaks
+    no_breaks = replace(team, enemy=replace(team.enemy, breaks=False))
+    off = optimize(gd, team, [1, 0, 0], max_level=1)
+    assert off.total == pytest.approx(simulate(gd, no_breaks, off.build).total)
+    on = optimize(gd, team, [1, 0, 0], max_level=1, breaks=True)
+    assert on.total == pytest.approx(simulate(gd, team, on.build).total)
+    assert on.total > off.total
+    assert team.enemy.breaks   # the caller's team is untouched
 
 
 def test_progress_reports_and_can_cancel(gd, short_team):

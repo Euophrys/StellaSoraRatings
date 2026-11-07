@@ -70,9 +70,9 @@ def _recalc(gd: GameData, team: TeamConfig):
     return run
 
 
-def _optimize(gd: GameData, team: TeamConfig, split, max_level, total=None):
+def _optimize(gd: GameData, team: TeamConfig, split, max_level, total=None, breaks=False):
     def run(progress):
-        r = optimize(gd, team, split, max_level=max_level, progress=progress, total=total)
+        r = optimize(gd, team, split, max_level=max_level, progress=progress, total=total, breaks=breaks)
         return {"targets": _name_targets(gd, team, r.build), "total": r.total, "base_total": r.base_total,
                 "method": r.method}
     return run
@@ -115,7 +115,10 @@ class App:
             total = body.get("total", team.budget_total)
             if total is not None and (not isinstance(total, int) or isinstance(total, bool) or total < 0):
                 raise ApiError(400, "total must be a non-negative whole number or null")
-            fn = _optimize(gd, team, split, max_level, total)
+            breaks = body.get("breaks", False)
+            if not isinstance(breaks, bool):
+                raise ApiError(400, "breaks must be true or false")
+            fn = _optimize(gd, team, split, max_level, total, breaks)
         elif kind == "pinks":
             member = body.get("member")
             if member not in (0, 1, 2):

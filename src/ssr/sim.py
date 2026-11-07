@@ -460,7 +460,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             return int(last is not None and t - last <= float(parts[4]) + 1e-9)
         if parts[1] == "broken":   # while:broken: the enemy's resilience bar is broken
             if bar is None:   # no bar: today's behaviour, the unknown_trigger_uptime assumption (on if > 0)
-                return int(uptime_default > 0)
+                return int(team.enemy.breaks and uptime_default > 0)
             return int(bar.broken(t))
         if parts[1] == "vul":   # while:vul:<element>: the enemy has that element's VUL (an <Element> DMG Taken debuff up)
             st = ELEM_TAKEN_BASE + int(parts[2]) - 1
@@ -482,7 +482,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     # ---- resilience bar
     en = team.enemy
     bar = (ResilienceBar(max=en.resilience, break_time=en.break_time, break_ratio=en.break_ratio,
-                         lock_delay=en.lock_delay, lock_time=en.lock_time) if en.resilience > 0 else None)
+                         lock_delay=en.lock_delay, lock_time=en.lock_time) if en.resilience > 0 and en.breaks else None)
     adjust = [toughness_adjust(gd, m.char_id) for m in team.members]
     resilience_by_member: dict = defaultdict(float)
 

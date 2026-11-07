@@ -5,7 +5,7 @@ simulate call; a progress callback may raise to cancel the run.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable
 
 from .builds import PinkBuildRow, pink_pairs, score_pinks
@@ -139,10 +139,16 @@ class OptimizeResult:
 
 
 def optimize(gd: GameData, team: TeamConfig, split: list[int], max_level: int = 6,
-             progress: Progress = None, max_passes: int = 5, total: int | None = None) -> OptimizeResult:
+             progress: Progress = None, max_passes: int = 5, total: int | None = None,
+             breaks: bool = False) -> OptimizeResult:
     """Greedy +1 steps within each member's budget, then swap polish: move one level between two potentials
     while that raises team damage. With `total`, `split` holds per-member caps on a shared budget, and levels may
-    also move between members (within the caps); otherwise only within a member (the split stays satisfied)."""
+    also move between members (within the caps); otherwise only within a member (the split stays satisfied).
+
+    Without `breaks`, every simulation runs with no breaks, and `total` / `base_total` are no-break totals: any damage
+    gain moves the break windows, which can make plain ATK look negative against the burst timings."""
+    if not breaks:
+        team = replace(team, enemy=replace(team.enemy, breaks=False))
     steps = min(total, sum(split)) if total is not None else sum(split)
     done = [0]
 

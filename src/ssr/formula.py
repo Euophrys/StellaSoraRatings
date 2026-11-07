@@ -50,6 +50,7 @@ class Enemy:
     lock_time: float = 4.7          # GUESS: seconds the bar can't be lowered
     ability: tuple = ()             # the boss's ability, as Modifiers
     fight_length: float | None = None
+    breaks: bool = True             # False: the bar never breaks and `while:broken` is never true (see specs/README.md)
 
 
 def slot_of(h: Hit) -> str:

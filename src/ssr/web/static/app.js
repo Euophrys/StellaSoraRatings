@@ -5,7 +5,7 @@
 let catalog = null;                 // GET /api/catalog
 let state = null;                   // the team doc
 let results = null;                 // {grid, emblems, total, forState, stale, at}
-const ui = { stem: null, teams: [], pinkRows: {}, open: {}, messages: [], job: null, optimizeNote: null };
+const ui = { stem: null, teams: [], pinkRows: {}, open: {}, messages: [], job: null, optimizeNote: null, optimizeBreaks: false };
 const SECTIONS = [];                // [render(): Node] after the team + pinks sections (potentials, optimize, emblems)
 
 // ---------------------------------------------------------------- tiny DOM helper
@@ -514,9 +514,10 @@ async function runOptimize() {
   const maxLevel = state.max_level || MAX_TARGET;
   const total = totalBudget();
   try {
-    const r = await runJob("optimize", { split, max_level: maxLevel, total });
+    const breaks = ui.optimizeBreaks;
+    const r = await runJob("optimize", { split, max_level: maxLevel, total, breaks });
     setState((s) => { s.members.forEach((m, i) => { m.targets = { ...r.targets[i] }; }); });
-    ui.optimizeNote = `method: ${r.method}, total ×${(r.total / r.base_total).toFixed(2)} vs pinks only (${total ? `total ${total}, caps` : "split"} ${split.join(" / ")}, max Lv${maxLevel})`;
+    ui.optimizeNote = `method: ${r.method}, total ×${(r.total / r.base_total).toFixed(2)} vs pinks only (${total ? `total ${total}, caps` : "split"} ${split.join(" / ")}, max Lv${maxLevel}, breaks ${breaks ? "on" : "off"})`;
     await recalc();
   } catch (e) { /* shown */ }
 }
@@ -533,8 +534,10 @@ function optimizeSection() {
         num(names[2], budgetOf(2), setBudget(2), 0, 200),
         num("Total (0 = none)", totalBudget() || 0, (s, v) => { s.budget_total = v > 0 ? v : null; }, 0, 600),
         num("Max level", state.max_level || MAX_TARGET, (s, v) => { s.max_level = v; }, 1, MAX_TARGET),
+        h("label", {}, "Include breaks", h("input", { type: "checkbox", checked: ui.optimizeBreaks,
+          onchange: (e) => { ui.optimizeBreaks = e.target.checked; } })),
         h("button", { class: "primary", onclick: runOptimize, disabled: !!ui.job || !state.members.every((m) => trekker(m.trekker)) }, "Optimize")),
-      h("div", { class: "small muted" }, "Fills target levels with the best found for this split (greedy +1 steps, then swaps between a trekker's potentials), then recalculates. With a total, the per-Trekker numbers are caps on a shared pool and swaps can also move levels between Trekkers. Emblem +N levels are free. Takes minutes."),
+      h("div", { class: "small muted" }, "Fills target levels with the best found for this split (greedy +1 steps, then swaps between a trekker's potentials), then recalculates. With a total, the per-Trekker numbers are caps on a shared pool and swaps can also move levels between Trekkers. Emblem +N levels are free. Breaks are off by default: any damage gain moves the break windows, which can make plain ATK look negative. They only affect this search; the recalculation afterwards still has them. Takes minutes."),
       ui.optimizeNote ? h("div", { class: "small" }, ui.optimizeNote) : null));
 }
 
@@ -592,7 +595,7 @@ async function exportHtml() {
     span.textContent = v ? text : "—";
     s.replaceWith(span);
   });
-  clone.querySelectorAll("input").forEach((x) => { const s = document.createElement("span"); s.textContent = x.value; x.replaceWith(s); });
+  clone.querySelectorAll("input").forEach((x) => { const s = document.createElement("span"); s.textContent = x.type === "checkbox" ? (x.checked ? "yes" : "no") : x.value; x.replaceWith(s); });
   clone.querySelectorAll("button").forEach((b) => b.remove());
   clone.querySelectorAll("details").forEach((d) => d.setAttribute("open", ""));
   clone.querySelectorAll(".emblem-slot .lines").forEach((l) => { if (!l.children.length) l.append("none"); });

@@ -132,6 +132,7 @@ Spec: `docs/superpowers/specs/2026-11-03-resilience-break-design.md`. Validation
 - **Chance procs** use exact expected values: a proc with `chance` p and ICD has, per trigger, p × (1 − proc mass already spent in the ICD window) (`ExpectedICD`). Cosette's Form Breaker: 30% per claw, ICD 0.5 s → ~3.05 procs per 13-claw cast, each removing 0.4/0.5/0.6% of the bar.
 - **`while:broken`** with the bar off falls back to `unknown_trigger_uptime` (spec). "Stunned" alternatives count as broken; bosses are stun-immune (Tilia's Enemy Counter already assumes so), so stun-applying potentials (Flora 512642, Tilia 510741, Shia 515528, Mistique 513508, Cosette 514228) don't break or stun the boss.
 - **EAT 42 ("Resilience")** lines are the Trekker's own superarmor: not modelled.
+- **The web optimizer leaves breaks out by default** (user, 2026-11-07): any damage gain moves the break windows, which can make a plain ATK buff look negative. A no-break fight has `while:broken` off, so break-only lines (Decisive Strike's second line, the "while broken" potentials) and Resilience Break Efficiency are worth nothing in that search, while `while:not:broken` lines are always on. "Include breaks" on the page turns breaks back on.
 
 ## Disc pass: every disc specced (2026-11-04)
 
