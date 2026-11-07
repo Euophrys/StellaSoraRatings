@@ -96,14 +96,22 @@ def test_blazing_waltz_is_not_an_assumed_uptime(gd):
 # ---- Downwind Journey
 
 
-def test_downwind_journey_boosts_nanohas_autos_and_shurikens(gd):
+def test_downwind_journey_boosts_nanohas_autos_shurikens_and_clones(gd):
     t = load_team(gd, TEAMS / "nanoha_ann_canace.yaml")
     base = simulate(gd, t, Build())
     dj = simulate(gd, t, Build().with_potential(ANN, DOWNWIND_JOURNEY, 1))
     assert dj.by_slot[(0, "auto")] > base.by_slot[(0, "auto")] * 1.02
     assert dj.by_slot[(0, "skill")] > base.by_slot[(0, "skill")] * 1.02
+    assert dj.by_slot[(0, "ult")] > base.by_slot[(0, "ult")] * 1.02                # the clones use her attacks
     assert dj.by_slot[(1, "skill")] == pytest.approx(base.by_slot[(1, "skill")])   # Ann's own hits
-    assert dj.by_slot[(0, "ult")] == pytest.approx(base.by_slot[(0, "ult")])       # the clones aren't counted
+
+
+def test_projectile_tag_does_not_widen_any_nanoha_potential(gd):
+    """`projectile` is on all her attacks: in a potential's scope it would reach far more than that potential says."""
+    kit = load_team(gd, TEAMS / "nanoha_ann_canace.yaml").members[0].kit
+    for p in kit.potentials:
+        for m in resolve_potential(gd, kit, p, 6).modifiers:
+            assert "projectile" not in m.hit_tags, p
 
 
 def test_downwind_journey_does_nothing_for_a_melee_main(gd):

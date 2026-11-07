@@ -163,6 +163,8 @@ main:
     516243:   # Guiding Star: Crit DMG while in Starender (ult buff)
       overrides:
         - {index: 0, event: cast:self:ult, duration: {ref: "Buff,LevelUp,16290003,Time,10K"}}
+      # User clip 2026-11-07, Lv2 (0.9/s), T0, 30 fps: ult cast 47,18; first Energy visible 48,10, before the first auto hit at 51,00,
+      # so it starts during the ult. Text trusted (user). Sim ticks on the whole second, not from the cast.
       procs:
         - {event: "timer:1", when: "while:status:starender", hit: 0, energy: {param: Param4}}   # every Param3 = 1 s (data, all levels)
 

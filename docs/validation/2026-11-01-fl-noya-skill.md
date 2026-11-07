@@ -10,7 +10,7 @@ Run: `python -m ssr teams/fl_noya_skill.yaml -o out/` → `out/fl_noya_skill.xls
 > - **Discs:** Spearman against Maygi's 11 discs is 0.818 (main C1), 0.809 (main C6), 1.0 (support C1).
 > - **Lux PEN emblem:** 9.79% / 0.69% against the reference build, which is what `python -m ssr` rates against (Maygi 8.65% / 0.05%); 24.34% / 7.12% against pinks only.
 >
-> **Update 2026-11-07, later: potentials can grant Energy.** Guiding Star now restores its 2.5 Energy/s during Starender, which moves this team. The numbers above are the last ones before that. Unconfirmed in game, and further from Maygi on the emblems. The pinks-only total and disc ratings don't change. Current numbers:
+> **Update 2026-11-07, later: potentials can grant Energy.** Guiding Star now restores its 2.5 Energy/s during Starender, which moves this team. The numbers above are the last ones before that. The user's Lv2 clip shows the Energy starting during the ult but can't measure the amount, and the user trusts the text (`docs/assumptions.md`). This is further from Maygi on the emblems. The pinks-only total and disc ratings don't change. Use these for regressions:
 >
 > - **Reference build:** Argent Mirage, Guiding Star, Resolve: Blitz, Prism Warp (Noya); Domain of Purity, Stellar Crash (Firefly); Enemy Counter, Trick Boost (Tilia). Guiding Star replaces Astral Brilliance.
 > - **Potentials, Lv6:** Enemy Counter 55.69%, Domain of Purity 45.26%, Argent Mirage 44.78%, Guiding Star 29.48%, Resolve: Blitz 24.30%, Prism Warp 23.64%, Astral Brilliance 17.29%, Trick Boost 7.26%, Stellar Crash 6.97%, Lucent Tide 6.59%.

@@ -75,9 +75,9 @@ main:
       windup: 2.0                  # user: first darts leave +1.967, first hit +2.067
       interval: 0.767              # user: strikes +0, +0.367, +1.0, next string +2.3 -> 2.3 s / 3 strikes
       attacks:
-        - {hit: 119900001, count: 2, interval: 0.033, tags: [clone], triggers_mark: true}
-        - {hit: 119900002, count: 2, interval: 0.033, tags: [clone], triggers_mark: true}
-        - {hit: 119900003, count: 3, interval: 0.033, tags: [clone], triggers_mark: true}
+        - {hit: 119900001, count: 2, interval: 0.033, tags: [clone, projectile], triggers_mark: true}
+        - {hit: 119900002, count: 2, interval: 0.033, tags: [clone, projectile], triggers_mark: true}
+        - {hit: 119900003, count: 3, interval: 0.033, tags: [clone, projectile], triggers_mark: true}
 
   potentials:
     511901:   # Growth Tempest (pink): every 3 auto hits -> an AoE auto hit (user: hits, not strikes)
@@ -94,7 +94,7 @@ main:
 
     511904:   # Bloom Dance (pink): shuriken range +50%, Skill DMG on the shuriken (data)
       overrides:
-        - {index: 0, hit_tags: [shuriken, projectile]}
+        - {index: 0, hit_tags: [shuriken]}
 
     511905:   # Gale Rage: each throw -> ATK SPD + Auto DMG, 5 s, 3 stacks
       overrides:
@@ -103,8 +103,8 @@ main:
 
     511906:   # Phantom Follower: Auto DMG per clone (2 max); Auto DMG while the ult is on cooldown
       overrides:
-        - {index: 0, hit_tags: [projectile, auto], event: "while:status:clone", per_stack: true, max_stacks: 2}
-        - {index: 1, hit_tags: [projectile, auto], event: "while:status:ult_cd"}
+        - {index: 0, hit_tags: [auto], event: "while:status:clone", per_stack: true, max_stacks: 2}
+        - {index: 1, hit_tags: [auto], event: "while:status:ult_cd"}
 
     511907:   # Sun Chaser: 30% on DMG -> ATK SPD + ATK 5 s
       overrides:
@@ -114,17 +114,17 @@ main:
 
     511908:   # Distant Prayer: shuriken Skill DMG while far from Nanoha
       overrides:
-        - {index: 0, hit_tags: [shuriken, projectile], event: unknown, uptime: 0.5}
+        - {index: 0, hit_tags: [shuriken], event: unknown, uptime: 0.5}
       note: "50% uptime (user: distance threshold unknown)."
 
     511909:   # Splendid Vortex: the skill triggers a Mark -> shuriken Skill DMG, 3 s, 3 stacks
       overrides:
-        - {index: 0, hit_tags: [shuriken, projectile], event: "mark:self&recent:shuriken:0.05"}
+        - {index: 0, hit_tags: [shuriken], event: "mark:self&recent:shuriken:0.05"}
 
     511910:   # Blossom Shower: skill cast -> each clone (up to 2) throws a shuriken; ult cast -> Skill DMG 30 s
       procs:
-        - {event: "cast:self:skill", when: "while:status:clone", hit: 119510001, offset: 0.667, tags: [clone_shuriken]}   # user: skill 37,13, shurikens appear 37,20, hit 38,03
-        - {event: "cast:self:skill", when: "while:status:clone>=2", hit: 119510001, offset: 0.667, tags: [clone_shuriken]}
+        - {event: "cast:self:skill", when: "while:status:clone", hit: 119510001, offset: 0.667, tags: [clone_shuriken, projectile]}   # user: skill 37,13, shurikens appear 37,20, hit 38,03
+        - {event: "cast:self:skill", when: "while:status:clone>=2", hit: 119510001, offset: 0.667, tags: [clone_shuriken, projectile]}
       overrides:
         - {index: 0, event: "cast:self:ult"}
 
