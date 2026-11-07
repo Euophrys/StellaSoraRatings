@@ -6,7 +6,7 @@ from ..effects import disc_modifiers
 from ..emblems import emblem_options
 from ..enemies import preset_catalog
 from ..game import potential_pools, talent_groups
-from ..kit import SPECS
+from ..kit import SPECS, role_status
 from ..stats import ELEMENTS
 
 ROWS = {1: "Main Build 1", 2: "Main Build 2", 3: "Generic"}
@@ -34,7 +34,8 @@ def catalog(gd: GameData) -> dict:
         for role in ("main", "support"):
             pools = potential_pools(gd, cid, role)
             roles[role] = {
-                "pinks": [_potential(gd, p) for p in pools["pink"]],
+                "kit": role_status(SPECS / f"{cid}.yaml", role),
+                "pinks":[_potential(gd, p) for p in pools["pink"]],
                 # in-game preset order within a row: rarity (purple first), then id; the game also floats
                 # higher target levels first, which the page doesn't do (cards would jump on every click)
                 "potentials": sorted([_potential(gd, p, "normal") for p in pools["normal"]]

@@ -3,6 +3,7 @@
 char_id: 107
 
 main:
+  stub: true   # placeholder hits only: not timed in game, potentials not modelled
   actions:
     skill:
       hits:
@@ -60,7 +61,8 @@ support:
     510727:   # Knight's Seal: ally triggers Lux Mark -> squad stat
       overrides:
         - {index: 0, event: "mark:any", target: team}
-      note: "Energy gain not modelled."
+      procs:
+        - {event: "mark:any", hit: 0, energy: {param: Param3}}
 
     510728:   # Brilliant Relay: Aegis reaches the main -> main's stat, stacking
       overrides:

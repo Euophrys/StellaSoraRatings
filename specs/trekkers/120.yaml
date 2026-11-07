@@ -8,6 +8,7 @@ char_id: 120
 #   ult (23,12): hits +1.2 x2, then x2 every ~0.23 s; leaves +8.73.
 
 main:
+  stub: true   # placeholder hits only: not timed in game, potentials not modelled
   actions:
     skill:
       hits:

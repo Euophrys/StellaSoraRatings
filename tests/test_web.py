@@ -83,6 +83,13 @@ def test_catalog_lists_spec_trekkers(client):
     assert [t["colour"] for t in atk["tiers"]] == ["green", "blue", "yellow", "purple"] and atk["slots"] == [1, 2, 3]
 
 
+def test_catalog_says_which_role_kits_are_real(client):
+    by_name = {t["name"]: t for t in client.get("/api/catalog")["trekkers"]}
+    assert by_name["Firstlight Noya"]["roles"]["main"]["kit"] == "ok"
+    assert by_name["Tilia"]["roles"]["main"]["kit"] == "stub"
+    assert by_name["Ridge"]["roles"]["main"]["kit"] == "missing"
+
+
 def test_team_list_and_get(client, monkeypatch):
     monkeypatch.setattr(server, "TEAMS_DIR", FIXTURES)
     assert "amber_flora_chixia" in client.get("/api/teams")

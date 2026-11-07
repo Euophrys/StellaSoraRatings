@@ -5,6 +5,7 @@ import pytest
 
 from ssr.data import GameData, REPO_ROOT
 from ssr.game import talent_groups, talent_nodes
+from ssr.kit import resolve_buffs
 from ssr.sim import simulate
 from ssr.team import Build, load_team
 
@@ -40,6 +41,13 @@ def test_t1_starender_from_first_hit(gd, shia_team):
     assert t1.status_time["starender"] > t0.status_time["starender"] + 25   # +30 s from the first hit
     assert t1.total > t0.total
     assert not any("key talent" in u for u in t1.unknown_modifiers)
+
+
+def test_single_row_talent_buff_ignores_the_skill_level(gd, shia_team):
+    """Buried Past's row is one id: at ult Lv10, id + 100 is a different talent's row (stat 85, 36%)."""
+    kit = shia_team.members[0].kit
+    mods = resolve_buffs(gd, kit, {"ult": 10, "skill": 10}, set(), kit.talents[1620116].buffs)
+    assert [(m.stat, m.value) for m in mods] == [(8, pytest.approx(0.12))]   # Crit DMG +12%
 
 
 def test_once_event_fires_once(gd, shia_team):

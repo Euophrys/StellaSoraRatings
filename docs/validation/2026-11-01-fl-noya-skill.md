@@ -9,6 +9,12 @@ Run: `python -m ssr teams/fl_noya_skill.yaml -o out/` → `out/fl_noya_skill.xls
 > - **Noya potentials, Lv6:** Argent Mirage 36.74%, Resolve: Blitz 20.85%, Astral Brilliance 18.75%, Prism Warp 18.35%, Guiding Star 12.93%, Lucent Tide 10.42%, Searing Sun 9.70%, Veteran's Grit 7.59%.
 > - **Discs:** Spearman against Maygi's 11 discs is 0.818 (main C1), 0.809 (main C6), 1.0 (support C1).
 > - **Lux PEN emblem:** 9.79% / 0.69% against the reference build, which is what `python -m ssr` rates against (Maygi 8.65% / 0.05%); 24.34% / 7.12% against pinks only.
+>
+> **Update 2026-11-07, later: potentials can grant Energy.** Guiding Star now restores its 2.5 Energy/s during Starender, which moves this team. The numbers above are the last ones before that. Unconfirmed in game, and further from Maygi on the emblems. The pinks-only total and disc ratings don't change. Current numbers:
+>
+> - **Reference build:** Argent Mirage, Guiding Star, Resolve: Blitz, Prism Warp (Noya); Domain of Purity, Stellar Crash (Firefly); Enemy Counter, Trick Boost (Tilia). Guiding Star replaces Astral Brilliance.
+> - **Potentials, Lv6:** Enemy Counter 55.69%, Domain of Purity 45.26%, Argent Mirage 44.78%, Guiding Star 29.48%, Resolve: Blitz 24.30%, Prism Warp 23.64%, Astral Brilliance 17.29%, Trick Boost 7.26%, Stellar Crash 6.97%, Lucent Tide 6.59%.
+> - **Lux PEN emblem:** 20.17% / 8.89% (Maygi 8.65% / 0.05%), because the reference build no longer has Astral Brilliance's PEN.
 
 **Summary.** Disc rank order matches well: Spearman 0.84 (main C1), 0.78 (main C6), 1.0 (support C1). My Guiding Star lands within 2 points at C1. Potential order mostly matches; Lucent Tide and Stellar Crash come out too low. Emblem order is close, and Skill Crit Rate matches exactly (4.73%).
 

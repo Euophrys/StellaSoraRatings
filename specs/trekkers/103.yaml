@@ -69,6 +69,11 @@ main:
       duration: {ref: "BuffValue,NoLevel,10331001,Time,10K"}
       target: self
 
+  talents:
+    1030116:   # A Dance with Bullets (T1 key talent): each hit -> Amber's Skill DMG, stacking
+      buffs:
+        - {effect: 10396111, level: skill, event: "hit:self:any", duration: {ref: "BuffValue,NoLevel,10396111,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,10396111,LaminatedNum,Fixed"}}
+
   potentials:
     510301:   # Dominant Firepower (pink): 36-round reload after skill; Auto DMG until the magazine is empty
       overrides:
@@ -149,8 +154,8 @@ main:
 
     510312:   # Blazing Waltz: ATK while moving
       overrides:
-        - {index: 0, hit_tags: [], uptime: 0.5}   # GUESS: moving half the fight
-      note: "Moving uptime is a guess (50%)."
+        - {index: 0, hit_tags: [], event: "while:not:in_action:0:ult"}   # user: she can keep moving, stopping only for her ult
+      note: "Always moving except during her ult (user)."
 
     510313:   # Keen Accent: Crit Hit on a Sacred Flame target -> ATK, stacking
       overrides:
@@ -176,6 +181,7 @@ main:
       note: "Kill bonus ignored (single boss)."
 
 support:
+  stub: true   # placeholder hits only: not timed in game, potentials not modelled
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   actions:
     skill:

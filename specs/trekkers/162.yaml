@@ -163,9 +163,11 @@ main:
     516243:   # Guiding Star: Crit DMG while in Starender (ult buff)
       overrides:
         - {index: 0, event: cast:self:ult, duration: {ref: "Buff,LevelUp,16290003,Time,10K"}}
-      note: "Energy restore not modelled."
+      procs:
+        - {event: "timer:1", when: "while:status:starender", hit: 0, energy: {param: Param4}}   # every Param3 = 1 s (data, all levels)
 
 support:
+  stub: true   # placeholder hits only: not timed in game, potentials not modelled
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   actions:
     skill:

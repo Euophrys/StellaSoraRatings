@@ -277,6 +277,12 @@ function memberPanel(i) {
     const unknown = m.trekker ? h("div", { class: "msg err" }, `${m.trekker} has no kit spec; it can't be simulated.`) : null;
     return h("div", { class: "panel" }, head, unknown);
   }
+  const kit = t.roles[role].kit;
+  const kitMsg = kit === "missing"
+    ? h("div", { class: "msg err" }, `${t.name} has no ${role} kit; this can't be simulated.`)
+    : kit === "stub"
+      ? h("div", { class: "msg warn small" }, `${t.name}'s ${role} kit is a placeholder, not timed in game, and its potentials aren't modelled. Don't trust these numbers.`)
+      : null;
   const skills = h("div", { class: "field" }, SKILLS[role].map((sk) => h("label", {}, sk,
     select(String(m.skill_levels[sk] ?? 10), Array.from({ length: 10 }, (_, k) => ({ value: String(k + 1), label: String(k + 1) })),
       (v) => setState((s) => { s.members[i].skill_levels[sk] = Number(v); })))));
@@ -285,7 +291,7 @@ function memberPanel(i) {
       (v) => setState((s) => { s.members[i].talents = Number(v); }))));
   const legacy = m.emblems.length && typeof m.emblems[0] === "string"
     ? h("div", { class: "msg warn small" }, `Old-style emblems (top tier): ${m.emblems.join(", ")}. Editing a slot replaces them.`) : null;
-  return h("div", { class: "panel" }, head, skills, talents, legacy, [1, 2, 3].map((slot) => emblemSlot(i, m, t, slot)));
+  return h("div", { class: "panel" }, head, kitMsg, skills, talents, legacy, [1, 2, 3].map((slot) => emblemSlot(i, m, t, slot)));
 }
 
 function discPanel(side) {

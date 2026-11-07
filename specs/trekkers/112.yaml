@@ -77,8 +77,7 @@ main:
 
     511203:   # Slash: Windfury! (pink): 30% per auto hit, 1/s: Multi Sword Aura x5
       procs:
-        - {event: "hit:self:auto_dmg", chance: 0.3, icd: 1.0, hit: 112100010, count: 5, offset: 0.1, interval: 0.067, tags: [aura]}
-      note: "Energy gain not modelled."
+        - {event: "hit:self:auto_dmg", chance: 0.3, icd: 1.0, hit: 112100010, count: 5, offset: 0.1, interval: 0.067, tags: [aura], energy: {param: Param2}}
 
     511204:   # Slash: Blade Storm! (pink)
       note: "Not modelled: autos turn into sword auras for 6 s after the skill (hit rate unknown)."
@@ -135,6 +134,7 @@ main:
         - {index: 0, event: "hit:self:ult_dmg"}
 
 support:
+  stub: true   # placeholder hits only: not timed in game, potentials not modelled
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   actions:
     skill:

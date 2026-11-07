@@ -8,6 +8,7 @@ char_id: 123
 #   ult (59,04): a buff on Noya +0.87 (shield, Overlord's Warcry), hit +0.97; leaves +3.07.
 
 main:
+  stub: true   # placeholder hits only: not timed in game, potentials not modelled
   actions:
     skill:
       hits:
@@ -62,8 +63,8 @@ support:
 
     512324:   # Downwind Journey (pink): main's projectiles through the wall
       overrides:
-        - {index: 0, drop: true}
-      note: "Projectile-only; Noya is melee."
+        - {index: 0, event: "while:status:wall", target: main, hit_tags: [projectile]}   # GUESS: every projectile passes through while a wall stands
+      note: "Hits tagged projectile (Nanoha's autos and shurikens), while a wall stands. Assumes each one passes through it, so this is an upper bound."
 
     512325:   # Burdening Pressure: lowers the target's ATK (defensive)
       overrides:

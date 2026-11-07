@@ -437,6 +437,8 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     def condition(ev: str, t: float) -> int:
         """Multiplier for a "while:" modifier at time t (0 = inactive)."""
         parts = ev.split(":")   # while:on_field:<who> | while:status:<name>
+        if parts[1] == "not":   # while:not:<condition>: active exactly when the condition isn't
+            return int(not condition("while:" + ":".join(parts[2:]), t))
         if parts[1] == "status":
             return status_stacks(parts[2], t)
         if parts[1] == "cd_within":   # while:cd_within:<member>:<action>:<seconds>: cooldown left <= N s
@@ -637,6 +639,8 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                         resilience_by_member[m.idx] += amount
                         if bar:
                             bar.damage(t, amount)
+                    if p.energy:   # flat: Charge Efficiency applies to Energy from hits, not to this
+                        m.energy += float(p.energy) * mass
                     if chancy:
                         if not p.hit_id:
                             continue

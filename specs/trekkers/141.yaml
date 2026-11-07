@@ -15,6 +15,7 @@
 char_id: 141
 
 main:
+  stub: true   # placeholder hits only: not timed in game, potentials not modelled
   actions:
     skill:
       hits:

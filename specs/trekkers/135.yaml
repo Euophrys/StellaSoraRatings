@@ -159,6 +159,7 @@ main:
         - {index: 0, event: "hit:self:ult_dmg"}
 
 support:
+  stub: true   # placeholder hits only: not timed in game, potentials not modelled
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   actions:
     skill:

@@ -30,6 +30,8 @@ def test_spec_hits_exist(gd):
     for cid, role in CASES:
         k = load_kit(gd, SPECS / f"{cid}.yaml", role)
         for hs in _all_hitspecs(k):
+            if hs.hit_id == 0:   # a marker: no damage (specs/README.md)
+                continue
             assert str(hs.hit_id) in gd.table("HitDamage"), hs.hit_id
             assert str(hs.hit_id).startswith(str(cid)), hs.hit_id
 

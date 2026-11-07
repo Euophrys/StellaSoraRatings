@@ -42,6 +42,7 @@ class HitSpec:
     restart: bool = False  # a new firing cancels this proc's hits still pending (a refreshed DoT)
     chance: float = 1.0    # probability per matching event (expected value; `icd` is then an expected-value ICD)
     resilience: object = 0.0   # fraction of the enemy's max resilience bar removed per proc (number or {param/ref})
+    energy: object = 0.0       # Energy granted to the proc's owner per proc (number or {param/ref})
 
 
 @dataclass
@@ -196,6 +197,7 @@ def _hitspec(d: dict) -> HitSpec:
         upto_cast=int(d.get("upto_cast", 0)),
         event=str(d.get("event", "")), icd=d.get("icd", 0.0), every=d.get("every", 1), when=str(d.get("when", "")),
         restart=bool(d.get("restart", False)), chance=float(d.get("chance", 1.0)), resilience=d.get("resilience", 0.0),
+        energy=d.get("energy", 0.0),
     )
 
 
@@ -264,10 +266,21 @@ def _buff(b: dict) -> BuffSpec:
                     minions=bool(b.get("minions", False)))
 
 
+def role_status(path: Path, role: str) -> str:
+    """How far a spec's role kit goes: "ok", "stub" (`stub: true`, placeholder hits only) or "missing" (no section)."""
+    with open(path, encoding="utf-8") as f:
+        sec = yaml.safe_load(f).get(role)
+    if sec is None:
+        return "missing"
+    return "stub" if sec.get("stub") else "ok"
+
+
 def load_kit(gd: GameData, path: Path, role: str) -> Kit:
     with open(path, encoding="utf-8") as f:
         doc = yaml.safe_load(f)
     char_id = int(doc["char_id"])
+    if role not in doc:
+        raise ValueError(f"no {role} kit in the spec (can't be simulated as {role})")
     sec = doc[role]
     ids = skill_ids(gd, char_id, role)
     actions = {}
@@ -392,6 +405,7 @@ def resolve_potential(gd: GameData, kit: Kit, potential_id: int, level: int) -> 
                      "times": value(gd, spec.cd_reduce.get("times", 1), level, pot)}
     procs = [HitSpec(**{**p.__dict__, "icd": value(gd, p.icd, level, pot),
                         "resilience": value(gd, p.resilience, level, pot),
+                        "energy": value(gd, p.energy, level, pot),
                         "every": max(1, int(round(value(gd, p.every, level, pot))))}) for p in spec.procs]
     add_actions = {n: replace(a, followup=replace(a.followup, every=max(1, int(round(value(gd, a.followup.every, level, pot))))))
                    if a.followup else a for n, a in spec.add_actions.items()}
@@ -439,13 +453,16 @@ def resolve_buffs(gd: GameData, kit: Kit, skill_levels: dict[str, int], owned: s
         trig = Trigger(event=b.event, duration=dur, max_stacks=int(value(gd, b.max_stacks, lv)), per_stack=b.per_stack,
                        add=int(value(gd, b.add, lv)))
         src = f"{gd.char_name(kit.char_id)} {b.level} {'status ' + b.name if b.name else 'buff'} ({b.effect or b.attribute})"
+        def row(table: str, base: int) -> dict:
+            # A row at the id itself is single-level (e.g. a talent's). id + level*10 could be an unrelated row.
+            return gd.table(table).get(str(base)) or level_row(gd, table, base, lv)
         if b.attribute is not None:
-            mods = _oaa_row_modifiers(level_row(gd, "OnceAdditionalAttributeValue", b.attribute, lv), src)
+            mods = _oaa_row_modifiers(row("OnceAdditionalAttributeValue", b.attribute), src)
         elif b.effect is None:   # pure status (e.g. a minion count): no stat, only stacks
             mods = [Modifier(stat=0, value=0.0, source=src)]
         else:
             notes: list[str] = []
-            vrow = level_row(gd, "EffectValue", b.effect, lv)
+            vrow = row("EffectValue", b.effect)
             mods = _interpret(gd, gd.table("Effect").get(str(b.effect)), vrow, src, notes, trig, None)
         for m in mods:
             kw = dict(trigger=trig, assumed=False, needs_scope=False, name=b.name,
