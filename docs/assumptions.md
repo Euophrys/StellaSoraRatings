@@ -80,7 +80,7 @@ Each main disc's harmonies are assumed at **Lv1**, and the team gets the notes t
 ## Glimmer, on-field time, conditional effects (second pass)
 
 - **Glimmer** (Word 4029 → Effect/BuffValue 3012): Lux DMG Taken +0.5% per stack, 6 s, max 3 stacks. Noya adds one stack per Lucent (Mark trigger). It's tracked as a named status (`name: glimmer` in `specs/trekkers/162.yaml`).
-- **EAT 85** = DMG dealt to targets with Glimmer, applied in the general DMG bucket. Noya's auto attacks get it once per Glimmer stack (`OnceAdditionalAttribute` 16290001 at auto level). Resolve: Blitz and Searing Sun get it while any Glimmer is up.
+- **EAT 85** = "DMG Multiplier", a separate multiplier on the hit (see Key talents). Resolve: Blitz gets it while any Glimmer is up. Noya's auto attacks get it once per Glimmer stack (`OnceAdditionalAttribute` 16290001 at auto level), and that line alone still sits in the general DMG bucket. Searing Sun's bonus against Glimmer targets is Lux DMG, not EAT 85.
 - **EffectType 45** = a stat add under a condition (e.g. "if the main's HP is above 80%"). It's treated as a stat add with an assumed trigger unless a spec pins it down.
 - **On the battlefield:** a support is on the field for `on_field` seconds after each skill or ult cast (default 4 s, GUESS). `while:on_field:<who>` effects are active only then.
 - **Stellar Crash:** each blade adds as many Lux DMG Taken stacks as the target has Glimmer stacks.
@@ -183,7 +183,7 @@ All from the game text, none checked in game. Stat nodes were already read from 
 
 - **Not modelled, listed by the sim when unlocked:** Ann's The Watcher in the Rye (needs her ult to destroy a hostile projectile, which depends on the boss). Snowish Laru's Queen's Party (needs the shield from her ult form; her support kit doesn't cast the ult).
 - **Worth nothing here (`buffs: []`):** Noya's Today's Bond and Canace's Imminent Dawn (kills), Canace's Yearning for Truth (normal and elite targets, and every preset is a boss).
-- **Does nothing yet:** Snowish Laru's Dreams Replayed is modelled, but fires on an ult her support kit doesn't cast.
+- **Snowish Laru's ult** (user: the community doesn't use it unless the main is Fuyuka): her support kit leaves it out, so Dreams Replayed is modelled but never fires, and Queen's Party isn't modelled. Fuyuka has no kit spec yet. When she gets one, Laru's ult needs authoring for that pairing.
 - **"Vs elite or higher-tier" is always on.** Every preset is a boss.
 - **HP conditions hold** (Claude's reading): Flora's Fate of Nirvana (main above 50%) and Firstlight Noya's Meeting You at Dawn (above 20%).
 - **Readings of unclear text** (Claude's, unconfirmed):
@@ -197,5 +197,5 @@ All from the game text, none checked in game. Stat nodes were already read from 
   - Mistique's Truth As You Wish covers every phantom hit during its 12 s, which slightly overrates it: phantoms summoned before it started get it too.
 - **"Removed after casting her Ultimate"** (Chitose's Afterrain Clarity, Shia's Beyond the Horizon, GUESS): all of that ult's hits get the stacks, and they clear right after the last one. Clearing at the cast would leave them doing nothing.
 - **A chance as a count:** Cosette's Determined to Leave (25% per hit) fires on every 4th hit, the same rate without the randomness.
-- **EAT 85 "DMG Multiplier" is now a real multiplier** (`DMG_MULT`, x (1 + value) on the hit), matching what the user's clips showed for Amber's recast. Night Watcher's Duty and Meeting You at Dawn use it. **Open:** Resolve: Blitz and Surge: Thunderbolt are also EAT 85 but stay in the DMG bucket (`as_stat: 50`), as moving them would change calibrated numbers without a measurement. Unscoped EAT 85 lines on stub support kits (Nimble Catwalk, Fiendbreaker, Breath of Light) were ignored before and now apply to all their hits; no team uses them.
+- **EAT 85 "DMG Multiplier" is now a real multiplier** (`DMG_MULT`, x (1 + value) on the hit), matching what the user's clips showed for Amber's recast. Night Watcher's Duty and Meeting You at Dawn use it. Resolve: Blitz and Surge: Thunderbolt moved to it too (user, 2026-11-07), unmeasured for those two. **Open:** Firstlight Noya's auto attacks per Glimmer stack are also EAT 85 and stay in the DMG bucket (`as_stat: 50`). Moving them is -0.14% on a build with Resolve: Blitz, Searing Sun, Guiding Star, Prism Warp and Argent Mirage at Lv6. Bucket and multiplier only differ when something else is in the general DMG bucket, so pinks-only totals can't show it. Unscoped EAT 85 lines on stub support kits (Nimble Catwalk, Fiendbreaker, Breath of Light) were ignored before and now apply to all their hits; no team uses them.
 - **`damage:<who>`:** A Dance with Bullets (Amber T1) now stacks once per hit instead of once per tag and bucket. `amber_flora_chixia` moves -0.02%. No other team's total moved at its current talents.

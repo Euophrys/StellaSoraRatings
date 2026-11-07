@@ -16,6 +16,11 @@ Run: `python -m ssr teams/fl_noya_skill.yaml -o out/` → `out/fl_noya_skill.xls
 > - **Potentials, Lv6:** Enemy Counter 55.69%, Domain of Purity 45.26%, Argent Mirage 44.78%, Guiding Star 29.48%, Resolve: Blitz 24.30%, Prism Warp 23.64%, Astral Brilliance 17.29%, Trick Boost 7.26%, Stellar Crash 6.97%, Lucent Tide 6.59%.
 > - **Lux PEN emblem:** 20.17% / 8.89% (Maygi 8.65% / 0.05%), because the reference build no longer has Astral Brilliance's PEN.
 
+> **Update 2026-11-07, later still: EAT 85 is a separate multiplier.** Resolve: Blitz moved out of the DMG bucket (user). The pinks-only total and disc ratings don't move. These are the current regression numbers:
+>
+> - **Potentials, Lv6:** Enemy Counter 55.67%, Domain of Purity 45.25%, Argent Mirage 44.75%, Guiding Star 29.50%, Resolve: Blitz 24.47%, Prism Warp 22.99%, Astral Brilliance 17.30%, Trick Boost 7.30%, Stellar Crash 7.10%, Lucent Tide 6.69%.
+> - **Lux PEN emblem:** 20.17% / 8.88%.
+
 **Summary.** Disc rank order matches well: Spearman 0.84 (main C1), 0.78 (main C6), 1.0 (support C1). My Guiding Star lands within 2 points at C1. Potential order mostly matches; Lucent Tide and Stellar Crash come out too low. Emblem order is close, and Skill Crit Rate matches exactly (4.73%).
 
 ## Discs

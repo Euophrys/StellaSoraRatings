@@ -78,7 +78,7 @@ support:
 
     512724:   # Surge: Thunderbolt (pink): Tidal Domain DMG multiplier +44%
       overrides:
-        - {index: 0, as_stat: 50, hit_tags: [domain]}   # EAT 85 "DMG multiplier", put in the general DMG bucket
+        - {index: 0, hit_tags: [domain]}   # EAT 85 "DMG Multiplier": a separate multiplier on these hits
       note: "The multiplier bonus is added to the DMG bucket rather than multiplying the hit (as Precise Temperature Control)."
 
     512725:   # Isn't It Awesome!: while shielded, the Aqua main's ATK and ATK SPD

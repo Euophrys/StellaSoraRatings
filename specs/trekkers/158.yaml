@@ -16,7 +16,7 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
     buffs:
       - {attribute: 15896511, event: always, minions: true}
   # 1580464: Queen's Party (T4): not modelled, see docs/assumptions.md
-  1580580:   # Dreams Replayed (T5): the support kit doesn't cast this ult, so it does nothing yet
+  1580580:   # Dreams Replayed (T5): does nothing until the ult is authored, which only matters with Fuyuka as main (docs/assumptions.md)
     buffs:
       - {effect: 15896311, event: "cast:self:ult", target: "element:2", duration: {ref: "BuffValue,NoLevel,15896311,Time,10K"}}
 
@@ -90,7 +90,7 @@ support:
         - {hit: 158523001, count: 21, offset: 7.2, interval: 1, tags: [curly, minion], requires_all: [515825, 515829, 515823]}
         - {hit: 158320003, count: 20, offset: 9.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
         - {hit: 158320003, count: 20, offset: 11.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
-    # No ult: the reference video never uses Sweet Dream Waltz (user).
+    # No ult: the reference video never uses Sweet Dream Waltz, and the community only uses it with Fuyuka as main (user). Fuyuka has no kit yet.
 
   potentials:
     515821:   # Fire Downpour (pink): each explosion leaves a field, every 0.3 s for 2 s
