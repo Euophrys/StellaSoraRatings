@@ -2,6 +2,23 @@
 # Schema: specs/README.md. Every guessed number is marked GUESS.
 char_id: 126
 
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1260116:   # Withered Flower Show (T1): text doesn't say whose ATK; squad, as Tilia's Divine Punishment
+    buffs:
+      - {effect: 12696111, event: "damage:any&while:mark:2", target: team, duration: {ref: "BuffValue,NoLevel,12696111,Time,10K"}}
+  1260232:   # Fate of Nirvana (T2): GUESS: the main's Skill Crit Rate; the main stays above 50% HP
+    buffs:
+      - {attribute: 12696211, event: always, target: main}
+  1260348:   # A Lonely Stage (T3)
+    buffs:
+      - {effect: 12696311, event: "mark_applied:self", target: team, duration: {ref: "BuffValue,NoLevel,12696311,Time,10K"}}
+  1260464:   # Flickering Candle (T4)
+    buffs:
+      - {effect: 12696411, event: "mark:element2", target: main, duration: {ref: "BuffValue,NoLevel,12696411,Time,10K"}}
+  1260580:   # Lived as Play (T5)
+    buffs:
+      - {effect: 12696511, event: "while:squad:2:3", target: team}
+
 main:
   stub: true   # placeholder hits only: not timed in game, potentials not modelled
   actions:

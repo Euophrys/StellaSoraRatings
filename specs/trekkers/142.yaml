@@ -9,6 +9,23 @@
 # Skill and ult hits inflict Umbra Mark: Gloom (Word 2018), triggered by Mistique.
 char_id: 142
 
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1420116:   # Blasphemous Moon (T1)
+    buffs:
+      - {effect: 14296111, event: "cast:self:skill", target: team, duration: {ref: "BuffValue,NoLevel,14296111,Time,10K"}}
+  1420232:   # Extinctive Downpour (T2)
+    buffs:
+      - {effect: 14296211, event: "cast:self:ult", target: main, duration: {ref: "BuffValue,NoLevel,14296211,Time,10K"}}
+  1420348:   # Cloud of Embers (T3)
+    buffs:
+      - {effect: 14296311, event: "mark_applied:element6", target: team, duration: {ref: "BuffValue,NoLevel,14296311,Time,10K"}}
+  1420464:   # Determined to Leave (T4): 25% chance (text) as every 4th hit
+    buffs:
+      - {effect: 14296411, event: "damage:self", target: main, duration: {ref: "BuffValue,NoLevel,14296411,Time,10K"}, every: 4}
+  1420580:   # The New Me (T5)
+    buffs:
+      - {effect: 14296511, event: "while:squad:6:3", target: team}
+
 main:
   stub: true   # placeholder hits only: not timed in game, potentials not modelled
   actions:

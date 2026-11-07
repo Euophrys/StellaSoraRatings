@@ -3,6 +3,23 @@
 # Summon hits (Colonel Walnut, General Curly) are HitDamage DamageType 7 = Minion DMG.
 char_id: 158
 
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1580116:   # Nutcracker (T1): toys spawn with each shell and live ~13.5 s (kit header)
+    buffs:
+      - {event: "hit:self:shell", duration: 13.5, name: toys}
+      - {effect: 15896111, event: "while:status:toys", target: "element:2"}
+  1580232:   # Holy Night Gift (T2)
+    buffs:
+      - {effect: 15896211, event: "mark:element2", duration: {ref: "BuffValue,NoLevel,15896221,Time,10K"}}
+      - {effect: 15896221, event: "mark:element2", duration: {ref: "BuffValue,NoLevel,15896221,Time,10K"}}
+  1580348:   # Block Paradise (T3)
+    buffs:
+      - {attribute: 15896511, event: always, minions: true}
+  # 1580464: Queen's Party (T4): not modelled, see docs/assumptions.md
+  1580580:   # Dreams Replayed (T5): the support kit doesn't cast this ult, so it does nothing yet
+    buffs:
+      - {effect: 15896311, event: "cast:self:ult", target: "element:2", duration: {ref: "BuffValue,NoLevel,15896311,Time,10K"}}
+
 main:
   stub: true   # placeholder hits only: not timed in game, potentials not modelled
   actions:

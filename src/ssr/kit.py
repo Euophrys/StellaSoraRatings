@@ -137,6 +137,9 @@ class BuffSpec:
     excludes: tuple = ()       # not with any of these potentials
     requires_all: tuple = ()   # only with all of these potentials
     minions: bool = False      # also reaches the owner's minions
+    every: object = 1          # activate on every Nth event
+    icd: object = 0.0          # seconds between activations
+    reset_on: tuple = ()       # events that clear all stacks
 
 
 @dataclass
@@ -263,7 +266,8 @@ def _buff(b: dict) -> BuffSpec:
                     requires=tuple(int(x) for x in b.get("requires", ())),
                     excludes=tuple(int(x) for x in b.get("excludes", ())),
                     requires_all=tuple(int(x) for x in b.get("requires_all", ())),
-                    minions=bool(b.get("minions", False)))
+                    minions=bool(b.get("minions", False)), every=b.get("every", 1), icd=b.get("icd", 0.0),
+                    reset_on=tuple(b.get("reset_on", ())))
 
 
 def role_status(path: Path, role: str) -> str:
@@ -289,9 +293,10 @@ def load_kit(gd: GameData, path: Path, role: str) -> Kit:
             continue
         actions[name] = _action(name, a, ids.get(name))
     buffs = [_buff(b) for b in sec.get("buffs", [])]
+    # Talents belong to the Trekker, not the role: top-level entries apply to both, a section's entry wins over them.
     talents = {int(k): TalentSpec(buffs=[_buff(b) for b in (v or {}).get("buffs", [])],
                                   buff_events=dict((v or {}).get("buff_events") or {}), note=(v or {}).get("note", ""))
-               for k, v in (sec.get("talents") or {}).items()}
+               for k, v in {**(doc.get("talents") or {}), **(sec.get("talents") or {})}.items()}
     mark = sec.get("mark")
     return Kit(
         char_id=char_id, role=role, actions=actions,
@@ -450,8 +455,10 @@ def resolve_buffs(gd: GameData, kit: Kit, skill_levels: dict[str, int], owned: s
             continue
         lv = skill_levels.get(b.level, 10)
         dur = math.inf if b.duration == "inf" else value(gd, b.duration, lv)
-        trig = Trigger(event=b.event, duration=dur, max_stacks=int(value(gd, b.max_stacks, lv)), per_stack=b.per_stack,
-                       add=int(value(gd, b.add, lv)))
+        trig = None if b.event == "always" else Trigger(
+            event=b.event, duration=dur, max_stacks=int(value(gd, b.max_stacks, lv)), per_stack=b.per_stack,
+            add=int(value(gd, b.add, lv)), every=int(value(gd, b.every, lv)), icd=value(gd, b.icd, lv),
+            reset_on=b.reset_on)
         src = f"{gd.char_name(kit.char_id)} {b.level} {'status ' + b.name if b.name else 'buff'} ({b.effect or b.attribute})"
         def row(table: str, base: int) -> dict:
             # A row at the id itself is single-level (e.g. a talent's). id + level*10 could be an unrelated row.

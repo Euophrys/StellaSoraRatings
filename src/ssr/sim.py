@@ -465,6 +465,8 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                            and (not md.event or any(x > t for x in md.stacks)) for md in by_event + scoped_const))
         if parts[1] == "mark":   # while:mark:<element>: a Mark of that element is on the enemy
             return int(mark_up[int(parts[2])])
+        if parts[1] == "squad":   # while:squad:<element>:<n>: at least n Trekkers of that element (EET) in the squad
+            return int(elements.count(int(parts[2])) >= int(parts[3]))
         if parts[1] == "on_field":
             who = parts[2]
             idx = [i for i in range(n) if (who == "any" or (who == "support" and roles[i] == "support")
@@ -897,6 +899,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         for tag in tags:
             emit(f"hit:{mi}:{tag}", t)
         emit(f"hit:{mi}:{slot}_dmg", t)
+        emit(f"damage:{mi}", t)   # once per landed hit, however many tags it has
 
     holds = {(int(h["member"]), h["action"]): (h["until"], float(h.get("max_wait", math.inf)), h.get("only_if", ""))
              for h in team.hold}

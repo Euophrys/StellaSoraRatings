@@ -12,6 +12,23 @@
 #   Ult: 27,11 cast; small hits from 28,05 every ~0.25 s, last small hit 30,20; big hit 32,00; control 33,00.
 char_id: 144
 
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1440116:   # Tideweaver (T1)
+    buffs:
+      - {effect: 14496111, event: "cast:self:ult", duration: {ref: "BuffValue,NoLevel,14496111,Time,10K"}}
+  1440232:   # Blade in Sleeves (T2)
+    buffs:
+      - {effect: 14496211, event: "mark:self", duration: {ref: "BuffValue,NoLevel,14496211,Time,10K"}}
+  1440348:   # Tideborn Shadow (T3)
+    buffs:
+      - {effect: 14496311, event: "hit:self:mirror", duration: {ref: "BuffValue,NoLevel,14496311,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,14496311,LaminatedNum,Fixed"}}
+  1440464:   # Afterrain Clarity (T4): GUESS: the stacks count for all of that ult's hits, then go
+    buffs:
+      - {effect: 14496411, event: "mark:self", max_stacks: {ref: "BuffValue,NoLevel,14496411,LaminatedNum,Fixed"}, reset_on: ["marker:self:ult_done"]}
+  1440580:   # Cloudstrider's Melody (T5)
+    buffs:
+      - {attribute: 14496511, event: always}
+
 main:
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   mark: {hit: 144000001}          # Aqua Mark DMG; also inflicts Chill (status below)
@@ -49,6 +66,7 @@ main:
       hits:
         - {hit: 144400001, count: 11, offset: 0.8, interval: 0.25, tags: [chitose_ult], triggers_mark: true}
         - {hit: 144400002, offset: 4.633, tags: [chitose_ult], triggers_mark: true}
+        - {hit: 0, offset: 4.65, tags: [ult_done]}   # right after the last hit: Afterrain Clarity's stacks end here
 
   buffs:
     # Chill (Word 1027): every Aqua Mark Chitose triggers inflicts a stack (10 s, 3 stacks; at 3 converts to Freeze).

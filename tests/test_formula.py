@@ -57,3 +57,12 @@ def test_hit_damage_expected_crit(gd):
     e = Enemy(res=0, defense=0)
     expected = me.final(h.base_stat) * 1.25 * (0.95 + 0.05 * 1.5) * 1.0  # hit_pct lvl10 = 1.25
     assert hit_damage(h, 10, me, e) == pytest.approx(expected)
+
+
+def test_dmg_multiplier_is_separate_from_the_buckets():
+    from ssr.game import Hit
+    from ssr.stats import DMG, DMG_MULT, StatBlock
+    h = Hit(id=1, damage_type=2, element=5, base_stat=1, source_type=0, pct=(10000.0,))
+    a = StatBlock(); a.set_base(1, 1000); a.add_stat(DMG, 0.5)
+    b = a.copy(); b.add_stat(DMG_MULT, 0.36)
+    assert hit_damage(h, 1, b, Enemy()) == pytest.approx(hit_damage(h, 1, a, Enemy()) * 1.36)

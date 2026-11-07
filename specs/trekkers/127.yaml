@@ -8,6 +8,23 @@
 #   Ult: cast 2,01; hits 4,15 (+2.47 s); leaves 7,17 (+5.53 s).
 char_id: 127
 
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1270116:   # Sturdy Edge (T1): target assumed to always carry Torrent or Chill, as Demonic Devour
+    buffs:
+      - {attribute: 12796111, event: always, target: team}
+  1270232:   # Midsummer Rain (T2)
+    buffs:
+      - {effect: 12796211, event: "while:status:surging_shield", target: main}
+  1270348:   # Battle-proven Ranger (T3)
+    buffs:
+      - {effect: 12796311, event: "mark_applied:self", target: team, duration: {ref: "BuffValue,NoLevel,12796311,Time,10K"}}
+  1270464:   # Dispersing Cloud (T4)
+    buffs:
+      - {effect: 12796411, event: "mark:element1", target: main, duration: {ref: "BuffValue,NoLevel,12796411,Time,10K"}}
+  1270580:   # Legendary Adventurer (T5)
+    buffs:
+      - {effect: 12796511, event: "while:squad:1:3", target: team}
+
 main:
   stub: true   # placeholder hits only: not timed in game, potentials not modelled
   actions:

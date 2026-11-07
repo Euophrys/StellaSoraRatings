@@ -11,6 +11,23 @@
 # Ridge deals an AoE Skill DMG hit. Ridge inflicts Earth Vein but does not trigger Terra Marks herself.
 char_id: 116
 
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1160116:   # Pastoral Ode (T1)
+    buffs:
+      - {effect: 11696111, event: "hit:self:ult_dmg", target: team, duration: {ref: "BuffValue,NoLevel,11696111,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,11696111,LaminatedNum,Fixed"}}
+  1160232:   # Cycle of Growth (T2)
+    buffs:
+      - {effect: 11696211, event: "mark:element3", duration: {ref: "BuffValue,NoLevel,11696211,Time,10K"}}
+  1160348:   # Bountiful Harvest (T3): "20 times in total": every hit of Ult DMG by anyone counts; lasts the rest of the fight
+    buffs:
+      - {effect: 11696311, event: "hit:any:ult_dmg", target: team, every: 20}
+  1160464:   # Labor Under the Sun (T4)
+    buffs:
+      - {attribute: 11696411, event: "while:mark:3"}
+  1160580:   # Soil and Toil (T5)
+    buffs:
+      - {effect: 11696511, event: "hit:self:ult_dmg", duration: {ref: "BuffValue,NoLevel,11696511,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,11696511,LaminatedNum,Fixed"}}
+
 support:
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   on_field: {skill: 8.03, ult: 5.07}   # user-timed (skill with Reblossom)

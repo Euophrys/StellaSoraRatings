@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from .game import Hit, hit_pct
 from .stats import (StatBlock, CRIT_RATE, CRIT_DMG, ELEM_DMG_BASE, ELEM_PEN_BASE, ELEM_IGNORE_RES_BASE,
                     ELEM_TAKEN_BASE, SLOT_OF_DAMAGE_TYPE, SLOT_DMG, SLOT_CRIT_RATE, SLOT_CRIT_DMG, SLOT_TAKEN,
-                    DMG, DMG_DEALT, FINAL_DMG, FINAL_DMG2, DMG_TAKEN, DMG_TAKEN2, VUL, elem_stat)
+                    DMG, DMG_DEALT, DMG_MULT, FINAL_DMG, FINAL_DMG2, DMG_TAKEN, DMG_TAKEN2, VUL, elem_stat)
 
 # From 4.config.json: (value_lower, value_upper, amend_lower, amend_upper) per band.
 RES_CURVE = {
@@ -58,7 +58,7 @@ def slot_of(h: Hit) -> str:
 
 def hit_damage(h: Hit, skill_level: int, attacker: StatBlock, enemy: Enemy, intensity: float = 1.0) -> float:
     slot = slot_of(h)
-    base = attacker.final(h.base_stat) * hit_pct(h, skill_level) * intensity
+    base = attacker.final(h.base_stat) * hit_pct(h, skill_level) * intensity * (1 + attacker.get(DMG_MULT))
     slot_dmg = 1 + (attacker.get(SLOT_DMG[slot]) if slot in SLOT_DMG else 0.0)
     elem_dmg = 1 + attacker.get(elem_stat(ELEM_DMG_BASE, h.element)) if h.element else 1.0
     general = 1 + attacker.get(DMG) + attacker.get(DMG_DEALT)

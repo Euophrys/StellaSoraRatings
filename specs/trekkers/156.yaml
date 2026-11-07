@@ -16,6 +16,23 @@
 #   ult: cast 24,23; hits 24,26 / 25,02 / 25,08 / 25,14 ... last ~27,12 (11 hits over ~2.53 s); leaves 31,01 (6.27 s).
 char_id: 156
 
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1560116:   # Blanket Home (T1)
+    buffs:
+      - {effect: 15696111, event: "mark:element3", target: team, duration: {ref: "BuffValue,NoLevel,15696111,Time,10K"}}
+  1560232:   # Snack Summoning Circle (T2)
+    buffs:
+      - {attribute: 15696211, event: "hit:self:ult_dmg", target: main, duration: {ref: "BuffValue,NoLevel,15696211,Time,10K"}}
+  1560348:   # Fluffy Guardian (T3)
+    buffs:
+      - {effect: 15696311, event: "mark_applied:self", target: enemy, duration: {ref: "BuffValue,NoLevel,15696311,Time,10K"}}
+  1560464:   # Expert Homebody (T4)
+    buffs:
+      - {effect: 15696411, event: "hit:self:skill_dmg", target: main, duration: {ref: "BuffValue,NoLevel,15696411,Time,10K"}}
+  1560580:   # Lullaby of Sweet Dreams (T5)
+    buffs:
+      - {effect: 15696511, event: "while:squad:3:3", target: team}
+
 main:
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
 

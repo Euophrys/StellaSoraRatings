@@ -176,3 +176,26 @@ Spec: `docs/superpowers/specs/2026-11-03-resilience-break-design.md`. Validation
 - **Single-row buffs:** a kit buff whose id is itself a row reads that row. Before this, `level: ult` at Lv10 read id + 100: Buried Past gave Firstlight Noya stat 85 at 36% (another talent's row) instead of Crit DMG +12%. The right row is worth more: pinks only, `fl_noya_t1_firefly_tilia` +2.4% and `fl_noya_t1_shia_tilia` +3.2%.
 - **Guiding Star's Energy moves the calibrated team, and the text is trusted (user).** 2.5 Energy/s (text, Lv6) over a 30 s Starender gives FL Noya a 3rd ult in 120 s. Its sheet rating goes from 12.93% to 29.48% (Maygi: B+; 8.45% to 19.37% against pinks only), it takes Astral Brilliance's place in the reference build, and so Noya's Lux PEN emblem lines go from 9.79% / 0.69% to 20.17% / 8.89% (Maygi: 8.65% / 0.05%). Not an edge effect of 120 s: at Lv6 it's worth 17-23% from 120 s to 600 s (pinks only).
   - **User's clip** (`bb_noya_shia_tilia_ingame` build: Lv2, 0.9/s, T0; 30 fps): first Energy 2,23, ult ready 45,12 (42.6 s), cast 47,18, first Energy 48,10 (before the first auto at 51,00, so it starts during the ult), ready again 1:30,24 (43.2 s from the cast). Sim, same build: first cast 42.6 s, then gaps of 40.0 s with Guiding Star and 43-44 s without. The clip's gap is 3 s longer than the sim's and matches its no-Guiding-Star gap, but the user sees variation from the boss moving and dodging (a 3 s difference is 27 of 235 Energy), so one clip can't separate them. It doesn't test Lv6 either: the Lv2-Lv6 scaling comes from data.
+
+## Key talents (2026-11-07)
+
+All from the game text, none checked in game. Stat nodes were already read from data. T5 on all three members (nodes plus key talents) comes to +75% to +207% across the teams; no in-game measurement backs that yet.
+
+- **Not modelled, listed by the sim when unlocked:** Ann's The Watcher in the Rye (needs her ult to destroy a hostile projectile, which depends on the boss). Snowish Laru's Queen's Party (needs the shield from her ult form; her support kit doesn't cast the ult).
+- **Worth nothing here (`buffs: []`):** Noya's Today's Bond and Canace's Imminent Dawn (kills), Canace's Yearning for Truth (normal and elite targets, and every preset is a boss).
+- **Does nothing yet:** Snowish Laru's Dreams Replayed is modelled, but fires on an ult her support kit doesn't cast.
+- **"Vs elite or higher-tier" is always on.** Every preset is a boss.
+- **HP conditions hold** (Claude's reading): Flora's Fate of Nirvana (main above 50%) and Firstlight Noya's Meeting You at Dawn (above 20%).
+- **Readings of unclear text** (Claude's, unconfirmed):
+  - Divine Punishment (Tilia) and Withered Flower Show (Flora) say "increases ATK" without saying whose. Modelled on the squad: 8.4% is the size of their other squad buffs.
+  - Fate of Nirvana's Skill Crit Rate goes to the main.
+  - "Chill and Freeze" (Freesia's The Fugitive: Judgment) tests Chill, as bosses can't be Frozen (user). Teresa's Sturdy Edge is always on, as Demonic Devour assumes.
+  - Freesia's roar is the ult's first two hits ("growls furiously"), not the AoE hit after them.
+  - Canace's Lost Youth lasts 6.533 s from the cast: the Wreath lands at +0.93 s (user-timed) and works for 6 s (text). Her Flying Leaves are main-role, and that kit is a stub.
+  - Canace's Hidden Past ("for each target hit") gives one stack per ult on a single target.
+  - Ridge's Bountiful Harvest counts Ult DMG hits by anyone, Ridge included, and then lasts the rest of the fight.
+  - Mistique's Truth As You Wish covers every phantom hit during its 12 s, which slightly overrates it: phantoms summoned before it started get it too.
+- **"Removed after casting her Ultimate"** (Chitose's Afterrain Clarity, Shia's Beyond the Horizon, GUESS): all of that ult's hits get the stacks, and they clear right after the last one. Clearing at the cast would leave them doing nothing.
+- **A chance as a count:** Cosette's Determined to Leave (25% per hit) fires on every 4th hit, the same rate without the randomness.
+- **EAT 85 "DMG Multiplier" is now a real multiplier** (`DMG_MULT`, x (1 + value) on the hit), matching what the user's clips showed for Amber's recast. Night Watcher's Duty and Meeting You at Dawn use it. **Open:** Resolve: Blitz and Surge: Thunderbolt are also EAT 85 but stay in the DMG bucket (`as_stat: 50`), as moving them would change calibrated numbers without a measurement. Unscoped EAT 85 lines on stub support kits (Nimble Catwalk, Fiendbreaker, Breath of Light) were ignored before and now apply to all their hits; no team uses them.
+- **`damage:<who>`:** A Dance with Bullets (Amber T1) now stacks once per hit instead of once per tag and bucket. `amber_flora_chixia` moves -0.02%. No other team's total moved at its current talents.

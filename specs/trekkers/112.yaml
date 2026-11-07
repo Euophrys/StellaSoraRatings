@@ -1,6 +1,22 @@
 # Noya (112) — Ventus Vanguard (the original Noya, not Firstlight). Hits scale with ATK (data).
 # Schema: specs/README.md. Every guessed number is marked GUESS.
 char_id: 112
+
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1120116:   # Wind Rider (T1)
+    buffs:
+      - {effect: 11296111, event: "hit:self:ult_dmg", duration: {ref: "BuffValue,NoLevel,11296111,Time,10K"}}
+  1120232:   # Air Vibration (T2)
+    buffs:
+      - {effect: 11296211, event: "mark:self", duration: {ref: "BuffValue,NoLevel,11296211,Time,10K"}}
+  1120348:   # Shadows from the Past (T3)
+    buffs:
+      - {effect: 11296311, event: "damage:self", duration: {ref: "BuffValue,NoLevel,11296311,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,11296311,LaminatedNum,Fixed"}}
+  1120464:   # Today's Bond (T4): kills: nothing against a single boss
+    buffs: []
+  1120580:   # Unsolved Chapter (T5)
+    buffs:
+      - {effect: 11296511, event: "hit:self:auto_dmg", duration: {ref: "BuffValue,NoLevel,11296511,Time,10K"}}
 #
 # User's friend, frame-timed at 30 fps (2026-11-03), tutorial build: Slash: Dual Strike! + Slash: Chain Slash!
 #   auto string (swing 36,04): S1 +0.20 | S2 +0.50, +0.63 | S3 stabs +1.00 .. +1.53 (5), final stab +1.73,

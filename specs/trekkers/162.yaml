@@ -1,6 +1,26 @@
 # Firstlight Noya (162) — Lux. Hits scale with Max HP (data).
 # Schema: specs/README.md. Every guessed number is marked GUESS.
 char_id: 162
+
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1620116:   # Buried Past (T1)
+    buff_events: {starender: "hit:self:any&once"}   # "Dealing any DMG grants her Starender. Once every 5 minutes" (> fight length)
+    buffs:
+      - {attribute: 16296111, event: "while:status:starender"}
+  1620232:   # Night Watcher's Duty (T2)
+    buffs:
+      - {effect: 16296211, event: always}
+      - {attribute: 16296221, event: "while:status:glimmer", hit_tags: [flurry, starfall]}
+  1620348:   # Resolve Beyond Fate (T3)
+    buffs:
+      - {attribute: 16296311, event: always}
+  1620464:   # Shining in the Night (T4)
+    buffs:
+      - {effect: 16296411, event: "mark:self", duration: {ref: "BuffValue,NoLevel,16296411,Time,10K"}}
+  1620580:   # Meeting You at Dawn (T5): HP stays above 20%
+    buffs:
+      - {attribute: 16296511, event: always, hit_tags: [longsword]}
+      - {attribute: 16296521, event: always, hit_tags: [greatsword]}
 #
 # User, frame-timed (2026-11-01, skill build: Lucent Blitz + Dawnflare, Prism Warp). Offsets in seconds after the cast.
 #   auto string (start 11,14): greatsword hits +0.20, +0.53 | +1.03, +1.37, +1.60 | +2.33, +2.50; backflip, longsword
@@ -63,12 +83,6 @@ main:
       event: cast:self:ult
       duration: {ref: "Buff,LevelUp,16290003,Time,10K"}
       target: self
-
-  talents:
-    1620116:   # Buried Past (T1 key talent): Starender from her first hit; Crit DMG while in Starender
-      buff_events: {starender: "hit:self:any&once"}   # "Dealing any DMG grants her Starender. Once every 5 minutes" (> fight length)
-      buffs:
-        - {attribute: 16296111, level: ult, event: "while:status:starender"}   # Crit DMG +12% (data)
 
   potentials:
     516201:   # Lucent Blitz (pink): +4 longsword attacks and 9 Glows on skill

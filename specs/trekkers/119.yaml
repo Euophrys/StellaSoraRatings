@@ -1,6 +1,23 @@
 # Nanoha (119) — Ventus Vanguard (standard banner). Hits scale with ATK (data).
 # Schema: specs/README.md. Every guessed number is marked GUESS.
 char_id: 119
+
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1190116:   # Like a Dream (T1)
+    buffs:
+      - {effect: 11996111, event: "while:status:clone"}
+  1190232:   # Rejuvenating Spring (T2)
+    buffs:
+      - {effect: 11996211, event: "mark:self", duration: {ref: "BuffValue,NoLevel,11996211,Time,10K"}}
+  1190348:   # Esoteric Arts (T3)
+    buffs:
+      - {effect: 11996311, event: "cast:self:skill", duration: {ref: "BuffValue,NoLevel,11996311,Time,10K"}}
+  1190464:   # Circulation of Wind (T4)
+    buffs:
+      - {effect: 11996411, event: "hit:self:auto_dmg", duration: {ref: "BuffValue,NoLevel,11996411,Time,10K"}}
+  1190580:   # Ninja Creed (T5)
+    buffs:
+      - {attribute: 11996511, event: always}
 #
 # User, frame-timed at 30 fps (2026-11-03). Build: Whirling Blade + Bloom Dance, Wind Whispers Lv3; no Gale Rage,
 # Sun Chaser or Blossom Shower.

@@ -14,6 +14,23 @@
 # Mark herself and summons a Thunderbolt (her own Mark DMG), competing with the main for Marks.
 char_id: 155
 
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1550116:   # Sparkling Dawn (T1)
+    buffs:
+      - {effect: 15596111, event: "hit:self:ult_dmg", duration: {ref: "BuffValue,NoLevel,15596111,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,15596111,LaminatedNum,Fixed"}}
+  1550232:   # Tidecaller's Resonance (T2)
+    buffs:
+      - {attribute: 15596211, event: always}
+  1550348:   # Meteor's Guidance (T3)
+    buffs:
+      - {effect: 15596311, event: "mark:self", duration: {ref: "BuffValue,NoLevel,15596311,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,15596311,LaminatedNum,Fixed"}}
+  1550464:   # Beyond the Horizon (T4): GUESS: the stacks count for all of that ult's hits, then go
+    buffs:
+      - {effect: 15596411, event: "hit:self:skill_dmg", max_stacks: {ref: "BuffValue,NoLevel,15596411,LaminatedNum,Fixed"}, reset_on: ["marker:self:ult_done"]}
+  1550580:   # Last Tear (T5)
+    buffs:
+      - {effect: 15596511, event: "mark_applied:element5", duration: {ref: "BuffValue,NoLevel,15596511,Time,10K"}}
+
 support:
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   on_field: {skill: 12.83, ult: 8.23}   # user-timed
@@ -35,6 +52,7 @@ support:
       hits:
         - {hit: 155400001, count: 28, offset: 1.0, interval: 0.18, tags: [ult], triggers_mark: true, excludes: [515543]}  # user counted ~28 in 5 s
         - {hit: 155400001, count: 40, offset: 1.0, interval: 0.125, tags: [ult], triggers_mark: true, requires: [515543]}  # Wave to Oblivion: interval -30%
+        - {hit: 0, offset: 5.9, tags: [ult_done]}   # right after the last laser: Beyond the Horizon's stacks end here
 
   potentials:
     515521:   # Kindred Bound (pink, not in build): 2 Snow Rabbits follow the main for 8 s after the skill ends

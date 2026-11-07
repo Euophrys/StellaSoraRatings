@@ -2,6 +2,23 @@
 # Schema: specs/README.md. Every guessed number is marked GUESS.
 char_id: 107
 
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1070116:   # Divine Punishment (T1): text doesn't say whose ATK; squad, reading its size against her other squad buffs (8.4%)
+    buffs:
+      - {effect: 10796111, event: "damage:any&while:mark:5", target: team, duration: {ref: "BuffValue,NoLevel,10796111,Time,10K"}}
+  1070232:   # Ward of Honor (T2)
+    buffs:
+      - {effect: 10796211, event: "cast:main:ult", target: main, duration: {ref: "BuffValue,NoLevel,10796211,Time,10K"}}
+  1070348:   # Knight's Yearning (T3)
+    buffs:
+      - {effect: 10796311, event: "mark_applied:self", target: team, duration: {ref: "BuffValue,NoLevel,10796311,Time,10K"}}
+  1070464:   # Legend Silhouette (T4)
+    buffs:
+      - {effect: 10796411, event: "mark:element5", target: main, duration: {ref: "BuffValue,NoLevel,10796411,Time,10K"}}
+  1070580:   # Justice in You (T5)
+    buffs:
+      - {effect: 10796511, event: "while:squad:5:3", target: team}
+
 main:
   stub: true   # placeholder hits only: not timed in game, potentials not modelled
   actions:

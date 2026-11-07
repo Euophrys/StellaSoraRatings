@@ -20,6 +20,23 @@
 #     (DamageType 5) use the summoner's sheet and buffs, not the minion's, and don't get Phantom-only bonuses.
 char_id: 135
 
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1350116:   # Harmful Rumors (T1)
+    buffs:
+      - {effect: 13596111, event: "summon:self:phantom", target: team, duration: {ref: "BuffValue,NoLevel,13596111,Time,10K"}, minions: true}
+  1350232:   # Secondary Slander (T2)
+    buffs:
+      - {effect: 13596211, event: always, hit_tags: [phantom]}
+  1350348:   # Communication Psychology (T3)
+    buffs:
+      - {effect: 13596311, event: "vanish:self:phantom", target: team, duration: {ref: "BuffValue,NoLevel,13596311,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,13596311,LaminatedNum,Fixed"}, minions: true}
+  1350464:   # Social Engineering (T4)
+    buffs:
+      - {effect: 13596411, event: "hit:self:phantom", duration: {ref: "BuffValue,NoLevel,13596411,Time,10K"}, minions: true}
+  1350580:   # Truth As You Wish (T5): GUESS: "subsequent phantoms" applies to every phantom hit during the window
+    buffs:
+      - {effect: 13596511, event: "summon:self:phantom", duration: {ref: "BuffValue,NoLevel,13596511,Time,10K"}, every: 5, icd: {ref: "ScriptParameterValue,NoLevel,13596511,CommonData,10K"}, hit_tags: [phantom]}
+
 main:
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   mark: {hit: 135000000}          # Umbra Mark trigger (Main Skill and Phantoms can trigger it)

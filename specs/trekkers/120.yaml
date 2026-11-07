@@ -1,6 +1,21 @@
 # Canace (120) — Ventus Versatile. Hits scale with ATK (data).
 # Schema: specs/README.md. Every guessed number is marked GUESS.
 char_id: 120
+
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1200116:   # Lost Youth (T1): Wreath lands 0.93 s after the cast (user-timed) and works for 6 s (text); as a main, Flying Leaves aren't authored
+    buffs:
+      - {attribute: 12096111, event: "cast:self:skill", target: team, duration: 6.533}
+  1200232:   # Imminent Dawn (T2): kills: nothing against a single boss
+    buffs: []
+  1200348:   # Hidden Past (T3): "for each target hit": one stack per ult on a single target
+    buffs:
+      - {effect: 12096311, event: "cast:self:ult", target: team, duration: {ref: "BuffValue,NoLevel,12096311,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,12096311,LaminatedNum,Fixed"}}
+  1200464:   # Mentor's Duty (T4)
+    buffs:
+      - {effect: 12096411, event: "mark:element4", duration: {ref: "BuffValue,NoLevel,12096411,Time,10K"}}
+  1200580:   # Yearning for Truth (T5): normal and elite targets only: nothing against a boss
+    buffs: []
 #
 # User's friend, frame-timed at 30 fps (2026-11-03), tutorial build: Grants Efficient Delving + Transformative Insight.
 #   skill (55,21): Laurel Wreath's first hit +0.93 (main standing on the boss); one full spin ~1.5 s

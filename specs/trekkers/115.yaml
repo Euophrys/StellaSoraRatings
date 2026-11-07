@@ -2,6 +2,23 @@
 # Schema: specs/README.md. Every guessed number is marked GUESS.
 char_id: 115
 
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1150116:   # Photon Diffusion (T1)
+    buffs:
+      - {effect: 11596111, event: "mark:element5", target: enemy, duration: {ref: "BuffValue,NoLevel,11596111,Time,10K"}}
+  1150232:   # Shining Blades (T2)
+    buffs:
+      - {effect: 11596211, event: "cast:self:skill", duration: {ref: "BuffValue,NoLevel,11596211,Time,10K"}}
+  1150348:   # Plushie and Safehouse (T3)
+    buffs:
+      - {effect: 11596311, event: "damage:self", target: enemy, duration: {ref: "BuffValue,NoLevel,11596311,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,11596311,LaminatedNum,Fixed"}}
+  1150464:   # Wings and Secret Friends (T4)
+    buffs:
+      - {effect: 11596411, event: "mark_applied:element5", duration: {ref: "BuffValue,NoLevel,11596411,Time,10K"}}
+  1150580:   # Armaments and Angel Heart (T5)
+    buffs:
+      - {attribute: 11596511, event: always}
+
 main:
   stub: true   # placeholder hits only: not timed in game, potentials not modelled
   actions:

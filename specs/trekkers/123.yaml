@@ -1,6 +1,21 @@
 # Ann (123) — Ventus Support. Hits scale with ATK (data).
 # Schema: specs/README.md. Every guessed number is marked GUESS.
 char_id: 123
+
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1230116:   # Sigh of Storm (T1)
+    buffs:
+      - {effect: 12396111, event: "hit:self:ult_dmg", target: team, duration: {ref: "BuffValue,NoLevel,12396111,Time,10K"}}
+  1230232:   # Rumbling Wind (T2)
+    buffs:
+      - {effect: 12396211, event: "mark_applied:self", target: team, duration: {ref: "BuffValue,NoLevel,12396211,Time,10K"}}
+  # 1230348: The Watcher in the Rye (T3): not modelled, see docs/assumptions.md
+  1230464:   # Rippling Crops (T4)
+    buffs:
+      - {effect: 12396411, event: "mark:element4", target: main, duration: {ref: "BuffValue,NoLevel,12396411,Time,10K"}}
+  1230580:   # Ode to Earth (T5)
+    buffs:
+      - {effect: 12396511, event: "while:squad:4:3", target: team}
 #
 # User's friend, frame-timed at 30 fps (2026-11-03), tutorial build: Gale Bastion + Wind Banish.
 #   skill (53,11): hits +0.77 and +0.83 ("again with bigger numbers"); Wind Banish pulses +2.83, +3.83 (1/s);

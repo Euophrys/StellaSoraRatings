@@ -35,6 +35,7 @@ SLOT_TAKEN = {"auto": AUTO_TAKEN, "skill": SKILL_TAKEN, "ult": ULT_TAKEN, "other
               "mark": MARK_TAKEN}
 
 BASE_STATS = (ATK, DEF, HP)
+DMG_MULT = 85      # "DMG Multiplier": x (1 + value) on the hit, outside the DMG buckets (docs/assumptions.md)
 RES_BREAK_EFF = 43   # Resilience Break Efficiency: x (1 + value) on resilience damage dealt
 
 

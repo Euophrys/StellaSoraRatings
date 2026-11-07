@@ -14,6 +14,23 @@
 #   Ult: first hit 1.43 s after the cast.
 char_id: 141
 
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1410116:   # Blaze Tome (T1)
+    buffs:
+      - {attribute: 14196111, event: "while:mark:2", target: team, minions: true}
+  1410232:   # Blaze Unbound (T2)
+    buffs:
+      - {attribute: 14196211, event: always, hit_tags: [ult]}
+  1410348:   # Prime Advantage (T3)
+    buffs:
+      - {effect: 14196311, event: "cast:self:ult", target: team, duration: {ref: "BuffValue,NoLevel,14196311,Time,10K"}, minions: true}
+  1410464:   # Trial of Growth (T4)
+    buffs:
+      - {effect: 14196411, event: "mark:element2", duration: {ref: "BuffValue,NoLevel,14196411,Time,10K"}, minions: true}
+  1410580:   # Qualified Xuan Shi (T5)
+    buffs:
+      - {attribute: 14196511, event: always, minions: true}
+
 main:
   stub: true   # placeholder hits only: not timed in game, potentials not modelled
   actions:

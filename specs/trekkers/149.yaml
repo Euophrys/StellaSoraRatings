@@ -20,6 +20,23 @@
 #   ult: same as main.
 char_id: 149
 
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1490116:   # Original Sin (T1)
+    buffs:
+      - {effect: 14996111, event: "hit:self:skill_dmg", duration: {ref: "BuffValue,NoLevel,14996111,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,14996111,LaminatedNum,Fixed"}, icd: 1}
+  1490232:   # White Throne (T2)
+    buffs:
+      - {effect: 14996211, event: "mark:self", duration: {ref: "BuffValue,NoLevel,14996211,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,14996211,LaminatedNum,Fixed"}}
+  1490348:   # Lazarus' Resurrection (T3)
+    buffs:
+      - {effect: 14996311, event: "hit:self:ult_dmg", duration: {ref: "BuffValue,NoLevel,14996311,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,14996311,LaminatedNum,Fixed"}}
+  1490464:   # Shackled at Dusk (T4)
+    buffs:
+      - {effect: 14996411, event: "mark_applied:element3", duration: {ref: "BuffValue,NoLevel,14996411,Time,10K"}}
+  1490580:   # Messiah' Promise (T5)
+    buffs:
+      - {attribute: 14996511, event: always}
+
 main:
   energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   mark: {hit: 149000001}          # Terra Mark DMG when Gerie triggers a Mark
