@@ -1,0 +1,17 @@
+# Deer's Song (Ventus). Melody's Skill DMG comes from an EffectId; Flowing Fragrance, harmony 1's per-caster Skill DMG
+# and harmony 2 are scripted.
+# Flowing Fragrance: +1 stack per Ventus support Skill DMG hit, max 5; the next hit at 5 removes them and adds a
+# Skill DMG Taken stack (6 s, max 10) -> one Taken stack every 6th support Skill DMG hit.
+# The target almost always carries some Fragrance once a support has hit it, so harmony 2 is on from then.
+melody:
+  - {stat: 0, value: 0, name: flowing_fragrance, target: enemy, event: "hit:support/element4:skill_dmg", duration: inf}
+  - {stat: 61, value: Param3, target: enemy, event: "hit:support/element4:skill_dmg", every: 6, duration: Param4,
+     max_stacks: Param5, note: "Ventus Skill DMG Taken as Skill DMG Taken"}
+harmony1:
+  - {stat: 57, value: Param2, target: main, event: "cast:main:skill|cast:main:recast", duration: Param3}
+  - {stat: 57, value: Param2, target: support, event: "cast:support:skill", duration: Param3,
+     note: "the caster's Skill DMG; any support's cast is applied to both supports"}
+harmony2:
+  - {stat: 20, value: Param1, target: main, event: "while:status:flowing_fragrance"}
+overrides:
+  - {part: melody, index: 0, target: support}   # Ventus Support Trekkers' Skill DMG

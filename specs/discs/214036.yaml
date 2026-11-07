@@ -1,0 +1,7 @@
+# The Lost Pilgrim — all parts come from EffectIds; this pins down their triggers.
+# "Terra Mark triggered" = mark:element3 (Marks are per element; only Terra Trekkers trigger Terra Marks).
+overrides:
+  - {part: melody, index: 1, event: "mark:element3", target: main}    # main Terra Trekker's Skill DMG, 4 s
+  - {part: melody, index: 2, event: "mark:element3", target: main}    # ... and Auto Attack DMG, 4 s
+  - {part: harmony1, index: 1, event: "while:on_field:support"}       # Terra Skill DMG while a Terra support is on the battlefield
+  - {part: harmony2, index: 0, event: "mark:element3"}                # Terra squad (+minions) ATK, 5 s, x4

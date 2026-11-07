@@ -6,6 +6,7 @@ marked `assumed` / `needs_scope` so the kit YAML can pin them down.
 """
 from __future__ import annotations
 
+import json
 import math
 import re
 from pathlib import Path
@@ -177,6 +178,16 @@ def _interpret(gd: GameData, effect_row: dict | None, value_row: dict, source: s
         return [Modifier(stat=CHARGE_EFF, value=v, target="self", trigger=trigger,
                          assumed=trigger is not None and trigger.uptime is None and trigger.event == "unknown",
                          source=source)]
+    if et == 34:   # restore Energy (Miraculous Anthem & co: "at the start of battle ... restore 15 Energy")
+        from .stats import START_ENERGY
+        try:
+            v = float(value_row.get("EffectTypeParam1", 0))
+        except (TypeError, ValueError):
+            v = 0.0
+        return [Modifier(stat=START_ENERGY, value=v, target="self", source=source)]
+    if et == 42:   # a shield: no damage. Discs whose other parts depend on it track it as a status in their spec.
+        notes.append(f"{source}: shield (effect {value_row.get('Id')}, no damage)")
+        return []
     notes.append(f"{source}: EffectType {et} (effect {value_row.get('Id')}) has no damage model")
     return []
 
@@ -392,3 +403,34 @@ def disc_modifiers(gd: GameData, disc_id: int, copies: int) -> tuple[list[Modifi
         elif not row.get("EffectId"):
             notes.append(f"{label}: scripted effect, no spec in specs/discs/ (not modelled)")
     return mods, notes
+
+
+def harmony_note_counts(gd: GameData, disc_ids, level: int = 1) -> dict[int, int]:
+    """Notes needed to bring every harmony of these (main-slot) discs to `level`.
+
+    Notes are shared across the run, so each note type's count is the largest any one harmony asks for."""
+    counts: dict[int, int] = {}
+    discs = gd.table("Disc")
+    for d in disc_ids:
+        row = discs.get(str(d), {})
+        gids = {row.get(g) for g in ("SecondarySkillGroupId1", "SecondarySkillGroupId2")} - {None, 0}
+        for r in gd.table("SecondarySkill").values():
+            if r.get("GroupId") in gids and r.get("Level") == level:
+                for k, v in json.loads(r.get("NeedSubNoteSkills") or "{}").items():
+                    counts[int(k)] = max(counts.get(int(k), 0), int(v))
+    return counts
+
+
+def note_modifiers(gd: GameData, counts: dict[int, int]) -> list[Modifier]:
+    """Always-on stat bonuses from notes: the note's Lv1 value x note count (linear, checked in game)."""
+    out: list[Modifier] = []
+    for nid, n in sorted(counts.items()):
+        if n <= 0:
+            continue
+        note = gd.table("SubNoteSkill")[str(nid)]
+        src = f"{gd.text(note['Name']) or nid} x{n}"
+        for eid in note.get("EffectId", []):
+            vrow = level_row(gd, "EffectValue", eid, 1)
+            for m in _interpret(gd, gd.table("Effect").get(str(eid)), vrow, src, [], None, 1):
+                out.append(m.with_(value=m.value * n))
+    return out

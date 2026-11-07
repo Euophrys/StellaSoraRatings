@@ -1,0 +1,8 @@
+# Dancing with the Bones (Terra) — melody is scripted; harmonies come from EffectIds.
+# Boulder is a permanent status on the main, so harmony 1 is always on.
+melody:
+  - {stat: 19, value: Param1, target: team}
+  - {stat: 57, value: Param3, target: team, note: "Terra Skill DMG while the main's HP > 50%: assumed always"}
+overrides:
+  - {part: harmony1, index: 0, event: always, minions: true}     # while the main has Boulder (always)
+  - {part: harmony2, index: 0, drop: true}                       # needs kills: none against a single boss

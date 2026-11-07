@@ -1,0 +1,13 @@
+# Little Paradise (Terra). Harmony 1's Terra DMG comes from an EffectId; Loaded is scripted.
+# Loaded: a Terra Vanguard's skill cast, 15 s, max 3 (harmony 2; both harmonies are always active in the sim).
+# Shared by all Terra Vanguards in the team. "Has N stacks" read as N or more.
+melody:
+  - {stat: 0, value: 0, name: loaded, target: "class:1", event: "cast:class1/element3:skill|cast:class1/element3:recast",
+     duration: Param1, max_stacks: 3}
+  - {stat: 61, value: Param2, target: enemy, event: "hit:class1/element3:skill_dmg&while:status:loaded", duration: Param3,
+     note: "Terra Skill DMG Taken (as Skill DMG Taken)"}
+  - {stat: 57, value: Param4, target: "class:1", event: "while:status:loaded>=2"}
+harmony1:
+  - {stat: 78, value: Param2, target: "class:1", event: "while:status:loaded", per_stack: true}
+harmony2:
+  - {stat: 1, pct: true, value: Param1, target: "class:1", event: "while:status:loaded>=3"}

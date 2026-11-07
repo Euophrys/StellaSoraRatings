@@ -3,16 +3,18 @@ from __future__ import annotations
 
 import heapq
 import math
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field, replace
 
 from .data import GameData
-from .effects import MINION_STATS, Modifier, disc_modifiers, effect_modifiers
+from .effects import (MINION_STATS, Modifier, disc_modifiers, effect_modifiers, harmony_note_counts,
+                      note_modifiers)
 from .formula import Enemy, hit_damage, slot_of
 from .game import toughness_adjust, char_base_stats, disc_base_stats, hit, hit_level, skill_cd, talent_nodes, ult_energy
 from .kit import ActionSpec, HitSpec, MinionSpec, ResolvedPotential, kit_buffs, resolve_buffs, resolve_potential
 from .resilience import ExpectedICD, ResilienceBar
-from .stats import CHARGE_EFF, RES_BREAK_EFF, StatBlock
+from .stats import CHARGE_EFF, DEF, ELEM_TAKEN_BASE, RES_BREAK_EFF, START_ENERGY, StatBlock
 from .emblems import EmblemChargeEfficiency, EmblemPotentialLevel, line_relevant
 from .team import FILLER, FILLER_SOURCE_DISC, Build, EmblemLine, EmblemSkillLevel, TeamConfig
 
@@ -73,13 +75,17 @@ def _disc_element(gd, disc_id) -> int:
     return el if 1 <= el <= 6 else 0
 
 
+DODGE_CD = 1.0   # user: seconds between dodges (the dodge cooldown)
+
+
 # ---------------------------------------------------------------- helpers
 
 def _norm_event(ev: str, owner: int) -> str:
     if "|" in ev:
         return "|".join(_norm_event(e, owner) for e in ev.split("|"))
-    parts = ev.split(":")
-    return ":".join([parts[0]] + [{"self": str(owner), "main": "0"}.get(p, p) for p in parts[1:]])
+    base, amp, rest = ev.partition("&")   # "&recent:..." / "&while:..." suffixes keep their own tokens
+    parts = base.split(":")
+    return ":".join([parts[0]] + [{"self": str(owner), "main": "0"}.get(p, p) for p in parts[1:]]) + amp + rest
 
 
 def _event_matches(pattern: str, ev: str) -> bool:
@@ -301,10 +307,15 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                 if name in rp.cd_scale and name in m.cd:
                     m.cd[name] *= rp.cd_scale[name]
         for pool, ms in kit.minions.items():
-            rules = {}
+            rules, adds = {}, defaultdict(float)
             for rp in resolved:
-                rules.update(rp.minion_rules.get(pool, {}))
+                for k, v in rp.minion_rules.get(pool, {}).items():
+                    if k.endswith("_add"):   # additive, e.g. duration_add: +3 s of lifetime
+                        adds[k[:-4]] += float(v)
+                    else:
+                        rules[k] = v
             ms = replace(ms, **rules)
+            ms = replace(ms, **{k: getattr(ms, k) + v for k, v in adds.items()})
             m.minions[pool] = replace(ms, summon=_norm_event(ms.summon, i),
                                       sacrifice_on=_norm_event(ms.sacrifice_on, i) if ms.sacrifice_on else "",
                                       resummon_on=_norm_event(ms.resummon_on, i) if ms.resummon_on else "",
@@ -340,6 +351,11 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         el = _disc_element(gd, d)
         for md in _disc_mods(gd, d, c):
             add_mod(md, 0, "team" if (disc_team and md.target == "self") else None, el)
+    notes_lv = int(team.assumptions.get("harmony_notes", 1))   # notes for main-disc harmonies at this level
+    if notes_lv > 0:
+        counts = harmony_note_counts(gd, [d for d, _ in discs_main if d != FILLER], notes_lv)
+        for md in note_modifiers(gd, counts):
+            add_mod(md, 0, "team" if disc_team else None)
     for md in team.enemy.ability:   # the boss's ability (enemy preset)
         add_mod(md, 0)
     for i, m in enumerate(members):
@@ -378,6 +394,8 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                     blk.add_stat(md.mod.stat, md.mod.value * md.constant, md.mod.is_pct)
         else:
             dynamic.append(md)
+    for m in members:   # "at the start of battle, ... restore N Energy" (always-on, folded into the sheet)
+        m.energy = m.static.get(START_ENERGY)
     for md in dynamic:
         if md.mod.needs_scope and not md.mod.hit_tags:
             unknown.add(f"{md.mod.source}: {md.mod.label()} applied to all hits (scope unknown)")
@@ -420,6 +438,11 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             mm = members[int(parts[2])]
             left = mm.cd_ready.get(parts[3], 0.0) - t
             return int(left <= float(parts[4]) + 1e-9)
+        if parts[1] == "in_action":   # while:in_action:<member>:<action>: within that action's lock after its last cast
+            mi, act = int(parts[2]), parts[3]
+            last = last_cast.get((mi, act))
+            a = members[mi].actions.get(act)
+            return int(last is not None and a is not None and t - last <= a.lock + 1e-9)
         if parts[1] == "cast_within":   # while:cast_within:<who>:<action>:<seconds>: cast that recently
             last = last_cast.get((int(parts[2]), parts[3]))
             return int(last is not None and t - last <= float(parts[4]) + 1e-9)
@@ -427,6 +450,12 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             if bar is None:   # no bar: today's behaviour, the unknown_trigger_uptime assumption (on if > 0)
                 return int(uptime_default > 0)
             return int(bar.broken(t))
+        if parts[1] == "vul":   # while:vul:<element>: the enemy has that element's VUL (an <Element> DMG Taken debuff up)
+            st = ELEM_TAKEN_BASE + int(parts[2]) - 1
+            if enemy_static.get(st) > 0:
+                return 1
+            return int(any(md.mod.stat == st and md.mod.value > 0 and "enemy" in md.receivers
+                           and (not md.event or any(x > t for x in md.stacks)) for md in by_event + scoped_const))
         if parts[1] == "mark":   # while:mark:<element>: a Mark of that element is on the enemy
             return int(mark_up[int(parts[2])])
         if parts[1] == "on_field":
@@ -465,6 +494,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     busy_until = [1.0]          # main can't start a cast before this
     lock_until = [1.0]          # main can't auto before this
     pending: list = []          # (ready_time, action_name) for main followups / extra casts
+    cancel_dodges: list = []    # times of the dodges that cancel an action into its followup
     auto_clock = [0.0]
     hit_cache: dict = {}
 
@@ -652,8 +682,10 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             vanish(m, pool, lst[0], t)
         summon(m, pool, t)
 
-    def schedule(m: _Member, h: HitSpec, action: str, t: float, cid: str):
+    def schedule(m: _Member, h: HitSpec, action: str, t: float, cid: str, cut_at: float = math.inf):
         for k in range(h.count):
+            if h.offset + k * h.interval > cut_at + 1e-9:   # a dodge-cancel drops the hits still to come
+                break
             seq[0] += 1
             heapq.heappush(queue, (t + h.offset + k * h.interval, seq[0], m.idx, h, action, cid))
 
@@ -685,12 +717,21 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         last_cast[(m.idx, name)] = t
         cid = f"{name}#{m.cast_count[name]}"
         c = m.cast_count[name]
+        # A dodge-cancelled cast (the main loop handles autos) loses the hits after the dodge and ends early. The cancel
+        # is the cast's own `dodge_cancel` or that of the followup it leads into.
+        cancel = None
+        if m.idx == 0 and team.assumptions.get("dodge_cancel", True):
+            fu = next((fa.followup for fa in m.actions.values() if fa.followup and fa.followup.dodge_at is not None
+                       and not fa.followup.event and fa.followup.after == name and c % fa.followup.every == 0), None)
+            cancel = (a.dodge_at, a.dodge_duration) if a.dodge_at is not None else \
+                (fu.dodge_at, fu.dodge_duration) if fu else None
+        cut_at, lock = cancel if cancel else (math.inf, a.lock)
         for h in a.hits:
             if h.cycle and (c - 1) % h.cycle[0] != h.cycle[1] - 1:
                 continue
             if (h.from_cast and c < h.from_cast) or (h.upto_cast and c > h.upto_cast):
                 continue
-            schedule(m, h, name, t, cid)
+            schedule(m, h, name, t, cid, cut_at)
         if from_cd and name in m.max_charges:
             refill(m, name, t)
             m.charges[name] -= 1
@@ -699,12 +740,12 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             cd = m.cd.get(name, 0.0) - sum(cr["seconds"] * cr["times"] for cr in m.cd_reduce if cr["action"] == name)
             q.append(max(t, q[-1] if q else t) + cd)   # one recharge timer, progress kept across casts (user)
         elif from_cd:
-            m.cd_ready[name] = t + m.cd.get(name, 0.0)
+            m.cd_ready[name] = t + a.cd_start + m.cd.get(name, 0.0)
             for cr in m.cd_reduce:
                 if cr["action"] == name:
                     m.cd_ready[name] -= cr["seconds"] * cr["times"]
         if a.starts_cd and a.starts_cd in m.cd:
-            m.cd_ready[a.starts_cd] = t + a.lock + m.cd[a.starts_cd]
+            m.cd_ready[a.starts_cd] = t + min(lock, cut_at) + m.cd[a.starts_cd]   # user: a dodge starts it at once
         if name == "ult":
             m.energy = 0.0
         if name in m.kit.on_field:
@@ -716,8 +757,10 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             else:
                 m.cd_ready[tgt] = t
         if m.idx == 0:
-            lock_until[0] = max(lock_until[0], t + a.lock)
-            busy_until[0] = t + min(DEFAULT_BUSY, a.lock) if a.lock else t
+            lock_until[0] = max(lock_until[0], t + lock)
+            busy_until[0] = t + min(DEFAULT_BUSY, lock) if lock else t
+            if cancel:
+                cancel_dodges.append(t + cut_at)
             if auto_clock[0] > 0:
                 auto_loop[0] += 1
             auto_clock[0] = 0.0
@@ -726,9 +769,9 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             for fname, fa in m.actions.items():
                 if fa.followup and not fa.followup.event and fa.followup.after == name \
                         and m.cast_count[name] % fa.followup.every == 0:
-                    pending.append((t + a.lock + fa.followup.delay, fname, False))
+                    pending.append((t + lock + fa.followup.delay, fname, False))
                     if not fa.followup.autos:   # no autos before the followup
-                        lock_until[0] = max(lock_until[0], t + a.lock + fa.followup.delay)
+                        lock_until[0] = max(lock_until[0], t + lock + fa.followup.delay)
         emit(f"cast:{m.idx}:{name}", t)
 
     def stat_for(receiver_block: StatBlock, receiver, tags: set, t: float, minion: bool = False) -> StatBlock:
@@ -756,9 +799,15 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
 
     def land(t: float, mi: int, h: HitSpec, action: str, cid: str):
         m = members[mi]
-        if h.hit_id == 0:   # marker: no damage, only emits marker:<who>:<tag>
+        if h.hit_id == 0:   # marker: no damage, only emits marker:<who>:<tag> (and can inflict a Mark)
             for tag in h.tags:
                 emit(f"marker:{mi}:{tag}", t)
+            if h.applies_mark:   # e.g. Ann's wind wall "constantly inflicts" Breeze without dealing DMG
+                el = elements[mi]
+                was_up = mark_up[el]
+                mark_up[el] = True
+                emit(f"mark_applied:{mi}", t)
+                emit(f"mark_refresh:{mi}" if was_up else f"mark_new:{mi}", t)
             return
         hd = get_hit(h.hit_id)
         tags = set(h.tags)
@@ -767,8 +816,10 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         minion = slot_of(hd) == "minion"
         attacker = stat_for(m.minion_static if minion else m.static, mi, tags, t, minion)
         taken = stat_for(enemy_static, "enemy", tags, t)
+        # DEF reductions on the enemy (flat, then %) lower its DEF before defAmend (formula ref 2.def.c); floor 0
+        defense = max(0.0, (team.enemy.defense + taken.flat[DEF]) * (1 + taken.pct[DEF]))
         e = Enemy(res=team.enemy.res, res_by_element=team.enemy.res_by_element,
-                  defense=team.enemy.defense, broken=team.enemy.broken,
+                  defense=defense, broken=team.enemy.broken,
                   vul=team.enemy.vul, taken=taken)
         dmg_unbroken = hit_damage(hd, lv, attacker, e) * h.mult
         dmg = dmg_unbroken * (bar.ratio(t) if bar else 1.0)   # read before this hit lowers the bar
@@ -801,7 +852,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         if triggers and mark_up[el] and t >= next_mark[el] and m.kit.mark_hit:
             mark_up[el] = False
             next_mark[el] = t + team.mark_icd
-            mh = HitSpec(hit_id=m.kit.mark_hit, tags=("mark",))
+            mh = HitSpec(hit_id=m.kit.mark_hit, tags=("mark",) + m.kit.mark_hit_tags)
             seq[0] += 1
             heapq.heappush(queue, (t, seq[0], mi, mh, "mark", "mark"))
             emit(f"mark:{mi}", t)
@@ -840,8 +891,48 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                 auto_hits.append((h.offset + k * h.interval, HitSpec(**{**h.__dict__, "count": 1, "offset": 0.0})))
         auto_hits.sort(key=lambda x: x[0])
     auto_loop = [0]
+    # Clock events: `timer:<s>` fires at 0, s, 2s, ... ("after the battle begins ... once every 20 s");
+    # `dodge:0` is the main's dodge, one every `dodge_interval` s on average (assumption, default 10; see below);
+    # `hit_taken:0` the main being hit, one every `hit_taken_interval` s.
+    used = " ".join([md.event for md in by_event] + [pev for m in members for pev, _ in m.procs])
+    timers = sorted({float(x) for x in re.findall(r"\btimer:(\d+(?:\.\d+)?)", used)})
+    dodge_every = float(team.assumptions.get("dodge_interval", 10.0))
+    spam = team.assumptions.get("dodge_spam")   # {interval: 3, potentials: [ids]}: dodge faster when the main has one
+    if spam:
+        owned = set(main.pot_levels) | {x.potential_id for (j, x) in extra if j == 0 and isinstance(x, ResolvedPotential)}
+        want = set(spam.get("potentials") or [])
+        if not want or owned & want:
+            dodge_every = float(spam["interval"])
+    dodge_time = float(team.assumptions.get("dodge_time", 10 / 30))   # user: a dodge costs 10 frames of attacking
+    next_dodge = [dodge_every]
+    # Dodge-cancel (Nanoha): dodging at the end of each auto string shortens it, so the main dodges every string and
+    # those dodges replace the periodic ones (user, 2026-11-04).
+    cancel_at = auto.dodge_at if (auto and auto.dodge_at is not None
+                                  and team.assumptions.get("dodge_cancel", True)) else None
+    auto_len = auto.dodge_duration if cancel_at is not None else (auto.duration if auto else 0.0)
+    if cancel_at is not None:
+        dodge_every = 0.0
+    hit_every = float(team.assumptions.get("hit_taken_interval", 20.0))   # `hit_taken:0`: the main is hit (user: ~20 s)
     for step in range(steps + 1):
         t = step * dt
+        for per in timers:
+            if per > 0 and abs(t / per - round(t / per)) * per < dt / 2:
+                emit(f"timer:{per:g}", t)
+        # A dodge cancelling an action (Amber) is free and takes the place of the next periodic one.
+        while cancel_dodges and t >= cancel_dodges[0] - 1e-9:
+            cancel_dodges.pop(0)
+            emit("dodge:0", t)
+            next_dodge[0] += dodge_every
+        # Dodges need control: one due during a cast's lock (no control, but immune) waits for the lock to end.
+        # The schedule keeps its average rate (user: the 1 per 10 s came from real fights, locks included), but two
+        # dodges are at least DODGE_CD apart. Each pauses the auto string for `dodge_time`.
+        if dodge_every > 0 and t >= next_dodge[0] - 1e-9 and t >= lock_until[0] - 1e-9:
+            lock_until[0] = max(lock_until[0], t + dodge_time)   # first, so a follow-up waits for the dodge to end
+            emit("dodge:0", t)
+            next_dodge[0] = max(next_dodge[0] + dodge_every, t + min(DODGE_CD, dodge_every))
+        if hit_every > 0 and t > 0 and abs(t / hit_every - round(t / hit_every)) * hit_every < dt / 2 \
+                and not (bar is not None and bar.broken(t)):   # a broken boss doesn't attack (user)
+            emit("hit_taken:0", t)
         for m in members:
             m.energy += m.kit.energy_per_second * dt
             if on_field_until[m.idx] > t:
@@ -849,6 +940,8 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                 on_field_time[m.idx] += dt
                 if int((on_field_time[m.idx] + 1e-9) // 5.0) > int((before + 1e-9) // 5.0):
                     emit(f"on_field_5s:{m.idx}", t)   # "every 5 s they are on the field"
+                if int(on_field_time[m.idx] + 1e-9) > int(before + 1e-9):
+                    emit(f"on_field_1s:{m.idx}", t)   # every second on the field
         for name in named:
             if status_stacks(name, t) > 0:
                 status_time[name] += dt
@@ -888,7 +981,9 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                 if c0 - 1e-9 <= off < c1 - 1e-9:
                     seq[0] += 1
                     heapq.heappush(queue, (t, seq[0], 0, h, "auto", f"auto#{auto_loop[0]}#{h.hit_id}"))
-            if c1 >= auto.duration - 1e-9:
+            if cancel_at is not None and c0 - 1e-9 <= cancel_at < c1 - 1e-9:
+                emit("dodge:0", t)
+            if c1 >= auto_len - 1e-9:
                 c1 = 0.0
                 auto_loop[0] += 1
                 main.cast_count["auto"] += 1

@@ -18,7 +18,7 @@ main:
 #   ult (58,00): hits +0.40 and +1.20; the second-part cutscene (1:00,00 -> 1:06,20) freezes time and isn't counted;
 #          final hit at +2.30 game time; leaves at +6.30 game time.
 support:
-  energy_per_second: 2.0          # GUESS passive ult energy regen
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   on_field: {skill: 21.53, ult: 6.3}   # user-timed
   actions:
     skill:                          # Starflare Pursuit: Sword Form (text), CD from data

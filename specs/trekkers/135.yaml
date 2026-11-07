@@ -21,7 +21,7 @@
 char_id: 135
 
 main:
-  energy_per_second: 2.0          # GUESS passive ult energy regen (same as the other kits)
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   mark: {hit: 135000000}          # Umbra Mark trigger (Main Skill and Phantoms can trigger it)
 
   actions:
@@ -138,10 +138,10 @@ main:
         - {index: 1, event: always, hit_tags: [phantom], minions: true}
       note: "ATK SPD shortens the Phantom attack interval (0.7 s / (1 + x)); the wind-up is unchanged (GUESS)."
 
-    513512:   # Decisive Moment: dodge -> ATK
+    513512:   # Decisive Moment: dodge -> ATK of Mistique and her Phantoms
       overrides:
-        - {index: 0, drop: true}
-      note: "Dodges not modelled (0)."
+        - {index: 0, event: "dodge:main", minions: true}   # one dodge every `dodge_interval` s (user 2026-11-04: 10 s)
+      note: "One dodge every 10 s (team assumption dodge_interval)."
 
     513541:   # Darkness Devourer (common): the ult sacrifices all minions, each +Ultimate DMG for 10 s
       minion_rules:
@@ -159,7 +159,7 @@ main:
         - {index: 0, event: "hit:self:ult_dmg"}
 
 support:
-  energy_per_second: 2.0          # GUESS
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   actions:
     skill:
       hits:

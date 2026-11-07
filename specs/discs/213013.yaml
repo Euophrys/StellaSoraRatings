@@ -1,0 +1,4 @@
+# Leaf Her to Me (Terra) — all parts from EffectIds; this pins down their triggers.
+overrides:
+  - {part: melody, index: 1, event: "cast:element3:skill"}                 # a Terra Trekker's skill cast -> Terra Ult DMG, 5 s
+  - {part: harmony1, index: 0, event: "mark:element3", minions: true}      # Terra Mark triggered (Marks are per element) -> ATK (and Minions), 4 s

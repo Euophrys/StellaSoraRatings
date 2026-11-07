@@ -24,7 +24,7 @@ main:
         - {hit: 141400001, count: 1, tags: [ult]}
 
 support:
-  energy_per_second: 2.0          # GUESS
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   on_field: {skill: 10.03, ult: 3.4}   # user-timed
 
   actions:

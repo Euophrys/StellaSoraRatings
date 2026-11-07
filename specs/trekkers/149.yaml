@@ -1,0 +1,237 @@
+# Gerie (149) — Terra, Vanguard. Hits scale with ATK (data).
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+#
+# User, frame-timed 2026-11-03 (30 fps, ss,ff):
+# MAIN (Avalanche of Stone + Beyond All Control):
+#   autos, not Lethal: string starts 37,29; hits 38,05 / 38,17 / 38,25 / 39,03 / 39,18 / 40,02 / 40,23 (slam) / 40,25;
+#     next string's first hit 41,20 (3.5 s period, includes walking).
+#   autos, Lethal: string starts 48,07; 15 numbers 48,12 .. 50,18 (8 base hits + Avalanche extra hits); next string's
+#     first hit 51,05 (2.767 s period). The model uses this faster string (with Beyond All Control, Lethal is up
+#     nearly all fight); hit offsets are the non-Lethal ones scaled by 0.757 (slam at 1.967 s after the first hit).
+#   skill: cast 0,15; Iron Cage appears 1,24 (+1.3); Lethal at 2,02 (+1.567); cage gone 10,10; Lethal gone 14,10
+#     (4 s after the cage = Lingering Hunger's text, so that run had it). Recast 45,28: leap hits 46,17 (+0.633),
+#     47,02 (+1.133); first auto 47,15 (+1.567).
+#   ult: cast 52,21; hits 53,02 (+0.367), 53,07 (+0.533), 53,12 x2 (+0.7); auto at 54,16 (+1.833).
+#     3 shovels in a claw pattern, each x3 (text); user: all three hit in the Gerie clip (in another clip two hit),
+#     so all 3 x 3 hits are modelled. Guide build (user) includes Lingering Hunger, so the 4 s Lethal tail is its effect.
+# SUPPORT (Deeper into Sin + Sin-Bound Echo):
+#   skill: cast 7,27, leaves 20,27 (13.0 s on the battlefield). Recast 32,24: x3 numbers at 33,22 (+0.933),
+#     33,25 (+1.033), 34,01 (+1.233), 34,18 (+1.8), 34,24 (+2.0), then 36,01, 36,07 ...
+#   ult: same as main.
+char_id: 149
+
+main:
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  mark: {hit: 149000001}          # Terra Mark DMG when Gerie triggers a Mark
+
+  actions:
+    auto:                          # Kiss of Death: 5 strikes, 8 hits (text: 1, 2, 1, 2, 1+1)
+      duration: 2.767              # user: Lethal string period
+      hits:
+        - {hit: 149100001, count: 1, offset: 0.167, tags: [auto]}
+        - {hit: 149100002, count: 1, offset: 0.470, tags: [auto]}
+        - {hit: 149100002, count: 1, offset: 0.672, tags: [auto]}
+        - {hit: 149100003, count: 1, offset: 0.873, tags: [auto]}
+        - {hit: 149100004, count: 1, offset: 1.252, tags: [auto]}
+        - {hit: 149100004, count: 1, offset: 1.605, tags: [auto]}
+        - {hit: 149100005, count: 1, offset: 2.135, tags: [auto, slam]}
+        - {hit: 149100006, count: 1, offset: 2.186, tags: [auto]}
+
+    skill:                         # Thorned Inferno: leap (2 hits) + Iron Cage ticking 1/s for 8 s
+      lock: 1.367                  # user: first auto hit +1.567 (auto's first hit is 0.2 s into the string)
+      hits:
+        - {hit: 149310001, count: 1, offset: 0.633, tags: [leap], triggers_mark: true}
+        - {hit: 149310003, count: 1, offset: 1.133, tags: [leap], triggers_mark: true}
+        - {hit: 149310002, count: 8, offset: 2.3, interval: 1.0, tags: [cage], triggers_mark: true}   # first tick 1 s after the cage appears (GUESS)
+
+    ult:                           # Divine: Retribution of Evil: 3 shovels, each x3 (text; user: all three hit)
+      lock: 1.633                  # user: auto at +1.833
+      hits:
+        - {hit: 149400001, count: 3, offset: 0.367, interval: 0.03, tags: [ult], triggers_mark: true}
+        - {hit: 149400001, count: 3, offset: 0.533, interval: 0.03, tags: [ult], triggers_mark: true}
+        - {hit: 149400001, count: 3, offset: 0.700, interval: 0.03, tags: [ult], triggers_mark: true}
+
+  buffs:
+    # Lethal: Auto DMG while near the Iron Cage (single boss, melee: always near). Cage 8.5 s (user), +50% with
+    # Piercing Sorrow; Lingering Hunger keeps Lethal 4 s after the cage is gone.
+    - {effect: 14900011, name: lethal, level: skill, event: "cast:self:skill", duration: 8.5, target: self, excludes: [514907, 514910]}
+    - {effect: 14900011, name: lethal, level: skill, event: "cast:self:skill", duration: 12.5, target: self, requires: [514907], excludes: [514910]}
+    - {effect: 14900011, name: lethal, level: skill, event: "cast:self:skill", duration: 12.75, target: self, requires: [514910], excludes: [514907]}
+    - {effect: 14900011, name: lethal, level: skill, event: "cast:self:skill", duration: 16.75, target: self, requires_all: [514907, 514910]}
+    # Iron Cage on the battlefield (the boss is linked to it)
+    - {name: cage, event: "cast:self:skill", duration: 9.8, excludes: [514910]}
+    - {name: cage, event: "cast:self:skill", duration: 14.0, requires: [514910]}
+
+  potentials:
+    514901:   # Beyond All Control (pink): Lethal -> Auto DMG, Movement SPD; Lethal anywhere
+      overrides:
+        - {index: 0, event: "while:status:lethal"}
+        - {index: 1, drop: true}   # Movement SPD
+      note: "Lethal is assumed up near the cage anyway (melee vs one boss), so the 'anywhere' part adds nothing."
+
+    514902:   # Avalanche of Stone (pink): Lethal -> each Auto DMG hit adds an extra Auto hit; autos trigger Terra Mark
+      procs:
+        - {event: "hit:self:auto", when: "while:status:lethal", hit: 149310201, offset: 0.05, tags: [avalanche], triggers_mark: true}
+      note: "One extra hit per auto hit while Lethal (user saw 15 numbers per Lethal string, 16 expected). The extra hits stand in for the autos' Mark triggers."
+
+    514903:   # Agony Cascade (pink): cage links 4 targets (single boss: nothing) + cage Skill DMG
+      overrides:
+        - {index: 0, hit_tags: [cage]}
+
+    514904:   # Endless Throes (pink): auto hits on cage-linked targets -> Skill DMG hit, 1/s, triggers Terra Mark
+      procs:
+        - {event: "hit:self:auto", when: "while:status:cage", hit: 149310401, icd: 1.0, tags: [throes], triggers_mark: true}
+
+    514905:   # Delight in Ruin: auto hits -> ATK stacks
+      overrides:
+        - {index: 0, event: "hit:self:auto"}
+
+    514906:   # No Safeword: Auto DMG + Auto DMG vs Broken Resilience
+      overrides:
+        - {index: 1, hit_tags: [auto, avalanche], event: "while:broken"}
+
+    514907:   # Lingering Hunger: Auto DMG; Lethal +4 s (buff variants above)
+      note: "Lethal extension modelled in the Lethal buff."
+
+    514908:   # Slanderous Strike: slows cage-linked targets; Terra DMG vs slowed targets
+      overrides:
+        - {index: 0, drop: true}   # the slow itself
+        - {index: 1, hit_tags: [], event: "while:status:cage"}
+      note: "Assumes the boss can be slowed while linked to the cage (GUESS)."
+
+    514909:   # Shadow Law: a squadmate casts a Support Skill -> Skill DMG stacks
+      overrides:
+        - {index: 0, event: "cast:support:skill"}
+
+    514911:   # Hunt is On: after dodging -> ATK 8 s
+      overrides:
+        - {index: 0, event: "dodge:main"}   # one dodge every `dodge_interval` s (user 2026-11-04: 10 s)
+      note: "One dodge every 10 s (team assumption dodge_interval)."
+
+    514913:   # Shared Sensation: ATK per Terra Trekker
+      overrides:
+        - {index: 0, event: always, stacks: 3}
+      note: "Mono-Terra squad: 3 stacks."
+
+    514910:   # Piercing Sorrow: cage Terra DMG, cage duration +50% (4 more ticks)
+      add_hits:
+        skill: [{hit: 149310002, count: 4, offset: 10.3, interval: 1.0, tags: [cage], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [cage]}
+
+    514912:   # Everyone's Invited: cage Skill DMG, range
+      overrides:
+        - {index: 0, hit_tags: [cage]}
+
+    514941:   # Emberwing's Proclamation: Ult DMG + 2 gigantic spades
+      add_hits:
+        ult: [{hit: 149400002, count: 2, offset: 0.85, interval: 0.15, tags: [ult], triggers_mark: true}]   # timing GUESS
+
+    514942:   # Quadrifrons' Lore: Ult DMG; a friendly Terra Mark trigger -> more Ult DMG vs that target 15 s
+      overrides:
+        - {index: 1, hit_tags: [], event: "mark:any", duration: {param: Param4}}
+
+    514943:   # Samsara's Judgment: ult cast -> Terra DMG vs nearby targets 15 s
+      overrides:
+        - {index: 0, hit_tags: [], event: "cast:self:ult", duration: {param: Param3}}
+
+support:
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  on_field: {skill: 13.0, ult: 3.0}   # skill user-timed (with Sin-Bound Echo); ult GUESS
+  mark: {hit: 149000001}          # her Support Skill and ult trigger Terra Mark (text)
+
+  actions:
+    skill:                         # Immediate Execution: chain spade + seismic waves
+      hits:
+        - {hit: 149320001, count: 1, offset: 0.933, tags: [spade], triggers_mark: true}
+        - {hit: 149320002, count: 1, offset: 1.033, tags: [wave], triggers_mark: true}
+    ult:
+      hits:
+        - {hit: 149400001, count: 3, offset: 0.367, interval: 0.03, tags: [ult], triggers_mark: true}
+        - {hit: 149400001, count: 3, offset: 0.533, interval: 0.03, tags: [ult], triggers_mark: true}
+        - {hit: 149400001, count: 3, offset: 0.700, interval: 0.03, tags: [ult], triggers_mark: true}
+
+  potentials:
+    514921:   # Deeper into Sin (pink): spades Skill DMG; 2 extra spades
+      add_hits:
+        skill: [{hit: 149321101, count: 2, offset: 0.933, interval: 0.0, tags: [spade], triggers_mark: true}]
+      overrides:
+        - {index: 0, hit_tags: [spade]}
+      note: "User saw the hits in threes (1 + 2 spades)."
+
+    514922:   # Curtain Call (pink): spades Skill DMG; each spade hits again when withdrawn
+      add_hits:
+        skill:
+          - {hit: 149322101, count: 1, offset: 4.0, tags: [spade], triggers_mark: true}                       # GUESS: withdrawn after ~4 s
+          - {hit: 149322101, count: 2, offset: 4.0, interval: 0.0, tags: [spade], triggers_mark: true, requires: [514921]}
+          - {hit: 149322101, count: 1, offset: 7.8, tags: [spade], triggers_mark: true, requires: [514923]}  # GUESS: Sin-Bound Echo keeps them out until the waves end
+      overrides:
+        - {index: 0, hit_tags: [spade]}
+      note: "Withdrawal time is a guess."
+
+    514923:   # Sin-Bound Echo (pink): stays 6 s; a seismic wave at her and each spade every second
+      add_hits:
+        skill:
+          - {hit: 149323101, count: 6, offset: 1.8, interval: 1.0, tags: [wave, echo], triggers_mark: true}
+          - {hit: 149323101, count: 6, offset: 1.8, interval: 1.0, tags: [wave, echo], triggers_mark: true}
+          - {hit: 149323101, count: 6, offset: 1.8, interval: 1.0, tags: [wave, echo], triggers_mark: true, requires: [514921]}
+      note: "2 waves per second (her + 1 spade), 3 with Deeper into Sin (user saw threes)."
+
+    514924:   # Earthshaker (pink): seismic waves Skill DMG
+      overrides:
+        - {index: 0, hit_tags: [wave]}
+
+    514925:   # Hexacalamity: Grief's Toll: skill cast -> Skill DMG 3 s
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+
+    514926:   # Hexacalamity: Tyrant's March: spades vs targets under 70% HP
+      overrides:
+        - {index: 0, hit_tags: [spade], event: unknown, uptime: 0.7}   # GUESS: the boss is under 70% HP for 70% of the fight
+      note: "Under-70%-HP uptime is a guess (70%)."
+
+    514927:   # Hexacalamity: Hallowed Chains: the chain shovel hit adds a Skill DMG hit
+      add_hits:
+        skill: [{hit: 149327101, count: 1, offset: 0.95, tags: [spade], triggers_mark: true}]
+
+    514928:   # Hexacalamity: Erosion: Skill DMG +X every second during the skill, resets after
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:on_field:self", stacks: 3}   # GUESS: ~3 s average into the 6 s echo
+      note: "Average of 3 stacks over the skill (GUESS)."
+
+    514930:   # Hexacalamity: Famine: seismic waves end -> AoE Skill DMG hit
+      add_hits:
+        skill:
+          - {hit: 149330101, count: 1, offset: 1.6, tags: [wave], excludes: [514923]}   # GUESS timing
+          - {hit: 149330101, count: 1, offset: 7.0, tags: [wave], requires: [514923]}
+      note: "One extra hit when the waves end (GUESS: once per cast)."
+
+    514931:   # Twilight's Verdict: Gerie triggers a Terra Mark -> Terra DMG stacks
+      overrides:
+        - {index: 0, event: "mark:self"}
+
+    514932:   # Twilight's Hunt: a squadmate casts a skill or ult -> ATK stacks
+      overrides:
+        - {index: 0, event: "cast:main:skill|cast:main:ult|cast:support:skill|cast:support:ult"}
+      note: "Counts her own support casts too (small overcount)."
+
+    514929:   # Hexacalamity: Death: seismic waves Skill DMG + Resilience Break Efficiency
+      overrides:
+        - {index: 0, hit_tags: [wave]}
+        - {index: 1, hit_tags: [wave]}
+
+    514933:   # Anima Resonance: ATK per Terra Trekker
+      overrides:
+        - {index: 0, event: always, stacks: 3}
+
+    514941:   # Emberwing's Proclamation
+      add_hits:
+        ult: [{hit: 149400002, count: 2, offset: 0.85, interval: 0.15, tags: [ult], triggers_mark: true}]
+
+    514942:   # Quadrifrons' Lore
+      overrides:
+        - {index: 1, hit_tags: [], event: "mark:any", duration: {param: Param4}}
+
+    514943:   # Samsara's Judgment
+      overrides:
+        - {index: 0, hit_tags: [], event: "cast:self:ult", duration: {param: Param3}}

@@ -82,6 +82,8 @@ If the team needs something new, add it generally (not team-specific), document 
 - **Summon timelines:** use marker hits (`hit: 0`) for summon-ready / periodic-stack moments and pure statuses for minion counts (`specs/trekkers/141.yaml`). Ask the user for damage numbers from one clip: ratios between hits in the same clip cancel the account's stats and pin down stack timings and hit rows.
 - **Mixed-element teams:** disc specs written for single-element teams may use `hit:any:` / `cast:any:` where the text says "any Ignis Trekker". Use `element<N>` (`hit:element2:skill_dmg`), and intersections like `support/element6` ("an Umbra support"). "The main Ignis Trekker" effects are gated on the main's element automatically. Marks are per element.
 - **Dynamic summons** (minions that are replaced, refreshed, sacrificed or re-summoned): use a `minions:` pool, not per-cast hit lists (`specs/trekkers/135.yaml`).
+- **Variant skills have their own hits:** check each row's `SkillId` in `python -m ssr.inspect hits <char id>` output before reusing the base skill's rows (Amber's recast small hits are 17%, not 7.6%). Compare damage numbers from one clip, since same-clip ratios cancel the account's stats.
+- **Simultaneous hits:** `count: 2` hits are 0.1 s apart unless the hit sets `interval: 0`.
 - **Timing:** hits outside `fight_length` are dropped, and an auto string restarts after every cast. Make the auto `duration` longer than any gap between casts when the first magazine differs (Dominant Firepower, Bullet Storm).
 
 ## Comparing teams

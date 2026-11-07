@@ -53,6 +53,8 @@ def _build_stat_names(gd: GameData) -> dict[int, str]:
 STAT_NAMES: dict[int, str] = _build_stat_names(GameData(DEFAULT_DATA_ROOT))
 CHARGE_EFF = 1037   # pseudo stat: Energy Charge Efficiency from EffectType 37 (x (1 + value) on energy gained)
 STAT_NAMES[CHARGE_EFF] = "Energy Charge Efficiency"
+START_ENERGY = 1034   # pseudo stat: Energy restored at the start of battle (EffectType 34, e.g. Miraculous Anthem)
+STAT_NAMES[START_ENERGY] = "Energy at battle start"
 
 
 def stat_name(stat: int, is_pct: bool = False) -> str:

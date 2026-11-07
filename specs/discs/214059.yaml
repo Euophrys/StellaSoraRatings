@@ -1,0 +1,20 @@
+# Fly, O Caged Bird (Ventus) — all scripted.
+# Starlit Hope: "when a Ventus Versatile Trekker is on the battlefield", 1 stack on the main, 12 s, max 10.
+# GUESS (user will test in game): one stack per second a Ventus Versatile support is on the battlefield.
+# Cyclone / Blossom: the Ventus Marks of Noya / Nanoha (their kits tag the Mark hit).
+melody:
+  - {stat: 0, value: 0, name: starlit_hope, target: main, event: "on_field_1s:support/class2/element4", duration: Param1, max_stacks: 10,
+     note: "1 stack per second a Ventus Versatile support is on the field GUESS"}
+  - {stat: 61, value: Param2, target: enemy, event: "hit:main:any&while:status:starlit_hope>=5", duration: Param3,
+     note: "Ventus Skill DMG Taken (as Skill DMG Taken)"}
+  - {stat: 60, value: Param4, target: enemy, event: "hit:main:any&while:status:starlit_hope>=10", duration: Param5,
+     note: "Ventus Auto DMG Taken (as Auto DMG Taken)"}
+harmony1:
+  - {stat: 56, value: Param1, target: "class:2"}
+  - {stat: 57, value: Param1, target: "class:2"}
+  - {stat: 78, value: Param2, target: main, event: "while:status:starlit_hope", per_stack: true}
+harmony2:
+  - {stat: 56, value: Param1, target: team, event: "hit:main:cyclone&while:status:starlit_hope", duration: Param2,
+     note: "Ventus Auto DMG on a Cyclone Mark trigger"}
+  - {stat: 57, value: Param3, target: team, event: "hit:main:blossom&while:status:starlit_hope", duration: Param4,
+     note: "Ventus Skill DMG on a Blossom Mark trigger"}

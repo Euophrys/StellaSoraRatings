@@ -2,6 +2,7 @@
 melody:
   - {stat: 21, value: Param1, target: team, note: "Destiny Card bonus not modelled (0 cards)"}
 overrides:
-  - {part: harmony1, stat: 21, drop: true}                                  # vs targets with Lux VUL: no VUL source modelled
+  - {part: harmony1, stat: 21, event: "while:vul:5"}                        # vs Lux VUL = a Lux DMG Taken debuff on the target
+  - {part: harmony1, index: 1, drop: true}                                  # DMG taken reduction (defensive)
   - {part: harmony2, stat: 56, index: 2, event: "cast:element5:ult", duration: inf}   # +1 stack per ult cast (any Lux Trekker), up to 6
   - {part: harmony2, stat: 57, index: 3, event: "cast:element5:ult", duration: inf}

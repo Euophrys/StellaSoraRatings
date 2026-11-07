@@ -1,3 +1,9 @@
-# Summer Sanctuary — harmony 2 is scripted.
+# Summer Sanctuary — melody's second line and harmony 2 are scripted.
+# "While the main's Ultimate is active": until the main regains control after the cast (its ult `lock`, user).
+melody:
+  - {stat: 21, value: Param2, target: team, event: "mark:element5&while:in_action:0:ult", duration: Param3,
+     max_stacks: Param4, note: "Lux Mark triggered while the main's ult is active (until the main regains control after it, user)"}
 harmony2:
   - {stat: 57, value: {value: Param2, times: Param1}, target: team, event: "cast:main:skill", duration: Param3, note: "full Diffraction stacks at each main skill cast GUESS"}
+overrides:
+  - {part: harmony1, index: 1, event: "cast:element5:skill"}     # Lux skill cast -> +Skill DMG, 10 s, x3

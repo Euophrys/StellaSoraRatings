@@ -1,0 +1,6 @@
+# Zesty Curiosity (neutral) — all parts from EffectIds; this pins down their triggers.
+# Dodges: one every `dodge_interval` s (team assumption, default 10; user 2026-11-04).
+overrides:
+  - {part: melody, index: 1, event: "dodge:main"}                                 # main dodges -> squad Crit DMG, 4 s
+  - {part: harmony1, index: 0, event: "cast:main:skill|cast:main:recast", target: support}   # main's skill -> supports' Skill DMG, 12 s
+  - {part: harmony1, index: 1, event: "cast:main:ult", target: support}           # main's ult -> supports' Ult DMG, 12 s

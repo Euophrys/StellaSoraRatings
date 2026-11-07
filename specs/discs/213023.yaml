@@ -1,0 +1,4 @@
+# Pure White (Lux) — all parts from EffectIds; this pins down harmony 1's trigger.
+# Melody's "restore 15 Energy at the start of battle" (EffectType 34) is read from data as starting Energy.
+overrides:
+  - {part: harmony1, stat: 1, event: "cast:element5:ult", minions: true}   # Lux Trekker's ult -> Lux ATK (and Minions), 30 s, 3 stacks

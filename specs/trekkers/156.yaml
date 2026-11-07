@@ -1,0 +1,284 @@
+# Nazuna (156) — Terra, Support class. Hits scale with ATK (data). No Mark hit of her own: she inflicts
+# Terra Mark: Earth Vein; Gerie (or another Terra Mark triggerer) consumes it.
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+#
+# User, frame-timed 2026-11-03 (30 fps, ss,ff):
+# MAIN (Small Force + Wobble Dance):
+#   autos: magazine 6 (like Amber). String starts 27,04; shots 27,15 / 27,24 / 28,04 / 28,17 / 29,00 / 29,11;
+#     reload, next string 30,15 (3.367 s period).
+#   skill: cast 0,17; penguin out 1,02 (+0.5); its aura buffs Nazuna 1,19 (+1.067); penguin slams 5,02 (+4.5);
+#     buffs lost 5,16 and 6,08.
+#   ult: same as support. Skill cast 43,16 -> first bolt 44,19; ult cast 36,06 -> first bolt 39,29.
+#   Raffles with Arrow of Affection (user video, 19 raffles): 10 HHH, 9 with 2 hearts + 1 penguin, 0 more penguins.
+# SUPPORT (Arrow of Affection + Sweetheart Bloom):
+#   skill: cast 4,18; raffle 1 (3 hearts) 5,24 (+1.2), Kiss of Love on Gerie 5,29; raffles at 9,20 / 13,17 / 17,13 /
+#     21,11 (~3.89 s apart); leaves 24,05 (19.57 s on the battlefield). Another cast rolled 2 hearts + 1 penguin.
+#   ult: cast 24,23; hits 24,26 / 25,02 / 25,08 / 25,14 ... last ~27,12 (11 hits over ~2.53 s); leaves 31,01 (6.27 s).
+char_id: 156
+
+main:
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+
+  actions:
+    auto:                          # Laid-back Shots: 6 bolts, then a reload (user-timed)
+      duration: 3.367
+      hits:
+        - {hit: 156100001, count: 1, offset: 0.367, tags: [auto, shot]}
+        - {hit: 156100001, count: 1, offset: 0.667, tags: [auto, shot]}
+        - {hit: 156100001, count: 1, offset: 1.000, tags: [auto, shot]}
+        - {hit: 156100001, count: 1, offset: 1.433, tags: [auto, shot]}
+        - {hit: 156100001, count: 1, offset: 1.867, tags: [auto, shot]}
+        - {hit: 156100001, count: 1, offset: 2.233, tags: [auto, shot, mag_end]}
+
+    skill:                         # Plushie Dance: penguin walks to the target and explodes
+      lock: 0.733                  # user: cast 43,16 -> first bolt 44,19 (+1.1; first shot is 0.367 s into the string)
+      hits:
+        - {hit: 156310002, count: 1, offset: 4.5, tags: [penguin, boom], applies_mark: true}   # user: slam at +4.5 (with Small Force)
+
+    ult:                           # Dream Spiral: 11 hits (text), cart explodes -> squad ATK 15 s
+      lock: 3.4                    # user: cast 36,06 -> first bolt 39,29 (+3.767)
+      hits:
+        - {hit: 156400001, count: 11, offset: 0.1, interval: 0.253, tags: [ult], applies_mark: true}
+        - {hit: 0, offset: 2.9, tags: [cart_boom]}                                                # GUESS: explodes as the spin ends
+
+  buffs:
+    - {name: penguin, event: "cast:self:skill", duration: 4.5}                               # penguin on the battlefield
+    - {effect: 15690001, level: skill, event: "hit:self:penguin", duration: {ref: "BuffValue,NoLevel,15690011,Time,10K"}, target: enemy}   # target's Terra DMG Taken
+    - {effect: 15694001, level: ult, event: "marker:self:cart_boom", duration: {ref: "BuffValue,NoLevel,15694011,Time,10K"}, target: team}
+
+  potentials:
+    515601:   # Small Force (pink): penguin hits -> target's Terra DMG Taken stacks
+      overrides:
+        - {index: 0, event: "hit:self:penguin", target: enemy}
+
+    515602:   # Wobble Dance (pink): the penguin dances while walking, x11 small hits, inflicts Earth Vein; heals
+      add_hits:
+        skill: [{hit: 156310004, count: 11, offset: 1.067, interval: 0.31, tags: [penguin, wobble], applies_mark: true}]   # spread over the penguin's walk (GUESS)
+
+    515603:   # Roll the Dice (pink): 30% (50% while the skill is on CD) to spend 2 ammo on 3 bolts
+      procs:
+        - {event: "hit:self:shot", hit: 156100001, mult: 0.31, offset: 0.05, tags: [auto, dice]}
+      note: "Expected value: ~45% chance -> (1+2p)/(1+p) = 1.31 bolts per ammo. Time per magazine is unchanged (GUESS)."
+
+    515604:   # Graceful Turn (pink): on reload, 6 tracking bolts (Earth Vein) + squad ATK 4 s
+      procs:
+        - {event: "hit:self:mag_end", hit: 156100002, count: 6, offset: 0.3, interval: 0.08, tags: [spin], applies_mark: true}
+      overrides:
+        - {index: 0, event: "hit:self:mag_end", target: team}
+
+    515605:   # Cuddle of Terror: the penguin pounces when it stops; penguin Skill DMG
+      overrides:
+        - {index: 0, hit_tags: [penguin]}
+      note: "The pounce is taken to be the explosion (no separate hit in data)."
+
+    515606:   # Cutie's Rally: squad ATK while the penguin is out
+      overrides:
+        - {index: 0, event: "while:status:penguin", target: team}
+
+    515607:   # Beat Maestro: reload -> Skill DMG stacks
+      overrides:
+        - {index: 0, event: "hit:self:mag_end"}
+
+    515608:   # Clean Sweep: 20% per auto: golden egg (AoE Auto DMG, Earth Vein)
+      procs:
+        - {event: "hit:self:shot", hit: 156310005, chance: 0.2, offset: 0.2, tags: [egg], applies_mark: true}
+
+    515609:   # Fill the Gap: reload -> Support Trekkers' Skill DMG stacks
+      overrides:
+        - {index: 0, event: "hit:self:mag_end", target: support}
+
+    515611:   # Swiftstep: dodge -> squad ATK 2 s
+      overrides:
+        - {index: 0, event: "dodge:main", target: team}   # one dodge every `dodge_interval` s (user 2026-11-04: 10 s)
+      note: "One dodge every 10 s (team assumption dodge_interval)."
+
+    515613:   # Wily Wonder: skill cast -> squad Terra DMG 5 s
+      overrides:
+        - {index: 0, event: "cast:self:skill", target: team}
+
+    515610:   # Focus Fire: squad ATK while Plushie Dance is on cooldown
+      overrides:
+        - {index: 0, event: unknown, uptime: 0.95, target: team}
+      note: "Cast on cooldown, so it's nearly always on cooldown (95%)."
+
+    515612:   # Touch of Nature: all Terra Trekkers' Mark DMG Multiplier
+      overrides:
+        - {index: 0, event: always, target: "element:3"}
+      note: "'Mark DMG Multiplier' added to the Mark DMG bucket (GUESS: it may add to the hit's multiplier instead)."
+
+    515641:   # Operation: Pandemonium: ult cast -> squad Skill Crit Rate 15 s
+      overrides:
+        - {index: 0, event: "cast:self:ult", target: team}
+
+    515643:   # Rocket Cart: ult hits, 30% each -> target's Terra DMG Taken stacks
+      overrides:
+        - {index: 0, event: "hit:self:ult", every: 3, target: enemy}
+      note: "30% per hit approximated as one stack every 3rd hit."
+
+support:
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  on_field: {skill: 19.57, ult: 6.27}   # user-timed
+
+  actions:
+    skill:                         # Bingo Crush: 5 raffles ~3.89 s apart (user). Odds: Arrow of Affection from the user's video; the others GUESSES.
+      hits:
+        - {hit: 0, count: 5, offset: 1.2, interval: 3.89, tags: [raffle]}
+        # A: full hearts 0.53, mixed 0.47, full penguins 0.0
+        - {hit: 156320004, count: 5, offset: 1.500, interval: 3.89, mult: 0.53, tags: [heart], applies_mark: true, requires: [515623]}
+        - {hit: 156320007, count: 5, offset: 1.500, interval: 3.89, mult: 0.47, tags: [sweep], applies_mark: true, requires: [515623]}
+        - {hit: 156320007, count: 5, offset: 1.650, interval: 3.89, mult: 0.47, tags: [sweep], applies_mark: true, requires: [515623]}
+        - {hit: 156320007, count: 5, offset: 1.800, interval: 3.89, mult: 0.47, tags: [sweep], applies_mark: true, requires: [515623]}
+        - {hit: 156320007, count: 5, offset: 1.950, interval: 3.89, mult: 0.47, tags: [sweep], applies_mark: true, requires: [515623]}
+        - {hit: 156320007, count: 5, offset: 2.100, interval: 3.89, mult: 0.47, tags: [sweep], applies_mark: true, requires: [515623]}
+        - {hit: 156320007, count: 5, offset: 2.250, interval: 3.89, mult: 0.47, tags: [sweep], applies_mark: true, requires: [515623]}
+        # F: full hearts 0.0, mixed 0.4, full penguins 0.6
+        - {hit: 156320007, count: 5, offset: 1.500, interval: 3.89, mult: 0.4, tags: [sweep], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320007, count: 5, offset: 1.650, interval: 3.89, mult: 0.4, tags: [sweep], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320007, count: 5, offset: 1.800, interval: 3.89, mult: 0.4, tags: [sweep], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320007, count: 5, offset: 1.950, interval: 3.89, mult: 0.4, tags: [sweep], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320007, count: 5, offset: 2.100, interval: 3.89, mult: 0.4, tags: [sweep], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320007, count: 5, offset: 2.250, interval: 3.89, mult: 0.4, tags: [sweep], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320002, count: 5, offset: 1.700, interval: 3.89, mult: 0.6, tags: [statue], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320002, count: 5, offset: 2.000, interval: 3.89, mult: 0.6, tags: [statue], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320002, count: 5, offset: 2.300, interval: 3.89, mult: 0.6, tags: [statue], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320002, count: 5, offset: 2.600, interval: 3.89, mult: 0.6, tags: [statue], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320002, count: 5, offset: 2.900, interval: 3.89, mult: 0.6, tags: [statue], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320002, count: 5, offset: 3.200, interval: 3.89, mult: 0.6, tags: [statue], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320002, count: 5, offset: 3.500, interval: 3.89, mult: 0.6, tags: [statue], applies_mark: true, requires: [515622], excludes: [515623]}
+        # N: full hearts 0.2, mixed 0.6, full penguins 0.2
+        - {hit: 156320004, count: 5, offset: 1.500, interval: 3.89, mult: 0.2, tags: [heart], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 1.500, interval: 3.89, mult: 0.6, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 1.650, interval: 3.89, mult: 0.6, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 1.800, interval: 3.89, mult: 0.6, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 1.950, interval: 3.89, mult: 0.6, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 2.100, interval: 3.89, mult: 0.6, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 2.250, interval: 3.89, mult: 0.6, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320002, count: 5, offset: 1.700, interval: 3.89, mult: 0.2, tags: [statue], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320002, count: 5, offset: 2.000, interval: 3.89, mult: 0.2, tags: [statue], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320002, count: 5, offset: 2.300, interval: 3.89, mult: 0.2, tags: [statue], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320002, count: 5, offset: 2.600, interval: 3.89, mult: 0.2, tags: [statue], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320002, count: 5, offset: 2.900, interval: 3.89, mult: 0.2, tags: [statue], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320002, count: 5, offset: 3.200, interval: 3.89, mult: 0.2, tags: [statue], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320002, count: 5, offset: 3.500, interval: 3.89, mult: 0.2, tags: [statue], applies_mark: true, excludes: [515622, 515623]}
+        # Kiss of Love / Kiss of Penguin per raffle: with Arrow of Affection every raffle has more hearts (user saw
+        # 3 hearts, then 2 hearts + 1 penguin); with Feel the Beat more penguins; otherwise alternating (GUESS).
+        - {hit: 0, count: 5, offset: 1.2, interval: 3.89, tags: [love], requires: [515623]}
+        - {hit: 0, count: 5, offset: 1.2, interval: 3.89, tags: [peng], requires: [515622], excludes: [515623]}
+        - {hit: 0, count: 3, offset: 1.2, interval: 7.78, tags: [love], excludes: [515622, 515623]}
+        - {hit: 0, count: 2, offset: 5.09, interval: 7.78, tags: [peng], excludes: [515622, 515623]}
+    ult:
+      hits:
+        - {hit: 156400001, count: 11, offset: 0.1, interval: 0.253, tags: [ult], applies_mark: true}
+        - {hit: 0, offset: 2.9, tags: [cart_boom]}
+
+  buffs:
+    - {effect: 15691002, level: skill, event: "marker:self:love", duration: {ref: "BuffValue,NoLevel,15691012,Time,10K"}, target: team}   # Kiss of Love: Terra DMG
+    - {effect: 15691001, level: skill, event: "marker:self:peng", duration: {ref: "BuffValue,NoLevel,15691011,Time,10K"}, target: team}   # Kiss of Penguin: ATK
+    - {effect: 15694001, level: ult, event: "marker:self:cart_boom", duration: {ref: "BuffValue,NoLevel,15694011,Time,10K"}, target: team}
+
+  potentials:
+    515621:   # Bold Assertion (pink): Kiss of Penguin also gives squad ATK; the statue attacks 10 times
+      add_hits:
+        skill:
+        - {hit: 156320002, count: 5, offset: 3.800, interval: 3.89, mult: 0.6, tags: [statue], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320002, count: 5, offset: 4.100, interval: 3.89, mult: 0.6, tags: [statue], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320002, count: 5, offset: 4.400, interval: 3.89, mult: 0.6, tags: [statue], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320002, count: 5, offset: 3.800, interval: 3.89, mult: 0.2, tags: [statue], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320002, count: 5, offset: 4.100, interval: 3.89, mult: 0.2, tags: [statue], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320002, count: 5, offset: 4.400, interval: 3.89, mult: 0.2, tags: [statue], applies_mark: true, excludes: [515622, 515623]}
+      overrides:
+        - {index: 0, event: "marker:self:peng", target: team}
+
+    515622:   # Feel the Beat (pink): more penguins; statue hits -> target's Terra DMG Taken stacks
+      overrides:
+        - {index: 0, event: "hit:self:statue", target: enemy}
+
+    515623:   # Arrow of Affection (pink): more hearts; the heart arrow ricochets once (single boss: nothing)
+      note: "Changes the raffle odds (user video: 10 of 19 raffles full hearts, 9 two hearts + one penguin). Ricochet adds nothing vs one boss."
+
+    515624:   # Sweetheart Bloom (pink): Kiss of Love also gives squad Terra DMG; heart arrow explodes a second time
+      add_hits:
+        skill:
+        - {hit: 156320004, count: 5, offset: 2.000, interval: 3.89, mult: 0.53, tags: [heart], applies_mark: true, requires: [515623]}
+        - {hit: 156320004, count: 5, offset: 2.000, interval: 3.89, mult: 0.2, tags: [heart], applies_mark: true, excludes: [515622, 515623]}
+      overrides:
+        - {index: 0, event: "marker:self:love", target: team}
+      note: "The secondary explosion is taken to repeat the heart arrow's hit (GUESS)."
+
+    515625:   # Feather Frenzy: more-penguins barrage adds an AoE hit
+      add_hits:
+        skill:
+        - {hit: 156320005, count: 5, offset: 2.400, interval: 3.89, mult: 0.4, tags: [frenzy], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320005, count: 5, offset: 2.400, interval: 3.89, mult: 0.3, tags: [frenzy], applies_mark: true, excludes: [515622, 515623]}
+
+    515626:   # Jubilant Spin: after a statue, a barrage + main's Skill DMG 7 s
+      add_hits:
+        skill:
+        - {hit: 156320007, count: 5, offset: 3.200, interval: 3.89, mult: 0.6, tags: [sweep], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320007, count: 5, offset: 3.350, interval: 3.89, mult: 0.6, tags: [sweep], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320007, count: 5, offset: 3.500, interval: 3.89, mult: 0.6, tags: [sweep], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320007, count: 5, offset: 3.650, interval: 3.89, mult: 0.6, tags: [sweep], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320007, count: 5, offset: 3.800, interval: 3.89, mult: 0.6, tags: [sweep], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320007, count: 5, offset: 3.950, interval: 3.89, mult: 0.6, tags: [sweep], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320007, count: 5, offset: 3.200, interval: 3.89, mult: 0.2, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 3.350, interval: 3.89, mult: 0.2, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 3.500, interval: 3.89, mult: 0.2, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 3.650, interval: 3.89, mult: 0.2, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 3.800, interval: 3.89, mult: 0.2, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 3.950, interval: 3.89, mult: 0.2, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+      overrides:
+        - {index: 0, event: "hit:self:statue", target: main}
+
+    515627:   # Twinkle Toss: the statue explodes when it vanishes (Earth Vein)
+      add_hits:
+        skill:
+        - {hit: 156320006, count: 5, offset: 4.700, interval: 3.89, mult: 0.6, tags: [statue_boom], applies_mark: true, requires: [515622], excludes: [515623]}
+        - {hit: 156320006, count: 5, offset: 4.700, interval: 3.89, mult: 0.2, tags: [statue_boom], applies_mark: true, excludes: [515622, 515623]}
+
+    515628:   # Love's True Strike: barrage hits -> target's Terra DMG Taken 7 s
+      overrides:
+        - {index: 0, event: "hit:self:sweep", target: enemy}
+
+    515630:   # Honeyed Arrow: barrage and heart arrow Skill DMG
+      overrides:
+        - {index: 0, hit_tags: [sweep, heart]}
+
+    515631:   # Lucky Drop: all Terra Trekkers' Terra DMG while Nazuna is on the battlefield
+      overrides:
+        - {index: 0, event: "while:on_field:self", target: "element:3"}
+
+    515632:   # Progressive Jackpot: each raffle -> Nazuna's ATK stacks
+      overrides:
+        - {index: 0, event: "marker:self:raffle"}
+
+    515629:   # Rain of Passion: after a heart arrow, a barrage + main's Terra DMG 7 s
+      add_hits:
+        skill:
+        - {hit: 156320007, count: 5, offset: 2.000, interval: 3.89, mult: 0.53, tags: [sweep], applies_mark: true, requires: [515623]}
+        - {hit: 156320007, count: 5, offset: 2.150, interval: 3.89, mult: 0.53, tags: [sweep], applies_mark: true, requires: [515623]}
+        - {hit: 156320007, count: 5, offset: 2.300, interval: 3.89, mult: 0.53, tags: [sweep], applies_mark: true, requires: [515623]}
+        - {hit: 156320007, count: 5, offset: 2.450, interval: 3.89, mult: 0.53, tags: [sweep], applies_mark: true, requires: [515623]}
+        - {hit: 156320007, count: 5, offset: 2.600, interval: 3.89, mult: 0.53, tags: [sweep], applies_mark: true, requires: [515623]}
+        - {hit: 156320007, count: 5, offset: 2.750, interval: 3.89, mult: 0.53, tags: [sweep], applies_mark: true, requires: [515623]}
+        - {hit: 156320007, count: 5, offset: 2.000, interval: 3.89, mult: 0.2, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 2.150, interval: 3.89, mult: 0.2, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 2.300, interval: 3.89, mult: 0.2, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 2.450, interval: 3.89, mult: 0.2, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 2.600, interval: 3.89, mult: 0.2, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+        - {hit: 156320007, count: 5, offset: 2.750, interval: 3.89, mult: 0.2, tags: [sweep], applies_mark: true, excludes: [515622, 515623]}
+      overrides:
+        - {index: 0, event: "hit:self:heart", target: main}
+
+    515633:   # Double Delight: last 2 raffles both full hearts or full penguins -> squad Terra DMG 10 s
+      overrides:
+        - {index: 0, event: unknown, uptime: 0.4, target: team}
+      note: "GUESS 40% uptime (needs 2 full raffles in a row; ~0.36-0.4 per raffle with a pink that tilts the odds)."
+
+    515641:   # Operation: Pandemonium
+      overrides:
+        - {index: 0, event: "cast:self:ult", target: team}
+
+    515643:   # Rocket Cart
+      overrides:
+        - {index: 0, event: "hit:self:ult", every: 3, target: enemy}
+      note: "30% per hit approximated as one stack every 3rd hit."

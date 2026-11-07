@@ -1,0 +1,4 @@
+# Cage of Roses (Ignis) — all parts from EffectIds; this pins down their triggers.
+overrides:
+  - {part: melody, index: 1, event: "cast:any:ult"}   # any ult -> +Skill DMG 16 s
+  - {part: harmony1, index: 0, event: "hit_taken:main"}   # when the main is hit: one hit every `hit_taken_interval` s (user: ~20 s), none while broken

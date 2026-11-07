@@ -80,8 +80,10 @@ def test_scripted_disc_from_spec(gd):  # My Guiding Star: no EffectIds, values f
     assert [m for m in mods6 if m.stat == HP and m.is_pct][0].value == pytest.approx(0.30)
 
 
-def test_scripted_disc_without_spec_is_noted(gd):  # Review Focus 2: never silently dropped
-    mods, notes = disc_modifiers(gd, 214015, copies=1)   # Deer's Song: scripted, no spec
+def test_scripted_disc_without_spec_is_noted(gd, monkeypatch):  # Review Focus 2: never silently dropped
+    import ssr.effects as eff
+    monkeypatch.setattr(eff, "_disc_spec", lambda disc_id: None)   # every disc has a spec now: pretend Deer's Song has none
+    mods, notes = disc_modifiers(gd, 214015, copies=1)   # Deer's Song: harmony 2 is scripted
     assert any("scripted" in n for n in notes)
 
 
@@ -98,3 +100,24 @@ def test_effect_type_45_is_conditional_stat(gd):  # Good Night: per-hit Skill DM
     assert len(sk) == 3
     assert sk[2].trigger.event == "while:on_field:support"   # harmony 1, from the disc spec
     assert not any("EffectType 45" in n for n in notes)
+
+
+def test_harmony_notes_take_max_per_type(gd):
+    from ssr.effects import harmony_note_counts, note_modifiers
+    from ssr.stats import CRIT_DMG
+    import json
+    discs = [214038, 214030]
+    counts = harmony_note_counts(gd, discs, level=1)
+    want: dict[int, int] = {}
+    for d in discs:
+        row = gd.table("Disc")[str(d)]
+        for g in ("SecondarySkillGroupId1", "SecondarySkillGroupId2"):
+            for r in gd.table("SecondarySkill").values():
+                if r.get("GroupId") == row.get(g) and r.get("Level") == 1:
+                    for k, v in json.loads(r["NeedSubNoteSkills"]).items():
+                        want[int(k)] = max(want.get(int(k), 0), v)
+    assert counts == want and counts
+    # linear per note (in-game check, user 2026-11-03): 20 Burst notes = Crit DMG +9.2%
+    mods = note_modifiers(gd, {90013: 20})
+    assert len(mods) == 1 and mods[0].stat == CRIT_DMG
+    assert mods[0].value == pytest.approx(0.092) and mods[0].trigger is None

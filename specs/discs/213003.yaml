@@ -1,0 +1,4 @@
+# Scorching Night's End (Ignis) — all parts from EffectIds; this pins down their triggers.
+overrides:
+  - {part: melody, index: 1, event: "cast:element2:skill"}                 # a Ignis Trekker's skill cast -> Ignis Ult DMG, 5 s
+  - {part: harmony1, index: 0, event: "mark:element2", minions: true}      # Ignis Mark triggered (Marks are per element) -> ATK (and Minions), 4 s

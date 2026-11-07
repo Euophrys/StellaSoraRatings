@@ -19,7 +19,7 @@ main:
         - {hit: 142400001, tags: [ult]}
 
 support:
-  energy_per_second: 2.0          # GUESS
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   on_field: {skill: 7.367, ult: 4.2}   # user-timed with Phantom Mark (GUESS: same without it)
   wait_on_field: true             # the ult cancels a running skill (user): wait for it to end
 

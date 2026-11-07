@@ -79,6 +79,5 @@ def test_emblem_rows_include_second_pen_line(gd, team):
 
 
 def test_disc_row_carries_decode_notes(gd, team):  # Review Focus 2: undecodable/scripted parts reach the sheet
-    row = rate_discs(gd, team, disc_ids=[213021, 214015])   # Miraculous Anthem: EffectType 34; Deer's Song: scripted
-    assert any("EffectType 34" in n for n in row[0].notes + row[1].notes)
-    assert any("scripted" in n for r in row for n in r.notes)
+    row = rate_discs(gd, team, disc_ids=[214009, 214013])   # New Star Prelude / Voyage Blueprint: EffectType 42 shields
+    assert any("shield" in n for r in row for n in r.notes)

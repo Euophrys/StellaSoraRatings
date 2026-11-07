@@ -1,4 +1,7 @@
-# Midnight Mayhem — harmony1 "Decisive Strike": pins down its two triggers. The element lock limits it to Lux.
+# Midnight Mayhem — pins down the triggers. The element lock limits it to Lux.
 overrides:
+  - {part: melody, index: 2, event: "mark:element5", target: main}                       # Lux Mark triggered -> main's Auto DMG, 4 s
+  - {part: melody, index: 3, event: "mark:element5", target: main}                       # ... and Ult DMG, 4 s
   - {part: harmony1, index: 0, event: "hit:main:skill_dmg", duration: Param3}           # Lux main's skill hits -> Lux squad ATK, 15 s
   - {part: harmony1, index: 1, event: "hit:any:any&while:broken", duration: Param4}     # any Lux hit on a broken (or stunned) target: +more ATK, 15 s
+  - {part: harmony2, index: 0, event: "hit:support/element5:skill_dmg"}                  # a Lux support's skill hit -> Lux DMG Taken, 10 s

@@ -1,0 +1,11 @@
+# Moment of Glory (Ventus). Harmony 1's ATK comes from an EffectId; Glory is scripted.
+# Glory: a stack on the main per Auto / Skill DMG hit by a Ventus Versatile Trekker, 15 s, max 20.
+melody:
+  - {stat: 0, value: 0, name: glory, target: main, event: "hit:class2/element4:auto_dmg|hit:class2/element4:skill_dmg",
+     duration: Param1, max_stacks: Param2}
+  - {stat: 20, value: Param3, target: team, event: "while:status:glory>=10"}
+  - {stat: 56, value: Param4, target: team, event: "while:status:glory>=20"}
+harmony1:
+  - {stat: 57, value: Param2, target: main, event: "while:status:glory", per_stack: true}
+harmony2:
+  - {stat: 20, value: Param1, target: team, event: "while:status:glory>=20"}

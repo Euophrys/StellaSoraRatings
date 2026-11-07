@@ -1,0 +1,11 @@
+# Claw the Claw — melody part 2 is scripted (the row's only EffectId is the squad Terra DMG); harmony 1 is scripted.
+# Harmony 2 comes from EffectIds.
+melody:
+  - {stat: 37, value: Param2, target: enemy, event: "mark:element3", duration: Param3}   # Terra Mark triggered -> target takes +Terra DMG, 4 s
+harmony1:
+  # "When any Terra Trekker restores HP": Nazuna's heart arrows (support skill, full-hearts raffle) and Wobble Dance (main pink).
+  # Heart-arrow hits carry the raffle's expected-value mult, but their events fire on every raffle, so this slightly
+  # overrates the uptime (53% full hearts, a raffle every 3.89 s, 10 s duration: ~85% real uptime while she's out).
+  - {stat: 19, value: Param1, target: team, event: "hit:any:heart|hit:any:wobble", duration: Param2}
+overrides:
+  - {part: harmony2, index: 0, event: "hit:support:skill_dmg"}        # a support's Skill DMG -> Terra squad Skill DMG, 8 s, x6

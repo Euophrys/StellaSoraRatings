@@ -34,9 +34,10 @@ def test_t1_starender_from_first_hit(gd, shia_team):
     t1 = simulate(gd, shia_team, Build())
     m0 = replace(shia_team.members[0], talents=0)
     t0 = simulate(gd, replace(shia_team, members=[m0] + shia_team.members[1:]), Build())
-    # T0: Starender only from 3 ults x 30 s; T1: from the first hit as well (once per fight)
-    assert t0.status_time["starender"] == pytest.approx(90, abs=1.5)
-    assert t1.status_time["starender"] > 110
+    # T0: Starender only from the ults x 30 s (2 ults since passive energy was removed); T1: from the first hit as well
+    n = t0.casts[(0, "ult")]
+    assert n == 2 and t0.status_time["starender"] == pytest.approx(30 * n, abs=1.5)
+    assert t1.status_time["starender"] > t0.status_time["starender"] + 25   # +30 s from the first hit
     assert t1.total > t0.total
     assert not any("key talent" in u for u in t1.unknown_modifiers)
 

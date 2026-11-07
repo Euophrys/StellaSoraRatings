@@ -1,0 +1,7 @@
+# Prayer Beneath Light (Lux). Melody's shield (EffectType 42): when the main is hit, 20 s, once per 20 s (data CD).
+# How often the main is hit is a team assumption (`hit_interval`); tracked as a status, assumed not broken.
+melody:
+  - {stat: 0, value: 0, name: prayer_shield, target: main, event: "hit_taken:main", duration: Param3, icd: Param4}
+overrides:
+  - {part: harmony1, index: 0, event: "hit_taken:main", icd: 20, duration: 12}                        # main gains the shield -> Lux DMG, 12 s
+  - {part: harmony2, index: 0, event: "cast:element5:skill&while:status:prayer_shield", target: team}  # Lux skill cast while shielded -> squad Skill DMG, 6 s

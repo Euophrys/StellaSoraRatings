@@ -1,0 +1,4 @@
+# ★Bam Bam Girl★ (Lux) — all parts from EffectIds; this pins down their triggers.
+overrides:
+  - {part: melody, index: 1, event: "cast:element5:skill"}                 # a Lux Trekker's skill cast -> Lux Ult DMG, 5 s
+  - {part: harmony1, index: 0, event: "mark:element5", minions: true}      # Lux Mark triggered (Marks are per element) -> ATK (and Minions), 4 s

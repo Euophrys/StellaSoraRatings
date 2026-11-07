@@ -106,3 +106,19 @@ The sim now models resilience breaks (`docs/validation/2026-11-03-boss-blitz-bre
 | reference build | 1,078.8M | 1,258.0M (+16.6%) | 3 (24.5, 58.6, 92.9) |
 
 The reference build's picks are unchanged by the bar.
+
+## Update 2026-11-03: no passive energy
+
+The user tested in game: standing in a boss fight without attacking gains no ult energy. Every kit's
+`energy_per_second` went from 2.0 (GUESS) to 0. This team, pinks only, bar off: 239.32M -> 223.70M (−6.5%). Ult casts
+went from 3/2/3 to 2/1/2. Other teams, pinks only: Noya (Ventus) / Ann / Canace −7.6%, FL Noya / Shia / Tilia −9.6%,
+Chitose −8.7%, Gerie / Nazuna / Ridge −17.5%, Amber / Laru / Flora −3.0%, Mistique −4.2%. Numbers above this section
+predate the change.
+
+## Update 2026-11-04: every disc specced
+
+`docs/validation/2026-11-04-disc-pass.md`. This team's discs changed in two ways. Ripples of Nostalgia's harmony 1 bonus
+(+4.5% Auto/Skill DMG for 6 s after the main's Skill DMG) used to be assumed always on and now has its real trigger.
+A Moment in the Afternoon's Shock is now a named status, so "Skill DMG vs Shocked targets" is tested against it instead
+of assumed. Pinks only, bar on: 261.05M -> 259.68M (−0.53%). Bar off, no notes (the regression anchor): 223.70M ->
+222.42M (−0.57%). Ult casts unchanged.

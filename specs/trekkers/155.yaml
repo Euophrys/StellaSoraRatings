@@ -15,7 +15,7 @@
 char_id: 155
 
 support:
-  energy_per_second: 2.0          # GUESS passive ult energy regen (same as the other kits)
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   on_field: {skill: 12.83, ult: 8.23}   # user-timed
   mark: {hit: 155000001}          # Thunderbolt: Lux Mark DMG when Shia triggers a Mark
 

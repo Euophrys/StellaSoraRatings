@@ -1,0 +1,7 @@
+# Lemon & Black Tea (Ventus) — melody is scripted. Destiny Cards only exist in a side mode: 0 outside it (user).
+melody:
+  - {stat: 20, value: Param1, target: team, note: "0 Destiny Cards"}
+overrides:
+  - {part: harmony1, index: 0, event: "while:vul:4"}   # vs Ventus VUL = a Ventus DMG Taken debuff on the target (user, United by Fate)
+  - {part: harmony1, index: 1, drop: true}                         # DMG taken reduction (defensive)
+  - {part: harmony2, index: 0, drop: true}                         # needs kills: none against a single boss

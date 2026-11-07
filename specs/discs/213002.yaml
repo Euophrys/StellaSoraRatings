@@ -1,0 +1,6 @@
+# Seasonal Waves (neutral) — all parts from EffectIds; this pins down their triggers and targets.
+overrides:
+  - {part: melody, index: 0, target: support}                                     # Support Trekkers' ATK
+  - {part: melody, index: 1, event: "while:on_field:support", target: main}       # main's Auto DMG while a support is on the field
+  - {part: harmony1, index: 0, event: "cast:support:skill", target: main}         # a support's skill -> main's Skill DMG, 12 s
+  - {part: harmony1, index: 1, event: "cast:support:ult", target: main}           # a support's ult -> main's Ult DMG, 12 s

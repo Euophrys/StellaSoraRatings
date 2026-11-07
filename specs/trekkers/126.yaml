@@ -12,7 +12,7 @@ main:
         - {hit: 126400001, count: 1, tags: [ult]}
 
 support:
-  energy_per_second: 2.0          # GUESS
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   on_field: {skill: 4.0, ult: 4.533}  # user-timed (ult 03,12 -> teleport 07,28)
   actions:
     skill:                         # Flutter Flare: 3 Mindflare (buffs) + 3 Soulflare (hits) Butterflies

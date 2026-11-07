@@ -77,7 +77,7 @@ def test_catalog_lists_spec_trekkers(client):
     amber = next(t for t in cat["trekkers"] if t["name"] == "Amber")
     assert {p["row"] for p in amber["roles"]["main"]["potentials"]} == {1, 2, 3}
     assert len(amber["roles"]["support"]["pinks"]) == 4 and amber["element"] == "Ignis"
-    assert any(d["modelled"] for d in cat["discs"]) and any(not d["modelled"] for d in cat["discs"])
+    assert all(d["modelled"] for d in cat["discs"])   # every disc has a spec since 2026-11-04
     lines = cat["emblems"][str(amber["id"])]
     atk = next(e for e in lines if e["name"] == "ATK%")
     assert [t["colour"] for t in atk["tiers"]] == ["green", "blue", "yellow", "purple"] and atk["slots"] == [1, 2, 3]

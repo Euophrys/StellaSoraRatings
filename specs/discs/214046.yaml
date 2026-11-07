@@ -1,0 +1,9 @@
+# Dawn After Winter (Ventus). Harmony 1's Ult DMG comes from an EffectId; Bitter Cold is scripted.
+# Bitter Cold: a stack per Ultimate DMG hit by the main, 25 s, max 10.
+melody:
+  - {stat: 56, value: Param1, name: bitter_cold, target: main, event: "hit:main:ult_dmg", duration: Param2, max_stacks: Param3}
+  - {stat: 57, value: Param1, target: main, event: "while:status:bitter_cold", per_stack: true}
+harmony1:
+  - {stat: 1, pct: true, value: Param2, target: main, event: "while:status:bitter_cold", per_stack: true}
+harmony2:
+  - {stat: 20, value: Param1, target: main, event: "while:status:bitter_cold", per_stack: true}

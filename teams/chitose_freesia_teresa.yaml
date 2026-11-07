@@ -36,3 +36,4 @@ reference: {steps: 2, main_picks: 2, support_picks: 1, level: 6}
 assumptions:
   unknown_trigger_uptime: 1.0
   disc_stats_target: team
+  dodge_spam: {interval: 3, potentials: [514411]}   # user 2026-11-04: with Waltz of Ripples, dodge on cooldown (with Tremble and Fall her autos are a dodge loop anyway)

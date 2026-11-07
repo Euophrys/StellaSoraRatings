@@ -3,5 +3,5 @@ melody:
   - {stat: 22, value: Param1, target: team, note: "Destiny Card bonus not modelled (0 cards)"}
 harmony2: []   # normal targets / kill count: a single boss is neither
 overrides:
-  - {part: harmony1, stat: 22, drop: true}   # vs targets with Umbra VUL: no VUL source in the team
+  - {part: harmony1, stat: 22, event: "while:vul:6"}   # vs Umbra VUL = an Umbra DMG Taken debuff on the target
   - {part: harmony1, stat: 53, drop: true}   # damage reduction: defensive

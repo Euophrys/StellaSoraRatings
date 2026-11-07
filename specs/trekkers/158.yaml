@@ -13,7 +13,7 @@ main:
         - {hit: 158400002, count: 1, tags: [ult]}
 
 support:
-  energy_per_second: 2.0          # GUESS
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   on_field: {skill: 15.3}         # user (YouTube, 23 fps): appears 2:11,10, leaves 2:26,17; CD keeps ticking
   actions:
     skill:                         # Courtesy Before Aggression: Gift Box Shells, each impact + explosion; CD 18 s (data)

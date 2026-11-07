@@ -1,0 +1,13 @@
+# Chronicles of Spring (Ventus). Harmony 1's Ventus DMG comes from an EffectId; the rest is scripted.
+# Drifting Snow: the main gains a stack per skill cast, 10 s, max 3. The target debuffs (10 s, refreshed by the
+# main's hits) scale linearly with stacks: modelled as per Drifting Snow stack while it's up.
+melody:
+  - {stat: 0, value: 0, name: drifting_snow, target: main, event: "cast:main:skill|cast:main:recast", duration: 10, max_stacks: 3}
+  - {stat: 60, value: Param1, target: enemy, event: "while:status:drifting_snow", per_stack: true,
+     note: "Ventus Auto DMG Taken 6/12/18% (as Auto DMG Taken)"}
+  - {stat: 61, value: Param4, target: enemy, event: "while:status:drifting_snow", per_stack: true,
+     note: "Ventus Skill DMG Taken 2.5/5/7.5% (as Skill DMG Taken)"}
+harmony1:
+  - {stat: 77, value: Param2, target: main, event: "while:status:drifting_snow", per_stack: true}
+harmony2:
+  - {stat: 57, value: Param1, target: main, event: "while:status:drifting_snow", per_stack: true}

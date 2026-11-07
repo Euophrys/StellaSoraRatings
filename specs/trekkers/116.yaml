@@ -1,0 +1,105 @@
+# Ridge (116) — Terra, Versatile. Hits scale with ATK (data). Support kit only.
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+#
+# User, frame-timed 2026-11-03 (30 fps, ss,ff; Reblossom + Sense the Stir):
+#   skill: cast 25,19; seed field 27,09 (+1.667) -> 30,01 (+4.4); again (Reblossom) 30,20 (+5.033) -> 33,12 (+7.767);
+#     leaves 33,20 (8.03 s on the battlefield). Another cast 59,26: first hit 1:02,00 (+2.13), then ~0.23 s apart
+#     (seeds, Seed Orb hits and Mark numbers mixed).
+#   ult: cast 39,06; hits +0.033, +0.4, +0.833, +1.3, +1.8, big hit +2.933; leaves 44,08 (5.07 s).
+#
+# Seed Orb (text): seed hits put a 3 s Seed Orb on the target; when any friendly unit triggers a Terra Mark on it,
+# Ridge deals an AoE Skill DMG hit. Ridge inflicts Earth Vein but does not trigger Terra Marks herself.
+char_id: 116
+
+support:
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  on_field: {skill: 8.03, ult: 5.07}   # user-timed (skill with Reblossom)
+
+  actions:
+    skill:                         # Floral Storm: seed shower x6 (text) over ~2.73 s (user)
+      hits:
+        - {hit: 116320001, count: 6, offset: 1.667, interval: 0.45, tags: [seed], applies_mark: true, excludes: [511622]}
+        - {hit: 116320001, count: 9, offset: 1.667, interval: 0.3, tags: [seed], applies_mark: true, requires: [511622]}   # Sense the Stir: interval -30%
+    ult:                           # Harvest Rhapsody: x5 + a final strike (text, user-timed)
+      hits:
+        - {hit: 116400001, count: 5, offset: 0.033, interval: 0.44, tags: [ult], excludes: [511631]}
+        - {hit: 116400002, count: 1, offset: 2.933, tags: [ult, ult_final], excludes: [511631]}
+        - {hit: 116400001, count: 5, offset: 0.033, interval: 0.44, tags: [ult], applies_mark: true, requires: [511631]}
+        - {hit: 116400002, count: 1, offset: 2.933, tags: [ult, ult_final], applies_mark: true, requires: [511631]}
+
+  buffs:
+    - {name: seed_orb, event: "hit:self:seed", duration: {ref: "BuffValue,NoLevel,11691011,Time,10K"}, target: enemy, excludes: [511623]}
+    - {name: seed_orb, event: "hit:self:seed", duration: 4.5, target: enemy, requires: [511623]}   # Hasty Growth: +50%
+
+  procs:
+    - {event: "mark:any", when: "while:status:seed_orb", hit: 116320002, tags: [orb], excludes: [511623]}
+    - {event: "mark:any", when: "while:status:seed_orb", hit: 116320002, tags: [orb], applies_mark: true, requires: [511623]}
+
+  potentials:
+    511621:   # Reblossom (pink): Floral Storm casts again
+      add_hits:
+        skill:
+          - {hit: 116320001, count: 6, offset: 5.033, interval: 0.45, tags: [seed], applies_mark: true, excludes: [511622]}
+          - {hit: 116320001, count: 9, offset: 5.033, interval: 0.3, tags: [seed], applies_mark: true, requires: [511622]}
+
+    511622:   # Sense the Stir (pink): seed shower Terra DMG, attack interval -30% (hit variants above)
+      overrides:
+        - {index: 0, hit_tags: [seed]}
+
+    511623:   # Hasty Growth (pink): Seed Orb duration +50%, Skill DMG, inflicts Earth Vein (variants above)
+      overrides:
+        - {index: 0, hit_tags: [orb]}
+
+    511624:   # Misplaced Bloom (pink): Seed Orb Skill DMG, range; its DMG can set off another Seed Orb, 1/s
+      procs:
+        - {event: "hit:self:orb", when: "while:status:seed_orb", hit: 116320002, icd: 1.0, offset: 0.1, tags: [orb_chain]}
+      overrides:
+        - {index: 0, hit_tags: [orb, orb_chain]}
+      note: "Read as: a Seed Orb hit sets off one more Seed Orb hit, at most once per second (GUESS)."
+
+    511625:   # Needle Seed: Skill DMG +X every 0.5 s while the skill runs, resets after
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:on_field:self", stacks: 6}   # GUESS: ~3 s into each ~2.7 s shower on average
+      note: "Average stacks over the showers (GUESS: 6)."
+
+    511626:   # Corrosive Vines: seed hits lower the target's DEF (flat), stacking
+      overrides:
+        - {index: 0, target: enemy, event: "hit:self:seed"}
+
+    511627:   # Bouquet Blast: seed shower Skill DMG, range
+      overrides:
+        - {index: 0, hit_tags: [seed]}
+
+    511628:   # Sturdy Foundation: Ridge's Terra DMG vs Seed Orb targets
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:seed_orb"}
+
+    511630:   # Cone Bomb: Seed Orb Skill DMG; each Seed Orb hit fires a seed
+      procs:
+        - {event: "hit:self:orb|hit:self:orb_chain", hit: 116530001, offset: 0.2, tags: [cone]}
+      overrides:
+        - {index: 0, hit_tags: [orb, orb_chain]}
+
+    511631:   # Ensnaring Ground: Ult DMG; ult inflicts Earth Vein (variants above)
+      note: "Ult hits inflict Earth Vein (hit variants)."
+
+    511629:   # Root Grasp: lowers Seed Orb targets' DEF (flat)
+      overrides:
+        - {index: 0, target: enemy, event: "while:status:seed_orb"}
+
+    511633:   # Small Changes: squad ATK per Terra Trekker
+      overrides:
+        - {index: 0, event: always, stacks: 3, target: team}
+      note: "Mono-Terra squad: 3 stacks."
+
+    511641:   # Seed to Harvest: Ult DMG; final strike Resilience Break Efficiency
+      overrides:
+        - {index: 1, hit_tags: [ult_final]}
+
+    511642:   # Spring's Embrace: ult hits stack Ult DMG, reset after the ult
+      overrides:
+        - {index: 0, hit_tags: [ult], stacks: 3}   # GUESS: damage-weighted average (the big final hit at 5)
+
+    511643:   # Sow and Reap: ult cast -> ATK 15 s
+      overrides:
+        - {index: 0, event: "cast:self:ult"}

@@ -1,0 +1,142 @@
+# Noya (112) — Ventus Vanguard (the original Noya, not Firstlight). Hits scale with ATK (data).
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+char_id: 112
+#
+# User's friend, frame-timed at 30 fps (2026-11-03), tutorial build: Slash: Dual Strike! + Slash: Chain Slash!
+#   auto string (swing 36,04): S1 +0.20 | S2 +0.50, +0.63 | S3 stabs +1.00 .. +1.53 (5), final stab +1.73,
+#     slash +2.10, +2.73 | S4 +2.77, +2.80, +2.83 (14 hits = 1 + 2 + 8 + 3, matches the text); next string's
+#     first hit at +3.53 -> 3.33 s per string.
+#   skill (47,13): 6 hits +0.17 .. +1.13; Devastating Wind starts +1.57 (hits +1.67); Dragon Slash usable +1.97
+#     (used +3.30 in the clip: a human delay, modelled as used at once); Dragon Slash hits ~+0.6 after its cast;
+#     Devastating Wind again +1.1 after Dragon Slash; first auto hit +2.4 after Dragon Slash.
+#   skill CD: two clips (normal and dash-cancelled) both fit "CD starts 2.0 s after the skill cast".
+#   dash cancel (48,17): dash at +0.40 after 3 of 6 skill hits; Devastating Wind +0.77; Dragon Slash usable +1.50.
+#   ult (50,28): hits +0.73, +1.67; first auto hit +2.27.
+
+main:
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  mark: {hit: 112100000, tags: [cyclone]}   # Breeze trigger: a Cyclone, Param2 x3 as Ventus Mark DMG (2 more below)
+
+  procs:
+    - {event: "mark:self", hit: 112100000, count: 2, offset: 0.1, interval: 0.1, tags: [cyclone]}   # Cyclone hits 2-3 (text x3; timing GUESS)
+
+  actions:
+    auto:
+      duration: 3.333             # user-timed
+      hits:
+        - {hit: 112100001, count: 1, offset: 0.2, tags: [auto]}                          # Strike 1
+        - {hit: 112100002, count: 2, offset: 0.5, interval: 0.133, tags: [auto]}         # Strike 2 x2
+        - {hit: 112100003, count: 5, offset: 1.0, interval: 0.133, tags: [auto]}         # Strike 3: rapid stabs
+        - {hit: 112100003, count: 1, offset: 1.733, tags: [auto]}                        #   final stab
+        - {hit: 112100003, count: 1, offset: 2.1, tags: [auto]}                          #   slash
+        - {hit: 112100003, count: 1, offset: 2.733, tags: [auto]}                        #   slash
+        - {hit: 112100004, count: 1, offset: 2.767, tags: [auto, final]}                 # Strike 4 (final strike) x3
+        - {hit: 112100004, count: 2, offset: 2.8, interval: 0.033, tags: [auto]}
+
+    skill:                         # Sonic Slash x6 (text, user-counted)
+      lock: 1.567                  # user-timed: Devastating Wind starts +1.57 (with Chain Slash; GUESS without)
+      cd_start: 2.0                # user: CD starts 2.0 s after the cast (both clips, dash-cancelled too)
+      hits:
+        - {hit: 112310002, count: 6, offset: 0.167, interval: 0.193, tags: [sonic], triggers_mark: true}
+
+    ult:                           # Skyshatter Rend x2 (text, user-timed)
+      lock: 2.067                  # user-timed: first auto hit +2.27 (auto's first hit is at +0.2)
+      hits:
+        - {hit: 112400001, count: 1, offset: 0.733, tags: [rend], triggers_mark: true}
+        - {hit: 112400001, count: 1, offset: 1.667, tags: [rend], triggers_mark: true}
+        - {hit: 0, offset: 1.7, tags: [rend_end]}   # marker: the ult's hits are done (Sandstorm Crush resets here)
+
+  potentials:
+    511201:   # Slash: Dual Strike! (pink): Dragon Slash as the skill's second phase
+      add_actions:
+        dragon:
+          followup: {after: skill, delay: 0.4}   # usable +1.97 after the skill (user); with Chain Slash, Devastating Wind fills the 0.4 s
+          lock: 1.1                              # user-timed: Devastating Wind again +1.1 after Dragon Slash
+          skill_id: 11231001                     # main skill's level
+          hits:
+            - {hit: 112310122, count: 3, offset: 0.5, interval: 0.05, tags: [dragon]}   # x3 (text); "hits like 8 times" ~+0.6 (user)
+            - {hit: 112310123, count: 1, offset: 0.6, tags: [dragon]}
+      note: "Dragon Slash cast as soon as it's usable (the clip waited 1.3 s)."
+
+    511202:   # Slash: Chain Slash! (pink): Devastating Wind after the skill and after Dragon Slash; Skill DMG always on (data)
+      add_actions:
+        wind:
+          followup: {after: skill}
+          lock: 0.4                  # user-timed: Dragon Slash usable 0.4 s after Devastating Wind starts
+          skill_id: 11231001
+          hits:
+            - {hit: 112310124, count: 3, offset: 0.1, interval: 0.067, tags: [wind]}   # x4 (text); first hit +0.1 (user), spacing GUESS
+            - {hit: 112310124, count: 1, offset: 0.3, tags: [wind, wind_last]}
+        wind2:
+          followup: {after: dragon}
+          lock: 1.1                  # user-timed: first auto hit +2.4 after Dragon Slash = 1.1 + 1.1 + 0.2
+          skill_id: 11231001
+          hits:
+            - {hit: 112310124, count: 3, offset: 0.1, interval: 0.067, tags: [wind]}
+            - {hit: 112310124, count: 1, offset: 0.3, tags: [wind, wind_last]}
+
+    511203:   # Slash: Windfury! (pink): 30% per auto hit, 1/s: Multi Sword Aura x5
+      procs:
+        - {event: "hit:self:auto_dmg", chance: 0.3, icd: 1.0, hit: 112100010, count: 5, offset: 0.1, interval: 0.067, tags: [aura]}
+      note: "Energy gain not modelled."
+
+    511204:   # Slash: Blade Storm! (pink)
+      note: "Not modelled: autos turn into sword auras for 6 s after the skill (hit rate unknown)."
+
+    511205:   # Wind Slash: final auto strike or Devastating Wind -> sword auras
+      procs:
+        - {event: "hit:self:final|hit:self:wind_last", hit: 112310125, count: 4, offset: 0.1, interval: 0.1, tags: [wind_aura]}   # user: 4 auras per Devastating Wind (final auto strike assumed the same)
+      note: "4 auras per Devastating Wind (user); final auto strike assumed 4 too."
+
+    511206:   # Triple Blinks: skill / Dragon Slash cast -> sword auras
+      procs:
+        - {event: "cast:self:skill|cast:self:dragon", hit: 112310126, count: 3, offset: 0.3, interval: 0.1, tags: [blink_aura]}   # user: 3 auras per cast
+      note: "3 auras per skill / Dragon Slash cast (user)."
+
+    511207:   # Cloud Swirl: skill hits -> ATK
+      overrides:
+        - {index: 0, event: "hit:self:sonic"}
+
+    511208:   # Flurry Stance: ATK SPD stacks
+      overrides:
+        - {index: 0, drop: true}
+      note: "ATK SPD isn't modelled (auto string timing is fixed)."
+
+    511209:   # Sandstorm Crush: each auto hit -> Ultimate DMG, 10 stacks, spent by the ult (reset after its hits)
+      overrides:
+        - {index: 0, hit_tags: [rend], event: "hit:self:auto_dmg", max_stacks: 10, duration: inf, reset_on: ["marker:self:rend_end"]}
+
+    511211:   # Sunset Clouds: resilience every 10 s
+      procs:
+        - {event: "hit:self:any", hit: 0, icd: 10.0, resilience: {param: Param1}}
+
+    511213:   # Blade Dominance: Auto DMG vs distant targets
+      overrides:
+        - {index: 0, drop: true}
+      note: "Melee: 'distant targets' bonus assumed never to apply."
+
+    511210:   # Pebble Storm: each hit -> Auto DMG on that target, 10 stacks, 3 s
+      overrides:
+        - {index: 0, hit_tags: [auto], event: "hit:self:any"}
+
+    511212:   # Hero's Instinct: Skill DMG vs nearby targets (melee: always)
+      overrides:
+        - {index: 0, hit_tags: []}
+
+    511241:   # Mist Banisher
+      note: "Kill-based energy; worth 0 vs a single boss."
+
+    511242:   # Space Splitter: ult cast -> squad ATK
+      overrides:
+        - {index: 0, event: "cast:self:ult", target: team}
+
+    511243:   # Choreographed Assault: ult DMG -> ATK stacks
+      overrides:
+        - {index: 0, event: "hit:self:ult_dmg"}
+
+support:
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  actions:
+    skill:
+      hits:
+        - {hit: 112320001, count: 1, offset: 0.3, tags: [skill]}   # stub: support kit not authored

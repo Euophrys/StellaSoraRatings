@@ -1,0 +1,4 @@
+# The Knight's Smith (Terra) — all parts from EffectIds; this pins down their triggers.
+overrides:
+  - {part: melody, index: 1, event: always}                                   # main above 80% HP (as Steam Syndrome: assume always)
+  - {part: harmony1, index: 0, event: "while:on_field:support", target: main} # while a Terra support is on the battlefield

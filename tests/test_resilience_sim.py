@@ -5,7 +5,7 @@ from ssr.team import Build, load_team, TEAMS
 from ssr.effects import Modifier, Trigger
 from ssr.stats import SKILL_DMG
 
-PRE_RESILIENCE_TOTAL = 239320242.14835072   # fl_noya_skill, Build(), measured before the resilience change
+PRE_RESILIENCE_TOTAL = 222416708.8703382   # fl_noya_skill, Build(), bar off. Was 223,698,051.888 before Ripples of Nostalgia harmony 1 and Shock (A Moment in the Afternoon) got real triggers (2026-11-04). Was 239,320,242.148 before passive energy was removed (2026-11-03, user: no passive energy)
 
 
 def _with_enemy(team, **kw):
@@ -13,6 +13,7 @@ def _with_enemy(team, **kw):
 
 
 def test_bar_off_matches_pre_resilience_totals(gd, team):
+    team = replace(team, assumptions={**team.assumptions, "harmony_notes": 0, "dodge_time": 0})   # total predates notes and dodge costs
     r = simulate(gd, _with_enemy(team, resilience=0), Build())
     assert r.total == pytest.approx(PRE_RESILIENCE_TOTAL, rel=1e-12) and r.breaks == []
 
@@ -80,7 +81,9 @@ def test_form_breaker_removes_expected_resilience(gd):
     fb = simulate(gd, t, Build().with_potential(142, 514229, 1))
     casts = fb.casts[(2, "skill")]
     extra = fb.resilience_by_member[2] - base.resilience_by_member[2]
-    assert extra == pytest.approx(casts * 3.0533 * 0.004 * 250e6, rel=0.02)
+    per_cast = 3.0533 * 0.004 * 250e6
+    # the last cast's claws can fall past the fight's end (it does with no passive energy: 10 of 11 casts land)
+    assert (casts - 1) * per_cast * 0.98 <= extra <= casts * per_cast * 1.02
 
 
 def test_chance_proc_damage_is_expected_value(gd, team):

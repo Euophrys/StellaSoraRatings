@@ -4,6 +4,8 @@ melody:
   - {stat: 18, value: Param1, target: team, note: "Destiny Card bonus not modelled (0 cards)"}
 harmony2:
   - {stat: 1, pct: true, value: Param1, target: team, note: "base"}
-  - {stat: 1, pct: true, value: Param3, times: 6.33, target: team, note: "ramp: +1 stack per 8 s, max 10; 6.33 = average over a 120 s fight"}
+  - {stat: 1, pct: true, value: Param3, target: team, event: "timer:8", duration: inf, max_stacks: Param4,
+     note: "+1 stack every 8 s after the battle begins, max 10"}
 overrides:
-  - {part: harmony1, stat: 18, drop: true}   # vs targets with Ignis VUL: no VUL source in the team
+  - {part: harmony1, stat: 18, event: "while:vul:2"}   # vs Ignis VUL = an Ignis DMG Taken debuff on the target
+  - {part: harmony1, index: 1, drop: true}   # DMG taken reduction (defensive)

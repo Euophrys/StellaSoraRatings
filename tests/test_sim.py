@@ -65,8 +65,9 @@ def test_extra_cast_increases_skill_casts(gd, team):
 
 def test_ults_cast(gd, team):
     r = simulate(gd, team, Build())
-    for i in range(3):
-        assert r.casts[(i, "ult")] >= 2
+    for i in range(3):   # no passive energy (user-tested): Firefly gets 1 ult, Noya and Tilia 2
+        assert r.casts[(i, "ult")] >= 1
+    assert r.casts[(0, "ult")] >= 2
 
 
 def test_marks_trigger(gd, team):

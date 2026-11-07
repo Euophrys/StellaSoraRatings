@@ -13,7 +13,7 @@
 char_id: 144
 
 main:
-  energy_per_second: 2.0          # GUESS passive ult energy regen
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   mark: {hit: 144000001}          # Aqua Mark DMG; also inflicts Chill (status below)
 
   actions:
@@ -59,26 +59,29 @@ main:
     514401:   # Serpent's Glide (pink): after Torrent Flash, every auto strike summons a Coiling Serpent (Param1)
       add_hits:
         auto:
-          - {hit: 144311101, offset: 0.567, tags: [serpent, glide], triggers_mark: true}
-          - {hit: 144311101, offset: 1.133, tags: [serpent, glide], triggers_mark: true}
-          - {hit: 144311101, offset: 1.9, tags: [serpent, glide], triggers_mark: true}
-          - {hit: 144311101, offset: 2.867, tags: [serpent, glide], triggers_mark: true}
-          - {hit: 144311101, offset: 3.433, tags: [serpent, glide], triggers_mark: true}
-          - {hit: 144311101, offset: 4.767, tags: [serpent, glide], triggers_mark: true}
+          - {hit: 144311101, offset: 0.567, tags: [serpent, glide], triggers_mark: true, excludes: [514405]}
+          - {hit: 144311101, offset: 1.133, tags: [serpent, glide], triggers_mark: true, excludes: [514405]}
+          - {hit: 144311101, offset: 1.9, tags: [serpent, glide], triggers_mark: true, excludes: [514405]}
+          - {hit: 144311101, offset: 2.867, tags: [serpent, glide], triggers_mark: true, excludes: [514405]}
+          - {hit: 144311101, offset: 3.433, tags: [serpent, glide], triggers_mark: true, excludes: [514405]}
+          - {hit: 144311101, offset: 4.767, tags: [serpent, glide], triggers_mark: true, excludes: [514405]}
+          - {hit: 144311101, offset: 0.95, tags: [serpent, glide], triggers_mark: true, requires: [514405]}   # dodge loop: one per big strike (~0.12 s after it)
       note: "A Serpent with every auto strike (user: lasts 10+ s, longer than the skill CD, so always on); 0.17 s after the strike's first hit (user clip: with strike 1's second hit; 7949 vs 4811 auto = 52.9%/32.0%). Serpent potentials (Dance of Elegance, Aqueous Phantasm) trigger on them. Params 3-8 name missing hit rows: Param1 used for every strike."
 
     514402:   # Mirror Blade (pink): after Torrent Flash, a Mirror Image auto attacks with 60% of the multiplier
       add_hits:
         auto:
-          - {hit: 144310201, count: 2, offset: 0.4, interval: 0.1, tags: [mirror], mult: 0.6}
-          - {hit: 144310202, offset: 0.967, tags: [mirror], mult: 0.6}
-          - {hit: 144310203, offset: 1.733, tags: [mirror], mult: 0.6}
-          - {hit: 144310208, offset: 2.167, tags: [mirror], mult: 0.6}
-          - {hit: 144310204, count: 2, offset: 2.7, interval: 0.3, tags: [mirror], mult: 0.6}
-          - {hit: 144310205, count: 2, offset: 3.267, interval: 0.133, tags: [mirror], mult: 0.6}
-          - {hit: 144310209, offset: 3.967, tags: [mirror], mult: 0.6}
-          - {hit: 144310206, offset: 4.6, tags: [mirror], mult: 0.6}
-          - {hit: 144310207, offset: 4.7, tags: [mirror], mult: 0.6}
+          - {hit: 144310201, count: 2, offset: 0.4, interval: 0.1, tags: [mirror], mult: 0.6, excludes: [514405]}
+          - {hit: 144310202, offset: 0.967, tags: [mirror], mult: 0.6, excludes: [514405]}
+          - {hit: 144310203, offset: 1.733, tags: [mirror], mult: 0.6, excludes: [514405]}
+          - {hit: 144310208, offset: 2.167, tags: [mirror], mult: 0.6, excludes: [514405]}
+          - {hit: 144310204, count: 2, offset: 2.7, interval: 0.3, tags: [mirror], mult: 0.6, excludes: [514405]}
+          - {hit: 144310205, count: 2, offset: 3.267, interval: 0.133, tags: [mirror], mult: 0.6, excludes: [514405]}
+          - {hit: 144310209, offset: 3.967, tags: [mirror], mult: 0.6, excludes: [514405]}
+          - {hit: 144310206, offset: 4.6, tags: [mirror], mult: 0.6, excludes: [514405]}
+          - {hit: 144310207, offset: 4.7, tags: [mirror], mult: 0.6, excludes: [514405]}
+          - {hit: 144310206, offset: 0.833, tags: [mirror], mult: 0.6, requires: [514405]}   # dodge loop: the Mirror Image follows the dodge strikes (user)
+          - {hit: 144310207, offset: 0.933, tags: [mirror], mult: 0.6, requires: [514405]}
       note: "Mirror Image copies Chitose's auto string in step (GUESS) at 60%. Doesn't trigger Marks (text doesn't say it can)."
 
     514403:   # Cascade of Ruin (pink): Scale every 2nd cast instead of every 3rd; Scale deals Param1 x4 (skill hits above)
@@ -103,10 +106,20 @@ main:
         skill:
           - {hit: 144100006, offset: 0.55, tags: [auto, last_strike, edge_trigger]}
           - {hit: 144100007, offset: 0.65, tags: [auto, last_strike, edge_trigger]}
+      add_actions:   # ... and after every dodge: the dodge loop replaces her auto string (user 2026-11-04, 30 fps):
+        auto:          # dodge 3,18 -> big hit 4,13; 14,00 -> 14,25 + small hit 14,28 (+0.833 / +0.933 s); after the small
+                       # hit (16,28) she dodges again at once (16,29) -> next big hit 17,24. The normal string's first hit
+                       # comes 0.767 s after the last strike (3,16 -> 4,09; 7,00 -> 7,23): a big hit instead is far better.
+          duration: 0.967
+          dodge_cancel: {at: 0.0, duration: 0.967}     # each loop starts with a dodge (10 frames, already in the timings)
+          skill_id: 14410000
+          hits:
+            - {hit: 144100006, offset: 0.833, tags: [auto, last_strike, edge_trigger]}
+            - {hit: 144100007, offset: 0.933, tags: [auto, last_strike, edge_trigger]}
       overrides:
         - {index: 1, event: "hit:self:edge_trigger", icd: 1.0, duration: 3.0, hit_tags: [s1, s2, s3, s4, s5]}
         - {index: 2, drop: true}   # Param7/8 row (not in the text): duplicate
-      note: "Assumes the last strike is used after every Torrent Flash (GUESS). Edge modelled as the next ~3 s of strikes 1-5 (the first 5 strikes) rather than consumed per strike."
+      note: "Autos become a dodge loop (dodge, last strike +0.833/+0.933 s, every 0.967 s; user-timed). Also the last strike after every Torrent Flash. Edge (strikes 1-5) has nothing to boost in the loop."
 
     514406:   # Dance of Elegance: Serpent DMG -> Auto DMG stacks; and stacks on the last strike, 1/0.4 s, consumed by it
       overrides:
@@ -136,8 +149,8 @@ main:
 
     514411:   # Waltz of Ripples: ATK after dodging
       overrides:
-        - {index: 0, uptime: 0.5}   # GUESS: dodges keep it up half the fight
-      note: "Dodge frequency is a guess (50% uptime)."
+        - {index: 0, event: "dodge:main"}   # one dodge every `dodge_interval` s (user 2026-11-04: 10 s)
+      note: "One dodge every 10 s (team assumption dodge_interval)."
 
     514412:   # Adamant Scales: ATK; extra ATK when hit or casting Torrent Flash
       overrides:
@@ -161,7 +174,7 @@ main:
         - {index: 0, hit_tags: [], event: "while:status:chill"}
 
 support:
-  energy_per_second: 2.0
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   actions:
     skill:
       hits:

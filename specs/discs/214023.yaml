@@ -1,0 +1,9 @@
+# Colors Pierce the Grey (Terra) — melody and harmony 2 are scripted. Destiny Cards: 0 outside the side mode (user).
+melody:
+  - {stat: 19, value: Param1, target: team, note: "0 Destiny Cards"}
+harmony2:
+  - {stat: 57, value: Param1, target: team, note: "kill stacks: none against a single boss"}
+  - {stat: 58, value: Param1, target: team}
+overrides:
+  - {part: harmony1, index: 0, event: "while:vul:3"}   # vs Terra VUL = a Terra DMG Taken debuff on the target (user, United by Fate)
+  - {part: harmony1, index: 1, drop: true}                        # DMG taken reduction (defensive)

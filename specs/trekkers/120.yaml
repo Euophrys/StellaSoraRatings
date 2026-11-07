@@ -1,0 +1,106 @@
+# Canace (120) — Ventus Versatile. Hits scale with ATK (data).
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+char_id: 120
+#
+# User's friend, frame-timed at 30 fps (2026-11-03), tutorial build: Grants Efficient Delving + Transformative Insight.
+#   skill (55,21): Laurel Wreath's first hit +0.93 (main standing on the boss); one full spin ~1.5 s
+#     (same position at 56,19 and ~58,04); leaves +3.37.
+#   ult (23,12): hits +1.2 x2, then x2 every ~0.23 s; leaves +8.73.
+
+main:
+  actions:
+    skill:
+      hits:
+        - {hit: 120320001, count: 1, tags: [skill]}   # stub: main-role kit not authored
+    ult:
+      hits:
+        - {hit: 120400001, count: 1, tags: [ult]}
+
+support:
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  on_field: {skill: 3.367, ult: 8.733}   # user-timed
+  actions:
+    skill:                         # Laurel Halo: every 0.4 s for 6 s (text), inflicts Breeze
+      hits:
+        - {hit: 120320001, count: 15, offset: 0.933, interval: 0.4, tags: [wreath], applies_mark: true, excludes: [512021]}
+        - {hit: 120320001, count: 30, offset: 0.933, interval: 0.2, tags: [wreath], applies_mark: true, requires: [512021]}   # Efficient Delving: interval -50%
+        # full spins of the wreath (1.5 s, user-timed): 4 in 6 s; 6 with Speedup Notion (+50% rotation speed)
+        - {hit: 0, count: 4, offset: 2.433, interval: 1.5, tags: [spin], excludes: [512023]}
+        - {hit: 0, count: 6, offset: 1.933, interval: 1.0, tags: [spin], requires: [512023]}
+    ult:                           # Double Tempest: 2 cyclones x9 (text), user-timed spacing
+      hits:
+        - {hit: 120400001, count: 9, offset: 1.2, interval: 0.233, tags: [tempest]}
+        - {hit: 120400001, count: 9, offset: 1.2, interval: 0.233, tags: [tempest]}
+
+  potentials:
+    512021:   # Grants Efficient Delving (pink): interval -50% (hits above); Skill DMG
+      overrides:
+        - {index: 0, hit_tags: [wreath]}
+
+    512022:   # Grants Transformative Insight (pink): range +30%; Skill DMG
+      overrides:
+        - {index: 0, hit_tags: [wreath]}
+      note: "Range has no value vs a single boss."
+
+    512023:   # Grants Speedup Notion (pink): rotation +50% (spins above); Skill DMG
+      overrides:
+        - {index: 0, hit_tags: []}
+
+    512024:   # Grants Blooming Esthetics (pink): the wreath spins around the main and hits around her
+      add_hits:
+        skill: [{hit: 120524001, count: 4, offset: 2.433, interval: 1.5, tags: [bloom], applies_mark: true}]   # GUESS: one hit per spin
+      note: "GUESS: one hit per full spin."
+
+    512025:   # Structure Analysis: wreath DMG -> Ventus DMG Taken, 6 stacks, 8 s
+      overrides:
+        - {index: 0, event: "hit:self:wreath", target: enemy}
+
+    512026:   # Conundrum Solving: wreath Skill DMG vs elite+ (a boss)
+      overrides:
+        - {index: 0, hit_tags: [wreath]}
+
+    512027:   # Conclusion Analysis: wreath Skill DMG; after a break, Ventus DMG Taken 15 s
+      overrides:
+        - {index: 0, event: "while:broken", target: enemy}
+        - {index: 1, hit_tags: [wreath]}
+      note: "Break debuff modelled as 'while broken' (it lasts 15 s from the break, the break ~10 s)."
+
+    512028:   # High Pressure Reflux: each wreath hit (1/s) -> later Skill DMG of that cast
+      overrides:
+        - {index: 0, hit_tags: [wreath], event: "hit:self:wreath", icd: 1.0, max_stacks: 6, duration: 7.0, reset_on: ["cast:self:skill"]}
+      note: "GUESS: stacks once per second within a cast (6 max), reset on recast."
+
+    512029:   # Cyclone Acceleration: each full spin -> later Skill DMG of that cast
+      overrides:
+        - {index: 0, hit_tags: [wreath], event: "marker:self:spin", max_stacks: 6, duration: 7.0, reset_on: ["cast:self:skill"]}
+      note: "GUESS: stacks per spin within a cast, reset on recast."
+
+    512031:   # My Thoughts: ult inflicts Breeze; Ultimate DMG
+      add_hits:
+        ult: [{hit: 0, count: 4, offset: 1.2, interval: 1.0, tags: [tempest_mark], applies_mark: true}]   # GUESS: Breeze once per second
+      overrides:
+        - {index: 0, hit_tags: []}
+
+    512030:   # Storm Eye Expansion: each full spin -> main's ATK, 6 stacks, 3 s
+      overrides:
+        - {index: 0, event: "marker:self:spin", target: main}
+
+    512033:   # Finale Deduction: Canace's ATK per Ventus Trekker
+      overrides:
+        - {index: 0, event: always, stacks: 3}
+      note: "Assumes 3 Ventus Trekkers."
+
+    512041:   # Storm Suppression: ult 17x2 hits instead of 9x2
+      add_hits:
+        ult:
+          - {hit: 120400001, count: 8, offset: 3.297, interval: 0.233, tags: [tempest]}
+          - {hit: 120400001, count: 8, offset: 3.297, interval: 0.233, tags: [tempest]}
+      note: "17 ticks confirmed in game (user, tutorial build); extra ticks at the same spacing."
+
+    512042:   # Structure Shatter: ult DMG -> Ultimate DMG stacks, reset when the ult ends
+      overrides:
+        - {index: 0, event: "hit:self:ult_dmg", duration: 6.0}
+
+    512043:   # Downwind Area: ult cast -> Canace's ATK 20 s
+      overrides:
+        - {index: 0, event: "cast:self:ult"}

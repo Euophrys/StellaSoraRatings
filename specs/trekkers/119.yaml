@@ -1,0 +1,162 @@
+# Nanoha (119) — Ventus Vanguard (standard banner). Hits scale with ATK (data).
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+char_id: 119
+#
+# User, frame-timed at 30 fps (2026-11-03). Build: Whirling Blade + Bloom Dance, Wind Whispers Lv3; no Gale Rage,
+# Sun Chaser or Blossom Shower.
+#   auto string: S1 2,28 / 2,29 | S2 3,12 / 3,13 | S3 4,00 x2, 4,02 | next string's first hit 5,06
+#     -> S1 +0, +0.033 | S2 +0.467, +0.5 | S3 +1.067 x2, +1.133 | 2.267 s per string (2-2-3 darts, matches the text).
+#   skill (9,29): CD starts at the cast. Shuriken 1 thrown +0.167 (10,04), shuriken 2 +0.733 (10,21); autos
+#     resume at once (first auto 11,02 = +1.1) and keep going while the shurikens bounce. Each shuriken is thrown
+#     8 times (16 total) and they last until ~2 s are left on the CD (longer if Nanoha moves away). Round trip
+#     ~1.0-1.07 s (back in hand 11,06 / 38,03). The shuriken flies ~4 boss-widths, so not every 0.15 s tick lands:
+#     10,04 throw (Nanoha near max range, the perfect case): ticks 10,12; 10,17; 10,21; 10,26; maybe 11,02.
+#     37,03 throw (boss mid-range): ticks 37,08; 37,13; [37,18 misses, past the boss]; 37,23; 37,28; back 38,03
+#     -> 4 of 6 possible ticks.
+#     -> modelled: a throw every 1.0 s per shuriken (8 throws end ~+8 s), 4 ticks per throw at the 37,03 timing.
+#   Distant Prayer: distance threshold unknown; user: 50% uptime.
+#   ult (49,02): clones appear +0.067 / +0.1 but attack in sync; first auto hit +0.667; clone darts leave +1.967,
+#     first hit +2.067 (triggers Blossom); clone strikes +0, +0.367, +1.0 (2-2-3 like Nanoha); clones leave
+#     1:18,20 = +29.6 with Wind Whispers Lv3 (+3 s, data). Next clone string at 53,10 (+2.3 s per string).
+
+main:
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  mark: {hit: 119000001, tags: [blossom]}   # Blossom (Ventus Mark DMG)
+
+  buffs:
+    - {name: ult_cd, event: "cast:self:ult", duration: 30}   # Flowers Thrice's 30 s CD (data), for Phantom Follower
+
+  actions:
+    auto:
+      duration: 2.267             # user-timed
+      # User 2026-11-04: a chain is 17,19 -> 20,01 (2.40 s) without a dodge, 11,22 -> 13,26 (2.13 s) with a dodge that
+      # started 0.2 s after the final throw (13,02 -> dodge 13,08): dodging at the end is ~0.27 s faster even when late,
+      # so she dodges after every string (free dodges; they replace the periodic ones). String: 2.267 - 0.267 = 2.0 s.
+      dodge_cancel: {at: 1.4, duration: 2.0}
+      hits:
+        - {hit: 119100001, count: 1, offset: 0.2, tags: [auto, basic, strike]}               # Strike 1 x2
+        - {hit: 119100001, count: 1, offset: 0.233, tags: [auto, basic]}
+        - {hit: 119100002, count: 1, offset: 0.667, tags: [auto, basic, strike]}             # Strike 2 x2
+        - {hit: 119100002, count: 1, offset: 0.7, tags: [auto, basic]}
+        - {hit: 119100003, count: 1, offset: 1.267, tags: [auto, basic, strike]}             # Strike 3 x3
+        - {hit: 119100003, count: 1, offset: 1.267, tags: [auto, basic]}
+        - {hit: 119100003, count: 1, offset: 1.333, tags: [auto, basic]}
+
+    skill:                         # Flowers Dance: 2 shurikens x 8 throws, 1.0 s per throw (user: ~8 s in all)
+      lock: 0.9                    # user-timed: first auto hit +1.1 (the auto's first hit is at +0.2)
+      hits:
+        # shuriken 1, thrown +0.167
+        - {hit: 0, count: 8, offset: 0.167, interval: 1.0, tags: [throw]}   # marker per throw (Gale Rage)
+        - {hit: 119310001, count: 8, offset: 0.434, interval: 1.0, tags: [shuriken], triggers_mark: true, excludes: [511903]}   # no Whirling Blade: one hit going out (user)
+        - {hit: 119310001, count: 8, offset: 0.9, interval: 1.0, tags: [shuriken], triggers_mark: true, excludes: [511903]}   # no Whirling Blade: one hit coming back (user)
+        - {hit: 119310001, count: 8, offset: 0.334, interval: 1.0, tags: [shuriken], triggers_mark: true, requires: [511903]}   # Whirling Blade tick (user: 4 of 6 land)
+        - {hit: 119310001, count: 8, offset: 0.5, interval: 1.0, tags: [shuriken], triggers_mark: true, requires: [511903]}   # Whirling Blade tick (user: 4 of 6 land)
+        - {hit: 119310001, count: 8, offset: 0.834, interval: 1.0, tags: [shuriken], triggers_mark: true, requires: [511903]}   # Whirling Blade tick (user: 4 of 6 land)
+        - {hit: 119310001, count: 8, offset: 1.0, interval: 1.0, tags: [shuriken], triggers_mark: true, requires: [511903]}   # Whirling Blade tick (user: 4 of 6 land)
+        # shuriken 2, thrown +0.733
+        - {hit: 0, count: 8, offset: 0.733, interval: 1.0, tags: [throw]}   # marker per throw (Gale Rage)
+        - {hit: 119310001, count: 8, offset: 1.0, interval: 1.0, tags: [shuriken], triggers_mark: true, excludes: [511903]}   # no Whirling Blade: one hit going out (user)
+        - {hit: 119310001, count: 8, offset: 1.466, interval: 1.0, tags: [shuriken], triggers_mark: true, excludes: [511903]}   # no Whirling Blade: one hit coming back (user)
+        - {hit: 119310001, count: 8, offset: 0.9, interval: 1.0, tags: [shuriken], triggers_mark: true, requires: [511903]}   # Whirling Blade tick (user: 4 of 6 land)
+        - {hit: 119310001, count: 8, offset: 1.066, interval: 1.0, tags: [shuriken], triggers_mark: true, requires: [511903]}   # Whirling Blade tick (user: 4 of 6 land)
+        - {hit: 119310001, count: 8, offset: 1.4, interval: 1.0, tags: [shuriken], triggers_mark: true, requires: [511903]}   # Whirling Blade tick (user: 4 of 6 land)
+        - {hit: 119310001, count: 8, offset: 1.566, interval: 1.0, tags: [shuriken], triggers_mark: true, requires: [511903]}   # Whirling Blade tick (user: 4 of 6 land)
+
+    ult:                           # Flowers Thrice: summons the clones (pool below)
+      lock: 0.467                  # user-timed: first auto hit +0.667
+      hits: []
+
+  minions:
+    clone:                         # 2 stationary clones, in sync (user). Not minions: Ult DMG rows, Nanoha's stats (user: no Minion DMG)
+      summon: {event: "cast:self:ult", offset: 0.067, every: 0.0, count: 2}
+      max: 2
+      duration: 26.53              # user: gone +29.6 with Wind Whispers Lv3 (+3) -> 26.6 s base (text: 25 s)
+      at_max: replace
+      windup: 2.0                  # user: first darts leave +1.967, first hit +2.067
+      interval: 0.767              # user: strikes +0, +0.367, +1.0, next string +2.3 -> 2.3 s / 3 strikes
+      attacks:
+        - {hit: 119900001, count: 2, interval: 0.033, tags: [clone], triggers_mark: true}
+        - {hit: 119900002, count: 2, interval: 0.033, tags: [clone], triggers_mark: true}
+        - {hit: 119900003, count: 3, interval: 0.033, tags: [clone], triggers_mark: true}
+
+  potentials:
+    511901:   # Growth Tempest (pink): every 3 auto hits -> an AoE auto hit (user: hits, not strikes)
+      procs:
+        - {event: "hit:self:basic", every: 3, hit: 119501001, offset: 0.1, tags: [auto, tempest]}
+
+    511902:   # Blossom Flurry (pink): each auto strike also fires 3 piercing shurikens (user: on top of the darts)
+      procs:
+        - {event: "hit:self:strike", hit: 119502001, count: 3, offset: 0.1, interval: 0.033, tags: [auto, basic, flurry_shuriken]}
+      note: "Always on: the 10 s window equals the skill CD (user). The shurikens count for Growth Tempest (user: it can fire twice per strike). Spacing GUESS."
+
+    511903:   # Whirling Blade (pink): shuriken hits every 0.15 s (hits gated in the skill)
+      note: "4 ticks per throw (user: 4 of 6 possible ticks land; the perfect case 4-5)."
+
+    511904:   # Bloom Dance (pink): shuriken range +50%, Skill DMG on the shuriken (data)
+      overrides:
+        - {index: 0, hit_tags: [shuriken]}
+
+    511905:   # Gale Rage: each throw -> ATK SPD + Auto DMG, 5 s, 3 stacks
+      overrides:
+        - {index: 0, drop: true}
+        - {index: 1, event: "marker:self:throw"}
+      note: "ATK SPD isn't modelled (auto string timing is fixed)."
+
+    511906:   # Phantom Follower: Auto DMG per clone (2 max); Auto DMG while the ult is on cooldown
+      overrides:
+        - {index: 0, hit_tags: [auto], event: "while:status:clone", per_stack: true, max_stacks: 2}
+        - {index: 1, hit_tags: [auto], event: "while:status:ult_cd"}
+
+    511907:   # Sun Chaser: 30% on DMG -> ATK SPD + ATK 5 s
+      overrides:
+        - {index: 0, drop: true}
+        - {index: 1, event: "hit:self:any"}
+      note: "Treated as a proc on every hit (several hits a second: ~always up). ATK SPD isn't modelled."
+
+    511908:   # Distant Prayer: shuriken Skill DMG while far from Nanoha
+      overrides:
+        - {index: 0, hit_tags: [shuriken], event: unknown, uptime: 0.5}
+      note: "50% uptime (user: distance threshold unknown)."
+
+    511909:   # Splendid Vortex: the skill triggers a Mark -> shuriken Skill DMG, 3 s, 3 stacks
+      overrides:
+        - {index: 0, hit_tags: [shuriken], event: "mark:self&recent:shuriken:0.05"}
+
+    511910:   # Blossom Shower: skill cast -> each clone (up to 2) throws a shuriken; ult cast -> Skill DMG 30 s
+      procs:
+        - {event: "cast:self:skill", when: "while:status:clone", hit: 119510001, offset: 0.667, tags: [clone_shuriken]}   # user: skill 37,13, shurikens appear 37,20, hit 38,03
+        - {event: "cast:self:skill", when: "while:status:clone>=2", hit: 119510001, offset: 0.667, tags: [clone_shuriken]}
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+
+    511911:   # Sky Piercer: skill cast -> ATK 10 s
+      overrides:
+        - {index: 0, event: "cast:self:skill"}
+
+    511912:   # Blooming Flowers: Mark trigger -> ATK 2 s, 6 stacks
+      overrides:
+        - {index: 0, event: "mark:self"}
+
+    511913:   # Starlit Dash: dodge -> ATK 4 s
+      overrides:
+        - {index: 0, event: "dodge:main"}   # one dodge every `dodge_interval` s (user 2026-11-04: 10 s)
+
+    511941:   # Blossom Rhyme: clones follow the main; clone ATK +% (text says %, decodes as flat)
+      overrides:
+        - {index: 0, pct: true, hit_tags: [clone]}
+      note: "Following into combat isn't modelled (one boss, no field switching)."
+
+    511942:   # Infinite Shade: Ult DMG (data) + a third clone
+      minion_rules:
+        clone: {count: 3, max: 3}
+
+    511943:   # Wind Whispers: ATK (data) + clone lifetime
+      minion_rules:
+        clone: {duration_add: {param: Param1}}
+
+support:
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  actions:
+    skill:
+      hits:
+        - {hit: 119320001, count: 1, offset: 0.3, tags: [skill]}   # stub: support kit not authored

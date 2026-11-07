@@ -1,0 +1,4 @@
+# Meow Rhythm (Umbra) — all parts from EffectIds; this pins down their triggers.
+overrides:
+  - {part: melody, index: 1, event: "cast:element6:skill"}                 # a Umbra Trekker's skill cast -> Umbra Ult DMG, 5 s
+  - {part: harmony1, index: 0, event: "mark:element6", minions: true}      # Umbra Mark triggered (Marks are per element) -> ATK (and Minions), 4 s

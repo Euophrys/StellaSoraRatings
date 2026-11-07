@@ -1,0 +1,12 @@
+# Sky, Flowers, Poem (Ventus) — all parts come from EffectIds; this pins down their triggers.
+# Laceration: a 35% chance per non-Auto Ventus hit, 8 s. With frequent hits it's near-permanent, modelled as
+# every 3rd such hit (as Shock in A Moment in the Afternoon). It's re-written as a named status so harmony 1 can test it.
+melody:
+  - {stat: 38, value: Param3, name: laceration, target: enemy, every: 3, duration: Param4,
+     event: "hit:element4:skill_dmg|hit:element4:ult_dmg|hit:element4:mark_dmg|hit:element4:minion_dmg",
+     note: "Laceration: 35% chance per non-Auto hit"}
+overrides:
+  - {part: melody, index: 1, drop: true}                                  # the data copy of Laceration (re-written above)
+  - {part: melody, index: 2, drop: true}                                  # DMG taken reduction (defensive)
+  - {part: harmony1, index: 0, event: "while:status:laceration"}          # Ult DMG vs Laceration targets
+  - {part: harmony2, index: 0, drop: true}                                # needs kills: none against a single boss

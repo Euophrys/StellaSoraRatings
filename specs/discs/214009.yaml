@@ -1,0 +1,7 @@
+# New Star Prelude (Ventus). Melody's shield (EffectType 42) is a 20 s timer from battle start (data: Trigger 19,
+# condition 29, param 20), lasting 15 s. Tracked as a status; assumed not broken (no damage taken in the sim).
+melody:
+  - {stat: 0, value: 0, name: prelude_shield, target: main, event: "timer:20", duration: Param3}
+overrides:
+  - {part: harmony1, index: 0, event: "timer:20", duration: 12}               # main gains the shield -> Ventus DMG, 12 s
+  - {part: harmony2, index: 0, event: "while:status:prelude_shield"}          # Ventus Skill hits while the main is shielded

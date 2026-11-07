@@ -1,0 +1,4 @@
+# Vent It Out ♥ (Terra) — all parts from EffectIds; this pins down harmony 1's trigger.
+# Melody's "restore 15 Energy at the start of battle" (EffectType 34) is read from data as starting Energy.
+overrides:
+  - {part: harmony1, stat: 1, event: "cast:element3:ult", minions: true}   # Terra Trekker's ult -> Terra ATK (and Minions), 30 s, 3 stacks

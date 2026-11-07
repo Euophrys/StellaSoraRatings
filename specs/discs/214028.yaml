@@ -1,0 +1,7 @@
+# Daylight Garden (Ventus) — melody and harmony 1 from EffectIds; harmony 2 is scripted.
+harmony2:
+  - {stat: 38, value: Param2, target: enemy, event: "hit:main:any", every: Param1, duration: Param3, icd: Param4,
+     note: "after every 10 main hits, once per 10 s"}
+overrides:
+  - {part: melody, index: 2, event: "mark:element4", target: main}          # Ventus Mark triggered -> main's Ventus DMG, 4 s
+  - {part: harmony1, index: 1, event: "hit:main:ult_dmg", target: main}     # main's Ult DMG -> her Ventus DMG, 20 s

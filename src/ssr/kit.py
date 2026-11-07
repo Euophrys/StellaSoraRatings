@@ -51,6 +51,8 @@ class Followup:
     event: str = ""        # or: cast after every Nth matching event (e.g. "hit:self:glow")
     delay: float = 0.0     # seconds after `after`'s lock ends before it's cast (input / animation gap)
     autos: bool = False    # the main auto attacks during the delay
+    dodge_at: float | None = None   # the main dodge-cancels `after` at this offset from its cast, cutting later hits ...
+    dodge_duration: float = 0.0     # ... and this is cast this long after it (team assumption dodge_cancel, default on)
 
 
 @dataclass
@@ -62,8 +64,11 @@ class ActionSpec:
     skill_id: int | None = None
     followup: Followup | None = None
     starts_cd: str = ""    # casting this (re)starts that action's cooldown from the end of this one's lock
+    cd_start: float = 0.0  # this action's own cooldown starts this many seconds after its cast
     charges: int = 0       # uses that can be stored (0 = Skill.SectionAmount from data, else 1)
     use_interval: float | None = None   # min seconds between uses of stored charges (None = Skill.UseInterval)
+    dodge_at: float | None = None   # the main dodge-cancels this action at this offset (auto: the string's recovery; cast: cuts later hits) ...
+    dodge_duration: float = 0.0     # ... and it then lasts this long (team assumption dodge_cancel, default on)
 
 
 @dataclass
@@ -128,6 +133,7 @@ class BuffSpec:
     add: object = 1            # stacks added per event
     requires: tuple = ()       # only with any of these potentials
     excludes: tuple = ()       # not with any of these potentials
+    requires_all: tuple = ()   # only with all of these potentials
     minions: bool = False      # also reaches the owner's minions
 
 
@@ -145,6 +151,7 @@ class Kit:
     role: str
     actions: dict[str, ActionSpec]
     mark_hit: int | None = None
+    mark_hit_tags: tuple[str, ...] = ()   # extra tags on the Mark hit (e.g. Noya's Cyclone), for "a Mark that inflicts X"
     energy_per_second: float = 0.0
     energy_conv: float = 1.0
     potentials: dict[int, PotentialSpec] = field(default_factory=dict)
@@ -196,9 +203,14 @@ def _action(name: str, d: dict, skill_id: int | None) -> ActionSpec:
         name=name, hits=[_hitspec(h) for h in d.get("hits", [])],
         lock=float(d.get("lock", DEFAULT_LOCKS.get(name, 0.0))), duration=float(d.get("duration", 0.0)),
         skill_id=d.get("skill_id", skill_id),
-        followup=Followup(fu.get("after", ""), fu.get("every", 1), fu.get("event", ""), float(fu.get("delay", 0.0)), bool(fu.get("autos", False))) if fu else None,
-        starts_cd=str(d.get("starts_cd", "")), charges=int(d.get("charges", 0)),
+        followup=Followup(fu.get("after", ""), fu.get("every", 1), fu.get("event", ""), float(fu.get("delay", 0.0)), bool(fu.get("autos", False)),
+                          float(fu["dodge_cancel"]["at"]) if fu.get("dodge_cancel") else None,
+                          float(fu["dodge_cancel"]["duration"]) if fu.get("dodge_cancel") else 0.0) if fu else None,
+        starts_cd=str(d.get("starts_cd", "")), cd_start=float(d.get("cd_start", 0.0)),
+        charges=int(d.get("charges", 0)),
         use_interval=float(d["use_interval"]) if "use_interval" in d else None,
+        dodge_at=float(d["dodge_cancel"]["at"]) if d.get("dodge_cancel") else None,
+        dodge_duration=float(d["dodge_cancel"]["duration"]) if d.get("dodge_cancel") else 0.0,
     )
 
 
@@ -245,6 +257,7 @@ def _buff(b: dict) -> BuffSpec:
                     name=b.get("name", ""), add=b.get("add", 1),
                     requires=tuple(int(x) for x in b.get("requires", ())),
                     excludes=tuple(int(x) for x in b.get("excludes", ())),
+                    requires_all=tuple(int(x) for x in b.get("requires_all", ())),
                     minions=bool(b.get("minions", False)))
 
 
@@ -267,6 +280,7 @@ def load_kit(gd: GameData, path: Path, role: str) -> Kit:
     return Kit(
         char_id=char_id, role=role, actions=actions,
         mark_hit=int(mark["hit"]) if mark else None,
+        mark_hit_tags=tuple(mark.get("tags", ())) if mark else (),
         energy_per_second=float(sec.get("energy_per_second", 0.0)),
         energy_conv=gd.table("Character")[str(char_id)].get("EnergyConvRatio", 10000) / 10000,
         potentials={int(k): _potential(v) for k, v in (sec.get("potentials") or {}).items()},
@@ -319,6 +333,8 @@ def _apply_override(gd, m: Modifier, s: dict, level: int, pot: dict) -> Modifier
         kw["stat"] = int(s["as_stat"])
     if "minions" in s:
         kw["minions"] = bool(s["minions"])
+    if "pct" in s:   # e.g. an attribute that decodes as flat ATK but the text says "ATK by 39%"
+        kw["is_pct"] = bool(s["pct"])
     if "stacks" in s:  # constant stack count folded into the value
         n = (m.trigger.max_stacks if (s["stacks"] == "max" and m.trigger) else value(gd, s["stacks"], level, pot))
         kw["value"] = m.value * n
@@ -412,7 +428,8 @@ def resolve_buffs(gd: GameData, kit: Kit, skill_levels: dict[str, int], owned: s
     out = []
     owned = owned or set()
     for b in (kit.buffs if buffs is None else buffs):
-        if (b.requires and not any(r in owned for r in b.requires)) or any(e in owned for e in b.excludes):
+        if ((b.requires and not any(r in owned for r in b.requires)) or any(e in owned for e in b.excludes)
+                or not all(r in owned for r in b.requires_all)):
             continue
         lv = skill_levels.get(b.level, 10)
         dur = math.inf if b.duration == "inf" else value(gd, b.duration, lv)

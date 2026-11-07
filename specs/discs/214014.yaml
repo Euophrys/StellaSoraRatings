@@ -1,0 +1,7 @@
+# Sweet Times (Terra). Melody's shield (EffectType 42): any Terra Mark triggered, 20 s, once per 20 s.
+# Tracked as a status, assumed not broken (as Voyage Blueprint).
+melody:
+  - {stat: 0, value: 0, name: sweet_shield, target: main, event: "mark:element3", duration: Param3, icd: Param4}
+overrides:
+  - {part: harmony1, index: 0, event: "mark:element3", icd: 20, duration: 12}                         # main gains the shield -> Terra DMG, 12 s
+  - {part: harmony2, index: 0, event: "cast:element3:ult&while:status:sweet_shield", target: team}     # Terra ult while shielded -> squad Skill DMG, 15 s

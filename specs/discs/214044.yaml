@@ -1,0 +1,12 @@
+# Veiled Dawn of Spring (Terra). Melody's Skill DMG comes from an EffectId; Spring Blossom and the harmonies are scripted.
+melody:
+  - {stat: 61, value: Param2, name: spring_blossom, target: enemy, event: "hit:class2/element3:skill_dmg", duration: Param3,
+     note: "Spring Blossom: Terra Skill DMG Taken (as Skill DMG Taken)"}
+harmony1:
+  - {stat: 78, value: Param1, target: "class:2", note: "Terra Versatile Trekkers' Skill Crit DMG"}
+  - {stat: 57, value: Param2, target: main, event: "while:status:spring_blossom"}
+harmony2:
+  - {stat: 57, value: Param2, target: team, event: "hit:main:any&while:status:spring_blossom", every: Param1, duration: Param3,
+     note: "after every 10 main hits on a Spring Blossom target"}
+overrides:
+  - {part: melody, index: 0, target: support}   # Support Terra Trekkers' Skill DMG

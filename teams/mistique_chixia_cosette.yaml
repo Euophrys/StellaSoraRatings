@@ -85,6 +85,7 @@ reference:
 assumptions:
   unknown_trigger_uptime: 1
   disc_stats_target: team
+  dodge_spam: {interval: 3, potentials: [513512]}   # user 2026-11-04: weak autos, so with Decisive Moment she dodges on cooldown (3 s)
 budget_total: 60
 budget:
 - 30

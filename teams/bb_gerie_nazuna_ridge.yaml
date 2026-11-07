@@ -1,0 +1,36 @@
+# Boss Blitz variant of teams/gerie_nazuna_ridge.yaml (Lithe Beauty, 180 s, breaks on)
+# Gerie (main) / Nazuna / Ridge, all Terra. User timings 2026-11-03 (specs/trekkers/149, 156, 116).
+# Compared against teams/nazuna_gerie_ridge.yaml (same Trekkers, Nazuna main).
+name: bb_gerie_nazuna_ridge
+fight_length: 180
+tick: 0.05
+mark_icd: 1.0
+enemy:
+  preset: lithe_beauty   # Boss Blitz: 180 s, resilience bar and breaks, boss ability
+
+members:
+  - trekker: Gerie
+    role: main
+    pinks: [Avalanche of Stone, Beyond All Control]
+    skill_levels: {auto: 10, skill: 10, ult: 10}
+    emblems: []
+  - trekker: Nazuna
+    role: support
+    pinks: [Arrow of Affection, Sweetheart Bloom]
+    skill_levels: {skill: 10, ult: 10}
+    emblems: []
+  - trekker: Ridge
+    role: support
+    pinks: [Reblossom, Sense the Stir]
+    skill_levels: {skill: 10, ult: 10}
+    emblems: []
+
+discs:   # filler for both orders, so the comparison is about the kits
+  main: [filler, filler, filler]
+  support: [filler, filler, filler]
+
+reference: {steps: 2, main_picks: 2, support_picks: 1, level: 6}
+
+assumptions:
+  unknown_trigger_uptime: 1.0
+  disc_stats_target: team

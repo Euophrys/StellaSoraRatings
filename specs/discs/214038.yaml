@@ -4,3 +4,5 @@ harmony2:
 overrides:
   # Melody's Lux DMG Taken debuff fires when the main deals *Ultimate DMG* (text). Data can't say so.
   - {part: melody, stat: 39, event: "hit:main:ult_dmg"}
+  - {part: harmony1, index: 2, event: "hit:main:skill_dmg", target: main}   # main's Skill DMG -> +Auto DMG, 6 s
+  - {part: harmony1, index: 3, event: "hit:main:skill_dmg", target: main}   # ... and +Skill DMG, 6 s

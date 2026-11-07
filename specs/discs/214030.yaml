@@ -1,5 +1,11 @@
 # A Moment in the Afternoon — all parts come from EffectIds; this pins down their triggers.
+# Shock: 35% chance when a Lux Trekker deals non-Auto DMG, 8 s. Teams land many such hits, so near-permanent
+# (every 3rd hit). Re-written as a named status so harmony 1 ("vs Shocked targets") can test it.
+melody:
+  - {stat: 39, value: Param3, name: shock, target: enemy, every: 3, duration: Param4,
+     event: "hit:element5:skill_dmg|hit:element5:ult_dmg|hit:element5:mark_dmg|hit:element5:minion_dmg"}
 overrides:
-  # Shock: 35% chance when a Lux Trekker deals non-Auto DMG, 8 s. Teams land many such hits, so near-permanent.
-  - {part: melody, stat: 39, event: "hit:element5:skill_dmg|hit:element5:ult_dmg|hit:element5:mark_dmg", every: 3}
-  - {part: harmony2, stat: 21, drop: true}   # needs kills on Shocked targets: none against a single boss
+  - {part: melody, stat: 39, drop: true}                         # the data copy of Shock (re-written above)
+  - {part: melody, index: 2, drop: true}                         # DMG taken reduction (defensive)
+  - {part: harmony1, index: 0, event: "while:status:shock"}      # Lux Skill DMG vs Shocked targets
+  - {part: harmony2, stat: 21, drop: true}                       # needs kills on Shocked targets: none against a single boss

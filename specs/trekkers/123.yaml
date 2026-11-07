@@ -1,0 +1,117 @@
+# Ann (123) — Ventus Support. Hits scale with ATK (data).
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+char_id: 123
+#
+# User's friend, frame-timed at 30 fps (2026-11-03), tutorial build: Gale Bastion + Wind Banish.
+#   skill (53,11): hits +0.77 and +0.83 ("again with bigger numbers"); Wind Banish pulses +2.83, +3.83 (1/s);
+#     on the battlefield 9,27 -> 12,15 = 2.6 s.
+#   ult (59,04): a buff on Noya +0.87 (shield, Overlord's Warcry), hit +0.97; leaves +3.07.
+
+main:
+  actions:
+    skill:
+      hits:
+        - {hit: 123320001, count: 1, tags: [skill]}   # stub: main-role kit not authored
+    ult:
+      hits:
+        - {hit: 123300001, count: 1, tags: [ult]}
+
+support:
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
+  on_field: {skill: 2.6, ult: 3.067}   # user-timed
+  actions:
+    skill:                         # Wind Barrier: a wall of wind for 8 s that keeps inflicting Breeze
+      hits:
+        - {hit: 123320001, count: 1, offset: 0.767, tags: [barrier], applies_mark: true}
+        # Breeze from the wall, no damage: GUESS once per second while it stands
+        - {hit: 0, count: 8, offset: 1.0, interval: 1.0, tags: [wall_tick], applies_mark: true}
+    ult:                           # Call of the Wild
+      hits:
+        - {hit: 123300001, count: 1, offset: 0.967, tags: [howl], applies_mark: true}
+
+  buffs:
+    - effect: 12393005             # Wind Barrier cast: squad ATK (skill level), 15 s
+      level: skill
+      event: "cast:self:skill"
+      duration: {ref: "BuffValue,NoLevel,12393015,Time,10K"}
+      target: team
+    - name: wall                   # a wall of wind is on the battlefield (8 s, text)
+      level: skill
+      event: "cast:self:skill"
+      duration: 8.8                # 8 s from when it appears (~+0.8)
+      target: self
+
+  potentials:
+    512321:   # Gale Bastion (pink): 2 more walls
+      add_hits:
+        skill: [{hit: 123320001, count: 2, offset: 0.833, interval: 0.0, tags: [barrier], applies_mark: true}]   # GUESS: each wall deals the cast hit (user: a 2nd, bigger number at +0.83)
+      note: "Assumes all 3 walls hit the boss."
+
+    512322:   # Warm Wind Guard (pink): main passes through the wall -> ATK 4 s, 2 s ICD
+      overrides:
+        - {index: 0, event: "while:status:wall", target: main}
+      note: "Assumes the main is in the wall whenever one stands."
+
+    512323:   # Wind Banish (pink): the wall pulses AoE Skill DMG; each pulse -> Ventus DMG Taken 6 s
+      add_hits:
+        skill:
+          - {hit: 123320002, count: 8, offset: 2.833, interval: 1.0, tags: [banish], applies_mark: true}                         # user: 8 pulses, +2.83, 1/s
+          - {hit: 123320002, count: 8, offset: 2.833, interval: 1.0, mult: 2.0, tags: [banish], applies_mark: true, requires: [512321]}   # GUESS: the 2 extra walls pulse too
+      overrides:
+        - {index: 0, event: "hit:self:banish", target: enemy}
+
+    512324:   # Downwind Journey (pink): main's projectiles through the wall
+      overrides:
+        - {index: 0, drop: true}
+      note: "Projectile-only; Noya is melee."
+
+    512325:   # Burdening Pressure: lowers the target's ATK (defensive)
+      overrides:
+        - {index: 0, drop: true}
+      note: "Defensive; no damage value."
+
+    512326:   # Windgate Barrier: skill cast -> main's ATK 15 s
+      overrides:
+        - {index: 0, event: "cast:self:skill", target: main}
+
+    512327:   # Leveraged Boost: wall blocks projectiles -> main's ATK
+      overrides:
+        - {index: 0, drop: true}
+      note: "Needs the boss to fire projectiles into the wall; assumed never."
+
+    512328:   # Turbulent Flow: Wind Barrier DMG -> Ventus DMG Taken, 2 stacks, 8 s
+      overrides:
+        - {index: 0, event: "hit:self:skill_dmg", target: enemy}
+
+    512330:   # Wind Erosion Havoc: targets near the wall take more Ventus DMG
+      overrides:
+        - {index: 0, event: "while:status:wall", target: enemy}
+
+    512331:   # Storm Repel: Wind Barrier Skill DMG
+      overrides:
+        - {index: 0, hit_tags: []}
+
+    512332:   # Violent Current: main's ATK while a wall stands
+      overrides:
+        - {index: 0, event: "while:status:wall", target: main}
+
+    512329:   # Speed Surge: main passes through the wall -> ATK SPD + Ventus DMG 5 s
+      overrides:
+        - {index: 0, drop: true}
+        - {index: 1, event: "while:status:wall", target: main}
+      note: "ATK SPD not modelled; assumes the main is in the wall whenever one stands."
+
+    512333:   # Forest Princess' Blessing: 35% chance a random ally gets Ventus DMG
+      overrides:
+        - {index: 0, hit_tags: [], event: unknown, uptime: 0.117, target: main}
+      note: "GUESS: 35% x 1/3 (random ally) as the main's expected uptime."
+
+    512341:   # Overlord's Warcry: shield
+      note: "Shield; no damage value."
+
+    512342:   # Mountain's Entice: Ann's Ultimate DMG (always on)
+      overrides:
+        - {index: 0, event: always}
+
+    512343:   # Impulsive Devourer: energy when the ult blocks projectiles
+      note: "Needs projectiles; not modelled."

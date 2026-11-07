@@ -11,7 +11,7 @@ char_id: 162
 #   ult (3,27): control back at +3.23.
 
 main:
-  energy_per_second: 2.0          # GUESS passive ult energy regen
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   mark: {hit: 162000001}          # Lucent: Lux Mark DMG when Noya triggers a Mark
 
   actions:
@@ -166,7 +166,7 @@ main:
       note: "Energy restore not modelled."
 
 support:
-  energy_per_second: 2.0          # GUESS
+  energy_per_second: 0.0          # user-tested 2026-11-03: no passive energy, all energy comes from hits
   actions:
     skill:
       hits:

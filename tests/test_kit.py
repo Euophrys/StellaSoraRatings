@@ -99,3 +99,17 @@ def test_noya_glimmer_buffs(gd):
     assert g.trigger.event == "mark:self" and g.trigger.max_stacks == 3 and g.trigger.duration == 6
     a = [m for m in b if m.stat == DMG and "auto" in m.hit_tags][0]
     assert a.value == pytest.approx(0.12) and a.trigger.event == "while:status:glimmer" and a.trigger.per_stack
+
+
+def test_buff_requires_all_gerie_lethal(gd):
+    """Gerie's Lethal lasts 8.5 s, +4 s with Lingering Hunger, x1.5 cage with Piercing Sorrow; both: 16.75 s."""
+    from ssr.kit import resolve_buffs
+    k = load_kit(gd, SPECS / "149.yaml", "main")
+
+    def lethal(owned):
+        return sorted(m.trigger.duration for m in resolve_buffs(gd, k, {"skill": 10}, owned) if m.name == "lethal")
+
+    assert lethal(set()) == [8.5]
+    assert lethal({514907}) == [12.5]
+    assert lethal({514910}) == [12.75]
+    assert lethal({514907, 514910}) == [16.75]

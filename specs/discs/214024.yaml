@@ -1,0 +1,7 @@
+# One, Two, Three, Jump! (Ventus) — melody and harmony 1 from EffectIds; harmony 2 is scripted.
+harmony2:
+  - {stat: 57, value: Param1, target: support, event: "mark_applied:support/element4", duration: Param2,
+     note: "the inflicting support's Skill DMG; applied to both supports"}
+overrides:
+  - {part: melody, index: 0, event: "hit:element4:ult_dmg"}                 # any Ventus Ult DMG -> Ventus squad Skill DMG, 3 s
+  - {part: harmony1, index: 1, event: "mark:element4", minions: true}       # Ventus Mark triggered -> ATK (and Minions), 3 s
