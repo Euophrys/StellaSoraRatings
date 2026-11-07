@@ -14,7 +14,7 @@ import yaml
 
 from ..data import GameData
 from ..sharecode import SharePreset, decode_share, encode_share
-from ..guide import emblem_table, optimize, potential_grid, rank_pinks
+from ..guide import emblem_table, optimize, potential_grid, rank_pinks, without_breaks
 from ..sim import simulate
 from ..team import TEAMS, TeamConfig, TeamDocError, save_team, team_build, team_from_doc
 from .catalog import catalog
@@ -54,25 +54,26 @@ def _name_targets(gd: GameData, team: TeamConfig, build) -> list[dict[str, int]]
     return [{gd.item_name(p): lv for p, lv in sorted(build.levels_for(m.char_id).items())} for m in team.members]
 
 
-def _recalc(gd: GameData, team: TeamConfig):
+def _recalc(gd: GameData, team: TeamConfig, breaks: bool):
     build = team_build(team)
+    rated = team if breaks else without_breaks(team)
 
     def run(progress):
-        grid = potential_grid(gd, team, build, progress=progress)
+        grid = potential_grid(gd, rated, build, progress=progress)
         emblems = {}
         for i in range(len(team.members)):
             def p(phase, done, total, i=i):
                 progress(f"emblems: {gd.char_name(team.members[i].char_id)}", done, total)
-            emblems[str(i)] = [asdict(r) for r in emblem_table(gd, team, build, i, progress=p)]
-        r = simulate(gd, team, build)
+            emblems[str(i)] = [asdict(r) for r in emblem_table(gd, rated, build, i, progress=p)]
+        r = simulate(gd, team, build)   # the total and break count always include breaks: they compare with in-game runs
         return {"grid": {f"{i}:{pid}": v for (i, pid), v in grid.items()}, "emblems": emblems, "total": r.total,
                 "breaks": len(r.breaks)}
     return run
 
 
-def _optimize(gd: GameData, team: TeamConfig, split, max_level, total=None, breaks=False):
+def _optimize(gd: GameData, team: TeamConfig, split, max_level, total=None):
     def run(progress):
-        r = optimize(gd, team, split, max_level=max_level, progress=progress, total=total, breaks=breaks)
+        r = optimize(gd, team, split, max_level=max_level, progress=progress, total=total)
         return {"targets": _name_targets(gd, team, r.build), "total": r.total, "base_total": r.base_total,
                 "method": r.method}
     return run
@@ -101,8 +102,15 @@ class App:
     def start_job(self, body: dict) -> dict:
         kind = body.get("kind")
         gd = self.gd
+        breaks = body.get("breaks", False)
+        if not isinstance(breaks, bool):
+            raise ApiError(400, "breaks must be true or false")
+
+        def rated(team: TeamConfig) -> TeamConfig:
+            return team if breaks else without_breaks(team)
+
         if kind == "recalc":
-            fn = _recalc(gd, _team(gd, body.get("state")))
+            fn = _recalc(gd, _team(gd, body.get("state")), breaks)
         elif kind == "optimize":
             team = _team(gd, body.get("state"))
             split = body.get("split") or team.budget
@@ -115,15 +123,12 @@ class App:
             total = body.get("total", team.budget_total)
             if total is not None and (not isinstance(total, int) or isinstance(total, bool) or total < 0):
                 raise ApiError(400, "total must be a non-negative whole number or null")
-            breaks = body.get("breaks", False)
-            if not isinstance(breaks, bool):
-                raise ApiError(400, "breaks must be true or false")
-            fn = _optimize(gd, team, split, max_level, total, breaks)
+            fn = _optimize(gd, rated(team), split, max_level, total)
         elif kind == "pinks":
             member = body.get("member")
             if member not in (0, 1, 2):
                 raise ApiError(400, "member must be 0, 1 or 2")
-            fn = _pinks(gd, _team(gd, body.get("state"), skip_pinks=member), member)
+            fn = _pinks(gd, rated(_team(gd, body.get("state"), skip_pinks=member)), member)
         else:
             raise ApiError(400, f"unknown job kind {kind!r}")
         try:

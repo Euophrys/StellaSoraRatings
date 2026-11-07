@@ -5,7 +5,7 @@
 let catalog = null;                 // GET /api/catalog
 let state = null;                   // the team doc
 let results = null;                 // {grid, emblems, total, forState, stale, at}
-const ui = { stem: null, teams: [], pinkRows: {}, open: {}, messages: [], job: null, optimizeNote: null, optimizeBreaks: false };
+const ui = { stem: null, teams: [], pinkRows: {}, open: {}, messages: [], job: null, optimizeNote: null, breaks: false };
 const SECTIONS = [];                // [render(): Node] after the team + pinks sections (potentials, optimize, emblems)
 
 // ---------------------------------------------------------------- tiny DOM helper
@@ -54,7 +54,7 @@ async function runJob(kind, extra) {
   // POST a job, poll every 500 ms driving the progress bar, resolve with its result.
   let job;
   try {
-    job = await api("POST", "/api/jobs", { kind, state, ...(extra || {}) });
+    job = await api("POST", "/api/jobs", { kind, state, breaks: ui.breaks, ...(extra || {}) });
   } catch (e) { message("err", e.message); throw e; }
   ui.job = { id: job.id, kind, phase: "", done: 0, total: 0, t0: Date.now() };
   renderJobBar();
@@ -76,7 +76,7 @@ async function runJob(kind, extra) {
 }
 
 // ---------------------------------------------------------------- state
-const calcKey = (s) => JSON.stringify({ ...s, name: undefined, budget: undefined, budget_total: undefined, max_level: undefined });
+const calcKey = (s) => JSON.stringify({ ...s, name: undefined, budget: undefined, budget_total: undefined, max_level: undefined, breaks: ui.breaks });
 
 function setState(mutator) {
   mutator(state);
@@ -180,7 +180,7 @@ function renderBanner() {
     m.value ? h("input", { value: m.value, readonly: true, size: 44, onfocus: (e) => e.target.select() }) : null,
     h("button", { class: "x", onclick: () => { ui.messages.splice(k, 1); renderBanner(); } }, "×")));
   if (results && results.stale) {
-    kids.unshift(h("div", { class: "msg warn" }, "Levels changed — numbers are from the previous build.",
+    kids.unshift(h("div", { class: "msg warn" }, "Build changed — numbers are from before the change.",
       h("button", { class: "primary", onclick: recalc, disabled: !!ui.job }, "Recalculate")));
   }
   b.replaceChildren(...kids);
@@ -344,6 +344,10 @@ function teamSection() {
   return h("section", {}, h("h2", {}, "Team"),
     h("div", { class: "cols" }, [0, 1, 2].map(memberPanel)),
     h("h3", {}, "Discs"), h("div", { class: "discs" }, discPanel("main"), discPanel("support")),
+    h("div", { class: "field" },
+      h("label", {}, "Include breaks", h("input", { type: "checkbox", checked: ui.breaks,
+        onchange: (e) => { ui.breaks = e.target.checked; ui.pinkRows = {}; setState(() => {}); } })),
+      h("span", { class: "small muted" }, "For the potential, emblem and pink numbers and the optimizer. Off by default: any damage gain moves the break windows, which can make plain ATK look negative. Break-only effects count for nothing while it's off. The team total always includes breaks.")),
     advanced());
 }
 
@@ -514,8 +518,8 @@ async function runOptimize() {
   const maxLevel = state.max_level || MAX_TARGET;
   const total = totalBudget();
   try {
-    const breaks = ui.optimizeBreaks;
-    const r = await runJob("optimize", { split, max_level: maxLevel, total, breaks });
+    const breaks = ui.breaks;
+    const r = await runJob("optimize", { split, max_level: maxLevel, total });
     setState((s) => { s.members.forEach((m, i) => { m.targets = { ...r.targets[i] }; }); });
     ui.optimizeNote = `method: ${r.method}, total ×${(r.total / r.base_total).toFixed(2)} vs pinks only (${total ? `total ${total}, caps` : "split"} ${split.join(" / ")}, max Lv${maxLevel}, breaks ${breaks ? "on" : "off"})`;
     await recalc();
@@ -534,10 +538,8 @@ function optimizeSection() {
         num(names[2], budgetOf(2), setBudget(2), 0, 200),
         num("Total (0 = none)", totalBudget() || 0, (s, v) => { s.budget_total = v > 0 ? v : null; }, 0, 600),
         num("Max level", state.max_level || MAX_TARGET, (s, v) => { s.max_level = v; }, 1, MAX_TARGET),
-        h("label", {}, "Include breaks", h("input", { type: "checkbox", checked: ui.optimizeBreaks,
-          onchange: (e) => { ui.optimizeBreaks = e.target.checked; } })),
         h("button", { class: "primary", onclick: runOptimize, disabled: !!ui.job || !state.members.every((m) => trekker(m.trekker)) }, "Optimize")),
-      h("div", { class: "small muted" }, "Fills target levels with the best found for this split (greedy +1 steps, then swaps between a trekker's potentials), then recalculates. With a total, the per-Trekker numbers are caps on a shared pool and swaps can also move levels between Trekkers. Emblem +N levels are free. Breaks are off by default: any damage gain moves the break windows, which can make plain ATK look negative. They only affect this search; the recalculation afterwards still has them. Takes minutes."),
+      h("div", { class: "small muted" }, "Fills target levels with the best found for this split (greedy +1 steps, then swaps between a trekker's potentials), then recalculates. With a total, the per-Trekker numbers are caps on a shared pool and swaps can also move levels between Trekkers. Emblem +N levels are free. Takes minutes."),
       ui.optimizeNote ? h("div", { class: "small" }, ui.optimizeNote) : null));
 }
 
@@ -605,7 +607,7 @@ async function exportHtml() {
   const name = state.name || ui.stem || "build";
   const when = results ? new Date(results.at).toLocaleString() : "never";
   const note = !results ? "<p class=\"msg warn\">No numbers: this build wasn't calculated.</p>"
-    : results.stale ? "<p class=\"msg warn\">Numbers are stale: levels changed after the last calculation.</p>" : "";
+    : results.stale ? "<p class=\"msg warn\">Numbers are stale: the build changed after the last calculation.</p>" : "";
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(name)} — build</title><style>${css}
 .picked{font-weight:600} .lv div, .pink-toggle, .pink-results td{cursor:default} body{padding-bottom:20px}</style></head>

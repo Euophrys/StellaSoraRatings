@@ -21,6 +21,12 @@ Progress = Callable[[str, int, int], None] | None
 LEVELS = range(1, 7)
 
 
+def without_breaks(team: TeamConfig) -> TeamConfig:
+    """The team in a fight with no breaks. Any damage gain moves the break windows, which can make plain ATK look
+    negative against the burst timings, so the page's numbers leave them out unless asked."""
+    return replace(team, enemy=replace(team.enemy, breaks=False))
+
+
 def _tick(progress: Progress, phase: str, total: int):
     done = [0]
 
@@ -139,16 +145,10 @@ class OptimizeResult:
 
 
 def optimize(gd: GameData, team: TeamConfig, split: list[int], max_level: int = 6,
-             progress: Progress = None, max_passes: int = 5, total: int | None = None,
-             breaks: bool = False) -> OptimizeResult:
+             progress: Progress = None, max_passes: int = 5, total: int | None = None) -> OptimizeResult:
     """Greedy +1 steps within each member's budget, then swap polish: move one level between two potentials
     while that raises team damage. With `total`, `split` holds per-member caps on a shared budget, and levels may
-    also move between members (within the caps); otherwise only within a member (the split stays satisfied).
-
-    Without `breaks`, every simulation runs with no breaks, and `total` / `base_total` are no-break totals: any damage
-    gain moves the break windows, which can make plain ATK look negative against the burst timings."""
-    if not breaks:
-        team = replace(team, enemy=replace(team.enemy, breaks=False))
+    also move between members (within the caps); otherwise only within a member (the split stays satisfied)."""
     steps = min(total, sum(split)) if total is not None else sum(split)
     done = [0]
 
