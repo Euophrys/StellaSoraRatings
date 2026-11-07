@@ -71,11 +71,10 @@ main:
       duration: {ref: "Buff,LevelUp,3012,Time,10K"}
       max_stacks: {ref: "BuffValue,NoLevel,3012,LaminatedNum,Fixed"}
       target: enemy
-    - attribute: 16290001          # auto attacks: each Glimmer stack raises the hit's DMG (EAT 85, treated as DMG)
+    - attribute: 16290001          # auto attacks: each Glimmer stack raises the hit's EAT 85 "DMG Multiplier"
       level: auto
       event: "while:status:glimmer"
       per_stack: true
-      as_stat: 50
       hit_tags: [auto]
     - effect: 16290003             # Starender: Crit Rate (value from data at ult level)
       name: starender

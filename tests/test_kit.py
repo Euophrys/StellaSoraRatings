@@ -93,13 +93,13 @@ def test_noya_starender_buff(gd):
 
 def test_noya_glimmer_buffs(gd):
     from ssr.kit import resolve_buffs
-    from ssr.stats import elem_stat, ELEM_TAKEN_BASE, DMG
+    from ssr.stats import elem_stat, ELEM_TAKEN_BASE, DMG_MULT
     k = load_kit(gd, SPECS / "162.yaml", "main")
     b = resolve_buffs(gd, k, {"auto": 10, "skill": 10, "ult": 10})
     g = [m for m in b if m.name == "glimmer"][0]
     assert g.stat == elem_stat(ELEM_TAKEN_BASE, 5) and g.value == pytest.approx(0.005) and g.target == "enemy"
     assert g.trigger.event == "mark:self" and g.trigger.max_stacks == 3 and g.trigger.duration == 6
-    a = [m for m in b if m.stat == DMG and "auto" in m.hit_tags][0]
+    a = [m for m in b if m.stat == DMG_MULT and "auto" in m.hit_tags][0]
     assert a.value == pytest.approx(0.12) and a.trigger.event == "while:status:glimmer" and a.trigger.per_stack
 
 
