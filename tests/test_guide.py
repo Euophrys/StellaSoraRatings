@@ -19,17 +19,18 @@ def short_team(gd):
     return replace(load_team(gd, FIXTURES / "amber_flora_chixia.yaml"), fight_length=20)
 
 
-def test_grid_current_level_is_zero_and_signs(gd, short_team):
+def test_grid_current_level_is_removal_and_signs(gd, short_team):
     p = gd.table("CharPotential")["103"]["MasterNormalPotentialIds"][0]
     build = Build({(103, p): 3})
     grid = potential_grid(gd, short_team, build, members=[0])
     assert {k[0] for k in grid} == {0} and len(grid) == 12
     cells = grid[(0, p)]
-    assert len(cells) == 6 and cells[2] == 0.0
+    assert len(cells) == 6
     base = simulate(gd, short_team, build)
+    assert cells[2] == pytest.approx(gain(base, simulate(gd, short_team, Build())))
+    assert cells[2] < cells[0] < 0 < cells[5]
     assert cells[3] == pytest.approx(gain(base, simulate(gd, short_team, Build({(103, p): 4}))))
     assert cells[0] == pytest.approx(gain(base, simulate(gd, short_team, Build({(103, p): 1}))))
-    assert cells[0] < 0 < cells[5]
 
 
 def test_grid_level_one_shows_removal(gd, short_team):
