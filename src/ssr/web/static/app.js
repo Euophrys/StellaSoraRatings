@@ -471,7 +471,8 @@ function potentialCard(i, m, p) {
       h("button", { onclick: () => setTarget(i, p.name, lv + 1), disabled: lv >= MAX_TARGET }, "+")),
     h("div", { class: "lv numbers" }, [1, 2, 3, 4, 5, 6].map((n) => h("div", {
       class: [n === lv ? "cur" : "", n <= lv ? "have" : ""].join(" ").trim() || null,
-      title: `set target to ${n}${plus ? ` (fights at ${Math.min(9, n + plus)})` : ""}`,
+      title: n === 1 && lv === 1 ? "change in team damage from removing this potential"
+        : `set target to ${n}${plus ? ` (fights at ${Math.min(9, n + plus)})` : ""}`,
       onclick: () => setTarget(i, p.name, n) }, h("small", {}, n), cell(vals ? vals[n - 1] : null)))));
 }
 
@@ -505,7 +506,7 @@ function potentialsSection() {
     h("button", { class: "primary", onclick: recalc, disabled: !!ui.job || !ready }, results ? "Recalculate" : "Calculate"),
     results ? h("span", { class: "small muted" },
       `Team total ${(results.total / 1e6).toFixed(1)}M${results.breaks != null ? ` · ${results.breaks} break${results.breaks === 1 ? "" : "s"}` : ""} · calculated ${new Date(results.at).toLocaleString()}`)
-      : h("span", { class: "small muted" }, "Each cell: total change in team damage if this potential's target were that level (current = 0). ~1 min."));
+      : h("span", { class: "small muted" }, "Each cell: total change in team damage if this potential's target were that level (current = 0; at Lv 1, the loss from removing it). ~1 min."));
   const tb = totalBudget(), nAll = state.members.reduce((a, m) => a + used(m), 0);
   const shared = tb ? h("div", { class: "small" }, "Team total ",
     h("span", { class: `budget${nAll > tb ? " over" : ""}` }, `${nAll} / ${tb}`), " (per-Trekker numbers are caps)") : null;

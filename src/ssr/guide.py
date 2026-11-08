@@ -51,11 +51,15 @@ def _pool(gd: GameData, team: TeamConfig, i: int) -> list[int]:
 
 def potential_grid(gd: GameData, team: TeamConfig, build: Build, members: list[int] | None = None,
                    progress: Progress = None) -> dict[tuple[int, int], list[float]]:
-    """(member, potential) -> 6 values: team-damage change if that potential's target were 1..6."""
+    """(member, potential) -> 6 values: team-damage change if that potential's target were 1..6.
+
+    The current level's cell is 0, except at level 1, where it is the change from removing the potential (the
+    first rank is usually the most valuable, and would otherwise never show)."""
     members = list(range(len(team.members))) if members is None else members
     cells = [(i, p) for i in members for p in _pool(gd, team, i)]
     total = 1 + sum(1 for i, p in cells for lv in LEVELS
-                    if lv != build.potentials.get((team.members[i].char_id, p), 0))
+                    if lv != build.potentials.get((team.members[i].char_id, p), 0)
+                    or lv == 1)
     step = _tick(progress, "potentials", total)
     base = simulate(gd, team, build)
     step()
@@ -65,10 +69,10 @@ def potential_grid(gd: GameData, team: TeamConfig, build: Build, members: list[i
         cur = build.potentials.get((cid, p), 0)
         row = []
         for lv in LEVELS:
-            if lv == cur:
+            if lv == cur and lv != 1:
                 row.append(0.0)
                 continue
-            row.append(gain(base, simulate(gd, team, _set_level(build, cid, p, lv))))
+            row.append(gain(base, simulate(gd, team, _set_level(build, cid, p, 0 if lv == cur else lv))))
             step()
         out[(i, p)] = row
     return out

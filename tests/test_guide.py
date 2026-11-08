@@ -32,6 +32,15 @@ def test_grid_current_level_is_zero_and_signs(gd, short_team):
     assert cells[0] < 0 < cells[5]
 
 
+def test_grid_level_one_shows_removal(gd, short_team):
+    p = gd.table("CharPotential")["103"]["MasterNormalPotentialIds"][0]
+    build = Build({(103, p): 1})
+    cells = potential_grid(gd, short_team, build, members=[0])[(0, p)]
+    base = simulate(gd, short_team, build)
+    assert cells[0] == pytest.approx(gain(base, simulate(gd, short_team, Build())))
+    assert cells[0] < 0   # removing the only rank loses damage
+
+
 def test_grid_level_zero_target(gd, short_team):
     p = gd.table("CharPotential")["103"]["MasterNormalPotentialIds"][0]
     cells = potential_grid(gd, short_team, Build(), members=[0])[(0, p)]
