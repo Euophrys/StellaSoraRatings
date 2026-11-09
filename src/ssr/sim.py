@@ -19,6 +19,7 @@ from .stats import ATK_SPD, CHARGE_EFF, DEF, ELEM_TAKEN_BASE, RES_BREAK_EFF, STA
 from .emblems import EmblemChargeEfficiency, EmblemPotentialLevel, line_relevant
 from .team import FILLER, FILLER_SOURCE_DISC, Build, EmblemLine, EmblemSkillLevel, TeamConfig
 
+_HIT_DAMAGE = hit_damage
 DEFAULT_BUSY = 1.5   # GUESS: seconds after a main cast before another cast can start (animation)
 
 
@@ -426,18 +427,23 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     last_cast: dict = {}   # (member, action) -> time of its last cast
     alive: dict = defaultdict(list)   # (member, pool) -> [{"uid", "expire", "k"}] minions out, oldest first
     pools = {name for m in members for name in m.minions}
+    status_parsed: dict = {}   # status expression -> ([(named mod or None, pool name or None)], least stacks)
 
     def status_stacks(name: str, t: float) -> int:
         """Stacks of a status; "a+b" sums several statuses, "a>=N" is 0 below N stacks.
         A minion pool's name counts its minions out."""
-        name, _, least = name.partition(">=")
+        parsed = status_parsed.get(name)
+        if parsed is None:
+            names, _, least = name.partition(">=")
+            parsed = status_parsed[name] = ([(named.get(nm), nm if nm in pools else None) for nm in names.split("+")],
+                                            int(least or 1))
         k = 0
-        for nm in name.split("+"):
-            md = named.get(nm)
-            k += sum(1 for x in md.stacks if x > t) if md else 0
-            if nm in pools:
-                k += sum(len(v) for (mi, p), v in alive.items() if p == nm)
-        return k if k >= int(least or 1) else 0
+        for md, pool in parsed[0]:
+            if md is not None and md.stacks:
+                k += sum(1 for x in md.stacks if x > t)
+            if pool is not None:
+                k += sum(len(v) for (mi, p), v in alive.items() if p == pool)
+        return k if k >= parsed[1] else 0
 
     def condition(ev: str, t: float) -> int:
         """Multiplier for a "while:" modifier at time t (0 = inactive)."""
@@ -573,13 +579,17 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
 
     emit_plans: dict = {}   # event -> what it can touch: emit is the hot path, and most events match very little
 
-    def emit_plan(ev: str) -> tuple[list, list, list]:
+    def emit_plan(ev: str) -> tuple:
         def pool_listens(ms: MinionSpec) -> bool:
             return any(_event_matches(h.event, ev) for h in ms.reactions) or any(
                 e and _event_matches(e, ev) for e in (ms.sacrifice_on, ms.resummon_on, ms.summon))
 
-        plan_mods = [md for md in by_event if _event_matches(md.event, ev) or any(
-            _event_matches(_norm_event(r, md.owner), ev) for r in md.mod.trigger.reset_on or ())]
+        plan_mods = []   # (mod, the event resets it, the event triggers it, it has &recent/&once/&while checks)
+        for md in by_event:
+            resets = any(_event_matches(_norm_event(r, md.owner), ev) for r in md.mod.trigger.reset_on or ())
+            matches = _event_matches(md.event, ev)
+            if resets or matches:
+                plan_mods.append((md, resets, matches, "&" in md.event))
         plan_followups = [f for f in main_event_followups if _event_matches(f[1], ev)]
         plan_members = []
         for m in members:
@@ -587,17 +597,22 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             pools = [(pool, ms) for pool, ms in m.minions.items() if pool_listens(ms)]
             if procs or pools:
                 plan_members.append((m, procs, pools))
-        emit_plans[ev] = plan = (plan_mods, plan_followups, plan_members)
+        emit_plans[ev] = plan = (plan_mods, plan_followups, plan_members) if (
+            plan_mods or plan_followups or plan_members) else ()
         return plan
 
     def emit(ev: str, t: float):
-        plan_mods, plan_followups, plan_members = emit_plans.get(ev) or emit_plan(ev)
-        for md in plan_mods:
-            rs = md.mod.trigger.reset_on
-            if rs and md.stacks and any(_event_matches(_norm_event(r, md.owner), ev) for r in rs):
+        plan = emit_plans.get(ev)
+        if plan is None:
+            plan = emit_plan(ev)
+        if not plan:
+            return
+        plan_mods, plan_followups, plan_members = plan
+        for md, resets, matches, checked in plan_mods:
+            if resets and md.stacks:
                 md.stacks = []
-            if _event_matches(md.event, ev) and recent_ok(md.event, ev, t) and once_ok(md, ev) \
-                    and while_ok(md.event, ev, t):
+            if matches and (not checked or (recent_ok(md.event, ev, t) and once_ok(md, ev)
+                                            and while_ok(md.event, ev, t))):
                 trig = md.mod.trigger
                 if trig.every > 1:
                     md.count += 1
@@ -818,27 +833,61 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                         lock_until[0] = max(lock_until[0], t + lock + fa.followup.delay)
         emit(f"cast:{m.idx}:{name}", t)
 
-    def stat_for(receiver_block: StatBlock, receiver, tags: set, t: float, minion: bool = False) -> StatBlock:
+    stat_plans: dict = {}   # (receiver, minion, tags) -> (sheet with the constant mods folded in, by_event, while, [last key, last sheet])
+
+    def stat_plan(receiver_block: StatBlock, receiver, tags_key: tuple, minion: bool) -> tuple:
+        tags = set(tags_key)
         s = receiver_block.copy()
-        ok = (lambda md: reaches_minions(md.mod)) if minion else (lambda md: True)
+
+        def applies(md: _Mod) -> bool:
+            return receiver in md.receivers and (not md.mod.hit_tags or bool(tags & set(md.mod.hit_tags)))
         for md in scoped_const:   # always on (snapshot) or averaged uptime (minion check)
-            if receiver in md.receivers and (not md.mod.hit_tags or tags & set(md.mod.hit_tags)) \
-                    and (not minion or const_reaches_minions(md.mod)):
+            if applies(md) and (not minion or const_reaches_minions(md.mod)):
                 s.add_stat(md.mod.stat, md.mod.value * md.constant, md.mod.is_pct)
-        for md in by_event:
-            if md.stacks and receiver in md.receivers and (not md.mod.hit_tags or tags & set(md.mod.hit_tags)) and ok(md):
-                k = sum(1 for x in md.stacks if x > t)
-                if k:
-                    s.add_stat(md.mod.stat, md.mod.value * k, md.mod.is_pct)
-        for md in while_mods:
-            if receiver in md.receivers and (not md.mod.hit_tags or tags & set(md.mod.hit_tags)) and ok(md):
-                c = condition(md.event, t)
-                if c:
-                    k = c if md.mod.trigger.per_stack else md.mod.trigger.max_stacks
-                    s.add_stat(md.mod.stat, md.mod.value * k, md.mod.is_pct)
+        ok = (lambda md: reaches_minions(md.mod)) if minion else (lambda md: True)
+        plan = (s, [md for md in by_event if applies(md) and ok(md)], [md for md in while_mods if applies(md) and ok(md)],
+                [None, None])
+        stat_plans[(receiver, minion, tags_key)] = plan
+        return plan
+
+    def stat_for(receiver_block: StatBlock, receiver, tags_key: tuple, t: float, minion: bool = False) -> StatBlock:
+        """The receiver's sheet for a hit with these tags at time t. Which modifiers can apply depends only on
+        (receiver, tags), so that part is planned once; `receiver_block` is fixed per (receiver, minion)."""
+        plan = stat_plans.get((receiver, minion, tags_key)) or stat_plan(receiver_block, receiver, tags_key, minion)
+        base, ev_mods, wh_mods, last = plan
+        sig = []   # stacks up per event mod, then the multiplier per while mod: the sheet is a function of these
+        for md in ev_mods:
+            st = md.stacks
+            if not st:
+                sig.append(0)
+            elif len(st) == 1:
+                sig.append(1 if st[0] > t else 0)
+            else:
+                sig.append(sum(1 for x in st if x > t))
+        for md in wh_mods:
+            sig.append(condition(md.event, t))
+        if last[0] == sig:
+            return last[1]   # callers only read the sheet
+        s = base.copy()
+        i = 0
+        for md in ev_mods:
+            k = sig[i]
+            i += 1
+            if k:
+                mod = md.mod
+                s.add_stat(mod.stat, mod.value * k, mod.is_pct)
+        for md in wh_mods:
+            c = sig[i]
+            i += 1
+            if c:
+                mod = md.mod
+                k = c if mod.trigger.per_stack else mod.trigger.max_stacks
+                s.add_stat(mod.stat, mod.value * k, mod.is_pct)
+        last[0], last[1] = sig, s
         return s
 
     energy_used: dict = defaultdict(float)
+    dmg_memo: dict = {}   # (hit id, level) -> (attacker sheet, enemy sheet, damage before the hit's own multiplier)
     has_charge_mods = any(md.mod.stat == CHARGE_EFF for md in mods)
     has_atk_spd = any(md.mod.stat == ATK_SPD and 0 in md.receivers for md in mods)
 
@@ -855,24 +904,33 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                 emit(f"mark_refresh:{mi}" if was_up else f"mark_new:{mi}", t)
             return
         hd = get_hit(h.hit_id)
-        tags = set(h.tags)
+        tags_key = h.tags if type(h.tags) is tuple else tuple(h.tags)
+        tags = set(tags_key)
         lv = hit_level(hd, m.skill_levels, m.pot_levels, fallback="auto" if action == "auto" else (
             "ult" if action == "ult" else "skill"))
-        minion = slot_of(hd) == "minion"
-        attacker = stat_for(m.minion_static if minion else m.static, mi, tags, t, minion)
-        taken = stat_for(enemy_static, "enemy", tags, t)
-        # DEF reductions on the enemy (flat, then %) lower its DEF before defAmend (formula ref 2.def.c); floor 0
-        defense = max(0.0, (team.enemy.defense + taken.flat[DEF]) * (1 + taken.pct[DEF]))
-        e = Enemy(res=team.enemy.res, res_by_element=team.enemy.res_by_element,
-                  defense=defense, broken=team.enemy.broken,
-                  vul=team.enemy.vul, taken=taken)
-        dmg_unbroken = hit_damage(hd, lv, attacker, e) * h.mult
+        slot = slot_of(hd)
+        minion = slot == "minion"
+        attacker = stat_for(m.minion_static if minion else m.static, mi, tags_key, t, minion)
+        taken = stat_for(enemy_static, "enemy", tags_key, t)
+        # stat_for hands back the same sheets while no buff changed, and the hit's damage only depends on them.
+        # Tests observe hits by patching `hit_damage`: a patched one is called for every hit.
+        memo = dmg_memo.get((h.hit_id, lv)) if hit_damage is _HIT_DAMAGE else None
+        if memo is not None and memo[0] is attacker and memo[1] is taken:
+            raw = memo[2]
+        else:
+            # DEF reductions on the enemy (flat, then %) lower its DEF before defAmend (formula ref 2.def.c); floor 0
+            defense = max(0.0, (team.enemy.defense + taken.flat[DEF]) * (1 + taken.pct[DEF]))
+            e = Enemy(res=team.enemy.res, res_by_element=team.enemy.res_by_element,
+                      defense=defense, broken=team.enemy.broken,
+                      vul=team.enemy.vul, taken=taken)
+            raw = hit_damage(hd, lv, attacker, e)
+            dmg_memo[(h.hit_id, lv)] = (attacker, taken, raw)
+        dmg_unbroken = raw * h.mult
         dmg = dmg_unbroken * (bar.ratio(t) if bar else 1.0)   # read before this hit lowers the bar
         res = dmg_unbroken * adjust[mi] * (1 + attacker.get(RES_BREAK_EFF))
         resilience_by_member[mi] += res
         if bar:
             bar.damage(t, res)
-        slot = slot_of(hd)
         by_slot[(mi, slot)] += dmg
         for tag in (*tags, f"{slot}_dmg"):
             last_hit[(mi, tag)] = t
@@ -884,7 +942,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             gain = max(0.0, min(hd.energy, cap - energy_used[key]))
             energy_used[key] += gain
             for mm in members:
-                eff = mm.charge + (stat_for(mm.static, mm.idx, set(), t).get(CHARGE_EFF) if has_charge_mods else 0.0)
+                eff = mm.charge + (stat_for(mm.static, mm.idx, (), t).get(CHARGE_EFF) if has_charge_mods else 0.0)
                 mm.energy += gain * (1.0 if mm.idx == 0 else mm.kit.energy_conv) * eff
         el = elements[mi]   # Marks are per element: a Trekker applies and triggers Marks of their own element
         if h.applies_mark:
@@ -959,6 +1017,10 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     if cancel_at is not None:
         dodge_every = 0.0
     hit_every = float(team.assumptions.get("hit_taken_interval", 20.0))   # `hit_taken:0`: the main is hit (user: ~20 s)
+    # A status name that is a plain name and not also a minion pool is up exactly when its own mod has a live stack.
+    named_plain = [(name, md) for name, md in named.items() if not ("+" in name or ">=" in name or name in pools)]
+    named_other = [name for name in named if "+" in name or ">=" in name or name in pools]
+    cast_order = members[1:] + [main]
     for step in range(steps + 1):
         t = step * dt
         for per in timers:
@@ -988,7 +1050,11 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                     emit(f"on_field_5s:{m.idx}", t)   # "every 5 s they are on the field"
                 if int(on_field_time[m.idx] + 1e-9) > int(before + 1e-9):
                     emit(f"on_field_1s:{m.idx}", t)   # every second on the field
-        for name in named:
+        for name, md in named_plain:
+            st = md.stacks
+            if st and (st[-1] > t or max(st) > t):
+                status_time[name] += dt
+        for name in named_other:
             if status_stacks(name, t) > 0:
                 status_time[name] += dt
         for pool in pools:
@@ -998,7 +1064,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             for mn in [x for x in lst if x["expire"] <= t + 1e-9]:
                 vanish(members[mi], pool, mn, t)
         # supports first, then main
-        for m in members[1:] + [main]:
+        for m in cast_order:
             is_main = m.idx == 0
             if is_main and t < busy_until[0] - 1e-9:
                 continue
@@ -1023,7 +1089,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         # main autos: a string that restarts after every cast
         if auto_hits and t >= lock_until[0] - 1e-9:
             # ATK SPD runs the whole string faster, shots and reload (user-timed shots; the reload is a GUESS).
-            speed = 1.0 + (stat_for(main.static, 0, set(), t).get(ATK_SPD) if has_atk_spd else 0.0)
+            speed = 1.0 + (stat_for(main.static, 0, (), t).get(ATK_SPD) if has_atk_spd else 0.0)
             c0, c1 = auto_clock[0], auto_clock[0] + dt * speed
             for off, h in auto_hits:
                 if c0 - 1e-9 <= off < c1 - 1e-9:

@@ -29,17 +29,19 @@ git -C data_src/StellaSoraData sparse-checkout set EN
 Assuming the venv is active:
 
 ```bash
-pytest                                  # full suite, about 2 min
+pytest                                  # full suite, about 3 min
 pytest tests/test_sim.py -k <name>      # one test
 
-python -m ssr teams/<team>.yaml -o out/ # full rating to out/<team>.xlsx (1-2 min)
-python -m ssr teams/<team>.yaml --pinks <main> <support1> <support2>  # pink pair search (3-5 min)
-python -m ssr.compare teams/a.yaml teams/b.yaml --split 30,15,15      # compare totals (~4 min per team)
+python -m ssr teams/<team>.yaml -o out/ # full rating to out/<team>.xlsx (~10 s)
+python -m ssr teams/<team>.yaml --pinks <main> <support1> <support2>  # pink pair search (~20 s)
+python -m ssr.compare teams/a.yaml teams/b.yaml --split 30,15,15      # compare totals (~15 s per team)
 python -m ssr.inspect trekker|hits|disc|scripted-discs|word ...       # dump game data for writing specs
 python -m ssr.web [--port 9000] [--no-open]                           # build guide at http://127.0.0.1:8765/
 ```
 
-Run the slow commands in the background. Restart them if specs or code change mid-run: specs are read lazily, so a running job would mix old and new.
+Those times are on 16 CPU threads: every batch of simulations is spread over worker processes (`parallel.py`). `SSR_WORKERS=<n>` sets how many, and `SSR_WORKERS=1` keeps everything in one process (what the tests do, and what to use with a debugger or profiler). One simulation is 25-70 ms depending on the team.
+
+Restart a running command or the web server if specs or code change: specs are read lazily and the workers are forked once, so a running job would mix old and new.
 
 ## Architecture
 
@@ -55,6 +57,7 @@ Three layers of input feed one simulator, and everything else is a loop over `si
 
 **Consumers**
 
+- `parallel.py`: `simulate_many(gd, team, calls)` runs a batch of `simulate` calls on forked worker processes and returns the results in call order. Every consumer below goes through it, so write new loops as one batch of calls rather than a `simulate` per iteration.
 - `rate.py`: the pipeline of discs, emblems, reference build and potentials, each rated as the % gain between simulations. `report.py` writes the workbook, and `__main__.py` is the CLI.
 - `builds.py` (pink search) and `compare.py` (cross-team totals under level budgets).
 - `guide.py` is the analysis behind `web/`: a stdlib HTTP server, background jobs with progress and cancel, and a static frontend with no build step. `sharecode.py` handles the game's preset share codes.

@@ -16,6 +16,7 @@ from itertools import combinations
 
 from .data import GameData
 from .game import potential_pools
+from .parallel import simulate_many
 from .rate import ALL_FILLER, build_reference, gain
 from .sim import simulate
 from .team import Build, TeamConfig
@@ -48,10 +49,11 @@ def best_main_discs(gd: GameData, team: TeamConfig, n: int = 3, copies: int = 1,
     """Top-n main discs, each rated alone (C`copies`) against all-filler discs, pinks only."""
     if disc_ids is None:
         disc_ids = sorted(int(k) for k, v in gd.table("Disc").items() if v.get("Available") and v.get("Visible"))
-    base = simulate(gd, team, Build(), emblems=False, discs=ALL_FILLER)
     fill = ALL_FILLER[0][0]
-    scored = [(gain(base, simulate(gd, team, Build(), emblems=False, discs=([(d, copies), fill, fill], ALL_FILLER[1]))), d)
-              for d in disc_ids]
+    results = simulate_many(gd, team, [dict(build=Build(), emblems=False, discs=ALL_FILLER)] + [
+        dict(build=Build(), emblems=False, discs=([(d, copies), fill, fill], ALL_FILLER[1])) for d in disc_ids])
+    base = results[0]
+    scored = [(gain(base, r), d) for r, d in zip(results[1:], disc_ids)]
     scored.sort(key=lambda x: (-x[0], x[1]))
     return [(d, copies) for _, d in scored[:n]]
 

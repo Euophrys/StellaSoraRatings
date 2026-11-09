@@ -1,5 +1,9 @@
+import os
+
 import pytest
 from ssr.data import GameData, DEFAULT_DATA_ROOT
+
+os.environ.setdefault("SSR_WORKERS", "1")   # tests simulate in-process; test_parallel.py turns the workers on
 
 
 @pytest.fixture(scope="session")

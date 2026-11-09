@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 
 from .data import GameData
 from .stats import (StatBlock, ATK, DEF, HP, CRIT_RATE, CRIT_DMG, AUTO_DMG, SKILL_DMG, ULT_DMG,
@@ -13,9 +14,21 @@ _ROLE_SKILL_FIELDS = {
 }
 
 
+_ATTR_GROUPS: dict = {}   # id(gd) -> (gd, {GroupId: [Attribute rows]}): the table is big, and every simulate asks
+
+
+def _attr_rows(gd: GameData, group_id: int) -> list[dict]:
+    hit = _ATTR_GROUPS.get(id(gd))
+    if hit is None or hit[0] is not gd:
+        groups: dict = {}
+        for r in gd.table("Attribute").values():
+            groups.setdefault(r.get("GroupId"), []).append(r)
+        hit = _ATTR_GROUPS[id(gd)] = (gd, groups)
+    return hit[1].get(group_id, [])
+
+
 def char_base_stats(gd: GameData, char_id: int, level: int = 90) -> StatBlock:
-    rows = [r for r in gd.table("Attribute").values()
-            if r.get("GroupId") == char_id and r.get("lvl") == level]
+    rows = [r for r in _attr_rows(gd, char_id) if r.get("lvl") == level]
     if not rows:
         raise KeyError(f"no Attribute rows for char {char_id} lvl {level}")
     r = max(rows, key=lambda r: r.get("Break", 0))
@@ -30,8 +43,7 @@ def char_base_stats(gd: GameData, char_id: int, level: int = 90) -> StatBlock:
 
 def toughness_adjust(gd: GameData, char_id: int) -> float:
     """The Trekker's resilience-damage multiplier (`Attribute.ToughnessDamageAdjust`/10000), 1.0 if absent."""
-    vals = [r["ToughnessDamageAdjust"] for r in gd.table("Attribute").values()
-            if r.get("GroupId") == char_id and r.get("ToughnessDamageAdjust")]
+    vals = [r["ToughnessDamageAdjust"] for r in _attr_rows(gd, char_id) if r.get("ToughnessDamageAdjust")]
     return max(vals) / 10000 if vals else 1.0
 
 
@@ -92,10 +104,14 @@ def hit_level(h: Hit, skill_levels: dict[str, int], potential_levels: dict[int, 
     return 1
 
 
+@lru_cache(maxsize=None)
+def _last_real(pct: tuple[float, ...]) -> int:
+    return max((i for i, x in enumerate(pct) if x), default=0) + 1
+
+
 def hit_pct(h: Hit, skill_level: int) -> float:
     """Multiplier at `skill_level`, clamped to the last real (non-zero) entry: many arrays are zero-padded."""
-    last = max((i for i, x in enumerate(h.pct) if x), default=0) + 1
-    return h.pct[max(1, min(skill_level, last)) - 1]
+    return h.pct[max(1, min(skill_level, _last_real(h.pct))) - 1]
 
 
 def disc_base_stats(gd: GameData, disc_id: int, level: int = 90, copies: int = 1) -> StatBlock:

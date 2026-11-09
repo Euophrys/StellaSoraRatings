@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 
 from .data import GameData
 from .game import potential_pools
+from .parallel import simulate_many
 from .sim import simulate
 from .team import Build, TeamConfig, load_team
 
@@ -46,14 +47,17 @@ def greedy_build(gd: GameData, team: TeamConfig, budget: int = 60, max_level: in
     cur = simulate(gd, team, build).total
     res = GreedyResult(team.name, cur, build=build)
     for step in range(budget):
-        best = None
+        todo = []
         for cid, p in cands:
             lv = build.potentials.get((cid, p), 0)
             if lv >= max_level or (split and used[owner[(cid, p)]] >= split[owner[(cid, p)]]):
                 continue
-            tot = simulate(gd, team, build.with_potential(cid, p, lv + 1)).total
-            if best is None or tot > best[0]:
-                best = (tot, cid, p, lv + 1)
+            todo.append((cid, p, lv + 1))
+        results = simulate_many(gd, team, [dict(build=build.with_potential(cid, p, lv)) for cid, p, lv in todo])
+        best = None
+        for (cid, p, lv), r in zip(todo, results):   # in candidate order: the first of equal totals wins
+            if best is None or r.total > best[0]:
+                best = (r.total, cid, p, lv)
         if best is None:
             break
         cur, cid, p, lv = best

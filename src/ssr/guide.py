@@ -13,8 +13,8 @@ from .compare import greedy_build
 from .data import GameData
 from .emblems import emblem_options, line_relevant
 from .game import potential_pools
+from .parallel import simulate_many
 from .rate import gain
-from .sim import simulate
 from .team import Build, TeamConfig
 
 Progress = Callable[[str, int, int], None] | None
@@ -59,18 +59,14 @@ def potential_grid(gd: GameData, team: TeamConfig, build: Build, members: list[i
     cells = [(i, p) for i in members for p in _pool(gd, team, i)]
     total = 1 + len(cells) * len(LEVELS)
     step = _tick(progress, "potentials", total)
-    base = simulate(gd, team, build)
-    step()
-    out = {}
+    calls = [dict(build=build)]
     for i, p in cells:
         cid = team.members[i].char_id
         cur = build.potentials.get((cid, p), 0)
-        row = []
-        for lv in LEVELS:
-            row.append(gain(base, simulate(gd, team, _set_level(build, cid, p, 0 if lv == cur else lv))))
-            step()
-        out[(i, p)] = row
-    return out
+        calls += [dict(build=_set_level(build, cid, p, 0 if lv == cur else lv)) for lv in LEVELS]
+    results = simulate_many(gd, team, calls, step)
+    base, rest = results[0], iter(results[1:])
+    return {cell: [gain(base, next(rest)) for _ in LEVELS] for cell in cells}
 
 
 # ---------------------------------------------------------------- emblem lines
@@ -96,20 +92,23 @@ def emblem_table(gd: GameData, team: TeamConfig, build: Build, member: int,
     opts = emblem_options(gd, m.char_id)
     relevant = {o.name: line_relevant(o.tiers[0].line, element, m.role) for o in opts}
     step = _tick(progress, "emblems", 1 + sum(len(o.tiers) * len(o.slots) for o in opts if relevant[o.name]))
-    base = simulate(gd, team, build)
-    step()
+    calls = [dict(build=build)]
+    for o in opts:
+        if relevant[o.name]:
+            calls += [dict(build=build, extra=[(member, t.line)] * n) for t in o.tiers for n in range(1, len(o.slots) + 1)]
+    results = simulate_many(gd, team, calls, step)
+    base, rest = results[0], iter(results[1:])
     rows = []
     for o in opts:
         slots = sorted(o.slots)
         by_slot: dict[int, list[float]] = {s: [] for s in slots}
         for t in o.tiers:
             prev = base
-            for n, s in enumerate(slots, 1):
+            for s in slots:
                 g = 0.0
                 if relevant[o.name]:
-                    r = simulate(gd, team, build, extra=[(member, t.line)] * n)
+                    r = next(rest)
                     g, prev = gain(prev, r), r
-                    step()
                 by_slot[s].append(g)
         tiers = [(t.label, t.colour, by_slot[slots[0]][k]) for k, t in enumerate(o.tiers)]
         rows.append(EmblemRow(o.name, o.kind, slots, relevant[o.name], tiers, by_slot))
@@ -177,13 +176,12 @@ def optimize(gd: GameData, team: TeamConfig, split: list[int], max_level: int = 
                         if (j, b) != (i, a) and lb < max_level:
                             moves.append((cid, a, la, mj.char_id, b, lb))
         best_move = None
-        for k, (cid, a, la, cidb, b, lb) in enumerate(moves):
-            cand = _set_level(_set_level(build, cid, a, la - 1), cidb, b, lb + 1)
-            tot = simulate(gd, team, cand).total
-            if progress:
-                progress(f"optimize: swap pass {pass_no + 1}", k + 1, len(moves))
-            if tot > best_total * (1 + 1e-12):
-                best_total, best_move = tot, cand
+        cands = [_set_level(_set_level(build, cid, a, la - 1), cidb, b, lb + 1) for cid, a, la, cidb, b, lb in moves]
+        step = _tick(progress, f"optimize: swap pass {pass_no + 1}", len(moves))
+        results = simulate_many(gd, team, [dict(build=c) for c in cands], step)
+        for cand, r in zip(cands, results):   # in move order: among equal totals the first one wins
+            if r.total > best_total * (1 + 1e-12):
+                best_total, best_move = r.total, cand
         if best_move is None:
             break
         build = best_move

@@ -6,6 +6,7 @@ import threading
 import webbrowser
 
 from ..data import GameData
+from ..parallel import warm
 from .server import make_server
 
 
@@ -14,7 +15,9 @@ def main(argv=None):
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--no-open", action="store_true", help="don't open the browser")
     a = ap.parse_args(argv)
-    srv = make_server(GameData(), port=a.port)
+    gd = GameData()
+    warm(gd)   # fork the simulation workers before the server starts its threads
+    srv = make_server(gd, port=a.port)
     url = f"http://127.0.0.1:{srv.server_address[1]}/"
     print(f"Build guide: {url}  (Ctrl+C to stop)", flush=True)
     if not a.no_open:

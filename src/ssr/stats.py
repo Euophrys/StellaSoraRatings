@@ -101,4 +101,9 @@ class StatBlock:
         return self
 
     def copy(self) -> "StatBlock":
-        return StatBlock().add(self)
+        s = StatBlock.__new__(StatBlock)   # the simulator copies a block per hit
+        s._base = defaultdict(float, self._base)
+        s.flat = defaultdict(float, self.flat)
+        s.pct = defaultdict(float, self.pct)
+        s.vals = defaultdict(float, self.vals)
+        return s
