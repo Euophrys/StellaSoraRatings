@@ -1,6 +1,6 @@
 """Greedy equal-budget builds for cross-team comparison."""
 from ssr.compare import greedy_build
-from ssr.team import load_team, TEAMS
+from ssr.team import Build, load_team, TEAMS
 
 from pathlib import Path
 
@@ -32,3 +32,17 @@ def test_greedy_total_with_caps(gd):
     for (cid, _p), lv in r.build.potentials.items():
         per[cid] = per.get(cid, 0) + lv
     assert sum(per.values()) == 3 and all(v <= 2 for v in per.values())
+
+
+def test_greedy_emblems_respect_slots_and_gain(gd):
+    from ssr.compare import greedy_emblems
+    from ssr.emblems import emblem_options
+    team = load_team(gd, TEAMS / "nazuna_leafia_gerie.yaml")
+    e = greedy_emblems(gd, team, Build(), "purple", members=[0], per_slot=2)
+    kinds = {o.name: o.kind for o in emblem_options(gd, team.members[0].char_id)}
+    sl = e.slots[0]
+    assert all(kinds[n] == "stat" for n, _ in sl[1])            # Lv70: stat lines only
+    assert all(kinds[n] in ("stat", "skill") for n, _ in sl[2])  # Lv80: + skill levels
+    assert all(kinds[n] in ("stat", "potential") for n, _ in sl[3])
+    assert all(len(v) <= 2 and len({n for n, _ in v}) == len(v) for v in sl.values())   # once per emblem
+    assert e.totals == sorted(e.totals) and e.totals[0] > e.base_total

@@ -30,6 +30,9 @@
 # SUPPORT (Vanguard Calibration + Calibration Detonation): Vanguard Strikes 5,25 (204965) / 6,28 (four numbers:
 #   75248, 131298, 36020, 54655) / 8,00 (421622) / then every second, growing (broken: ~700k at 9,00, ~800k at 10,00,
 #   ~1M at 11,02). A full enhanced strike every second; the 3rd strike's big number fits the first detonation at 3 stacks.
+# SUPPORT (Co-Draw + Observer Iteration; Ascending Draw Zone, Terra DMG Etching, Draw Zone Ascension / Bombardment /
+#   Support and Tier 2 Etching all Lv6): spawn strike 21649, then mapping 64112 / 75928 / 88851 / 102913 / 111899 /
+#   119729. Growth through the 6th hit needs stacks that refresh (Ascending: 3 s x5 fed once a second).
 char_id: 161
 
 talents:   # key talents, unlocked by dupes (specs/README.md)
@@ -216,9 +219,11 @@ support:
         - {hit: 161400001, count: 11, offset: 3.033, interval: 2.0, tags: [ult], applies_mark: true, requires_all: [516132, 516142]}
 
   buffs:
-    # Observation Point tiers: one per Area Plotting cast (two with Ascending Draw Zone), up to 4 (Observer Iteration)
-    - {name: tier, event: "cast:self:skill", max_stacks: 4, excludes: [516127]}
-    - {name: tier, event: "cast:self:skill", max_stacks: 4, add: 2, requires: [516127]}
+    # Observation Point tiers: one per Area Plotting cast (two with Ascending Draw Zone), up to 4 (Observer Iteration).
+    # A cast's tiers only reach later turrets (user, Co-Draw clip: spawn strike / first mapping hit 0.338; the model
+    # gives 0.345 with the first turret untiered, 0.192 tiered). GUESS: tiers are gained as a turret expires.
+    - {name: tier, event: "vanish:self:point", max_stacks: 4, excludes: [516127]}
+    - {name: tier, event: "vanish:self:point", max_stacks: 4, add: 2, requires: [516127]}
 
   minions:
     point:                        # Observation Point + its Tactical Mapping

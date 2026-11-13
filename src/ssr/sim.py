@@ -208,6 +208,9 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     discs_main, discs_support = discs if discs is not None else (team.discs_main, team.discs_support)
     unknown: set[str] = set()
     uptime_default = float(team.assumptions.get("unknown_trigger_uptime", 1.0))
+    # A new stack of a buff: "refresh" resets every stack's timer (BuffValue TimeSuperposition 2, nearly every buff;
+    # user's Co-Draw clip: a 3 s x5 buff fed once a second reaches 5), "independent" lets each expire on its own.
+    refresh_stacks = team.assumptions.get("stack_timers", "independent") == "refresh"
     disc_team = team.assumptions.get("disc_stats_target", "team") == "team"
 
     classes = [gd.table("Character")[str(m.char_id)].get("Class", 0) for m in team.members]
@@ -645,6 +648,8 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                 md.last_trigger = t
                 dur = math.inf if (trig.duration == 0 or trig.duration == math.inf) else trig.duration
                 md.stacks = [x for x in md.stacks if x > t]
+                if refresh_stacks and md.stacks:
+                    md.stacks = [t + dur] * len(md.stacks)
                 md.stacks += [t + dur] * add
                 if len(md.stacks) > trig.max_stacks:
                     md.stacks.sort()

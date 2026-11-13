@@ -35,6 +35,7 @@ pytest tests/test_sim.py -k <name>      # one test
 python -m ssr teams/<team>.yaml -o out/ # full rating to out/<team>.xlsx (~10 s)
 python -m ssr teams/<team>.yaml --pinks <main> <support1> <support2>  # pink pair search (~20 s)
 python -m ssr.compare teams/a.yaml teams/b.yaml --split 30,15,15      # compare totals (~15 s per team)
+python -m ssr.compare ... --split 30,15,15 --emblems purple           # + greedy emblems on top (~30 s per team)
 python -m ssr.inspect trekker|hits|disc|scripted-discs|word ...       # dump game data for writing specs
 python -m ssr.web [--port 9000] [--no-open]                           # build guide at http://127.0.0.1:8765/
 ```
