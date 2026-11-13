@@ -8,11 +8,12 @@ from ssr.effects import Modifier, Trigger
 from ssr.kit import resolve_potential
 from ssr.sim import simulate
 from ssr.stats import ATK
-from ssr.team import Build, load_team, TEAMS
+from ssr.team import Build, load_team
 
 from pathlib import Path
 
-FIXTURES = Path(__file__).parent / "fixtures"   # frozen team files: the build page saves over teams/
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
+
 
 CHIXIA = 2
 CONVERGENCE, CHANT, TIGER, SCALES, HORN_CALL, TRAIL_SEEKER = 514121, 514122, 514123, 514124, 514125, 514126
@@ -20,7 +21,7 @@ CONVERGENCE, CHANT, TIGER, SCALES, HORN_CALL, TRAIL_SEEKER = 514121, 514122, 514
 
 @pytest.fixture(scope="module")
 def team(gd):
-    return load_team(gd, FIXTURES / "amber_flora_chixia.yaml")
+    return load_team(gd, TEAMS / "amber_flora_chixia.yaml")
 
 
 def test_minion_statuses_track_summons(gd, team):

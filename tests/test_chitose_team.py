@@ -8,7 +8,10 @@ from ssr.effects import Modifier, Trigger
 from ssr.kit import HitSpec
 from ssr.sim import simulate
 from ssr.stats import AUTO_DMG
-from ssr.team import Build, load_team, TEAMS
+from ssr.team import Build, load_team
+from pathlib import Path
+
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
 CHITOSE, FREESIA, TERESA = 144, 125, 127
 CASCADE, AGAINST_FLOW, SERPENT_GLIDE, MIRROR_BLADE = 514403, 514404, 514401, 514402

@@ -1,5 +1,5 @@
 import pytest
-from ssr.team import load_team, FILLER, Build, emblem_lines, TEAMS
+from ssr.team import load_team, FILLER, Build, emblem_lines
 from ssr.stats import HP, CRIT_RATE, elem_stat, ELEM_PEN_BASE
 
 

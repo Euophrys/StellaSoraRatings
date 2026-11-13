@@ -2,7 +2,10 @@
 import pytest
 from ssr.kit import resolve_potential
 from ssr.sim import _norm_event, simulate
-from ssr.team import Build, load_team, TEAMS
+from ssr.team import Build, load_team
+from pathlib import Path
+
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
 NANOHA = 119
 

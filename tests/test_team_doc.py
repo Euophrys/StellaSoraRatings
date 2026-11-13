@@ -6,13 +6,14 @@ import yaml
 
 from ssr.emblems import EmblemLine, EmblemPotentialLevel, EmblemSkillLevel
 from ssr.sim import simulate
-from ssr.team import TEAMS, Build, TeamDocError, load_team, save_team, team_build, team_from_doc
+from ssr.team import Build, TeamDocError, load_team, save_team, team_build, team_from_doc
 
 from pathlib import Path
 
-FIXTURES = Path(__file__).parent / "fixtures"   # frozen team files: the build page saves over teams/
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
-AFC = FIXTURES / "amber_flora_chixia.yaml"
+
+AFC = TEAMS / "amber_flora_chixia.yaml"
 
 
 @pytest.fixture
@@ -102,7 +103,7 @@ def test_bad_names_raise_team_doc_error(gd, doc, edit, bad):
 
 
 def test_level_and_bonus_stats(gd):
-    from ssr.team import load_team, TEAMS
+    from ssr.team import load_team
     from ssr.sim import simulate
     from ssr.team import Build
     t = load_team(gd, TEAMS / "bb_noya_shia_tilia_ingame.yaml")

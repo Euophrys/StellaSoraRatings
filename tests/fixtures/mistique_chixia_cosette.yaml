@@ -1,0 +1,93 @@
+# Mistique (main, Umbra) + Chixia (Ignis) + Cosette (Umbra). User timings (2026-11-02): see specs/trekkers/135.yaml,
+# 142.yaml; Chixia's from the Amber team (141.yaml, user: same here).
+name: mistique_chixia_cosette
+fight_length: 120
+tick: 0.05
+mark_icd: 1
+hold:
+- member: 0
+  action: ult
+  until: while:cast_within:2:skill:3
+  only_if: while:cd_within:2:skill:7
+  max_wait: 15
+enemy:
+  res: 250        # weak-element RES (docs/assumptions.md)
+  weak:
+  - Umbra
+  res_neutral: 750
+  defense: 500
+  broken: 1
+members:
+- trekker: Mistique
+  role: main
+  pinks:
+  - Defiance Before Deletion
+  - Burst Shooting
+  skill_levels:
+    auto: 10
+    skill: 10
+    ult: 10
+  emblems: []
+  targets:
+    Cursed Screech: 6
+    'Lingering Grudge: Onslaught': 1
+    Full Frame Focus: 6
+    Darkness Devourer: 6
+    Quick Nightfall: 1
+    Chaos Frenzy: 6
+- trekker: Chixia
+  role: support
+  pinks:
+  - 'Crimson Dragon: Convergence'
+  - 'Sigil Unleashed: Tiger of the East'
+  skill_levels:
+    skill: 10
+    ult: 10
+  emblems: []
+  targets:
+    'Ink Sigil: Horn Call': 6
+    'Ink Sigil: Barrier Construct': 1
+    'Ink Sigil: Blood Fed': 1
+    'Ink Sigil: Ambush': 6
+- trekker: Cosette
+  role: support
+  pinks:
+  - Eclipse Imprint
+  - Phantom Mark
+  skill_levels:
+    skill: 10
+    ult: 10
+  emblems: []
+  targets:
+    'Dark: Demon Mark': 6
+    'Dark: Mirage': 6
+    'Dark: Hallucination': 1
+    'Dark: Afterglow': 5
+    Void Blessing: 1
+    Gift of Darkness: 1
+discs:
+  main:
+  - name: Wisteria Dream
+    copies: 1
+  - name: Witch's Swing
+    copies: 1
+  - name: Petals of Blooming Mirage
+    copies: 1
+  support:
+  - filler
+  - filler
+  - filler
+reference:
+  steps: 2
+  main_picks: 2
+  support_picks: 1
+  level: 6
+assumptions:
+  unknown_trigger_uptime: 1
+  disc_stats_target: team
+  dodge_spam: {interval: 3, potentials: [513512]}   # user 2026-11-04: weak autos, so with Decisive Moment she dodges on cooldown (3 s)
+budget_total: 60
+budget:
+- 30
+- 20
+- 20

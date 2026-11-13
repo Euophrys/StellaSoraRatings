@@ -2,10 +2,14 @@
 from dataclasses import replace
 
 import pytest
+import yaml
 
 from ssr.kit import HitSpec, resolve_potential, role_status
 from ssr.sim import simulate
-from ssr.team import Build, SPECS, TeamDocError, load_team, team_from_doc, TEAMS
+from ssr.team import Build, SPECS, TeamDocError, load_team, team_from_doc
+from pathlib import Path
+
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
 TILIA, NOYA, FL_NOYA, AMBER, ANN = 107, 112, 162, 103, 123
 KNIGHTS_SEAL, WINDFURY, GUIDING_STAR = 510727, 511203, 516243
@@ -124,7 +128,9 @@ def test_downwind_journey_does_nothing_for_a_melee_main(gd):
 
 
 def test_a_dance_with_bullets_stacks_skill_dmg(gd):
-    t = _amber(gd)
+    doc = yaml.safe_load((TEAMS / "amber_flora_chixia.yaml").read_text(encoding="utf-8"))
+    doc["members"][0]["talents"] = 1
+    t = team_from_doc(gd, doc, "amber_flora_chixia")
     assert t.members[0].talents == 1
     on = simulate(gd, t, Build())
     assert not any("key talent" in u and "Amber" in u for u in on.unknown_modifiers)

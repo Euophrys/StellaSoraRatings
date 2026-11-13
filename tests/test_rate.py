@@ -5,6 +5,9 @@ from ssr.team import Build, FILLER
 from ssr.game import potential_pools, disc_base_stats
 from ssr.effects import Modifier
 from ssr.stats import ATK, HP, StatBlock
+from pathlib import Path
+
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
 FILLERS = ([(FILLER, 6)] * 3, [(FILLER, 6)] * 3)
 
@@ -95,5 +98,5 @@ def test_cli_rates_emblems_on_reference_build(gd, tmp_path, monkeypatch):
     monkeypatch.setattr(cli, "rate_emblems", lambda _gd, _team, build: seen.append(build) or [])
     monkeypatch.setattr(cli, "rate_potentials", lambda *a, **k: [])
     monkeypatch.setattr(cli, "write_xlsx", lambda *a, **k: None)
-    cli.main(["teams/fl_noya_skill.yaml", "-o", str(tmp_path)])
+    cli.main([str(TEAMS / "fl_noya_skill.yaml"), "-o", str(tmp_path)])
     assert seen == [ref]

@@ -7,16 +7,16 @@ from ssr.compare import greedy_build
 from ssr.guide import emblem_table, optimize, potential_grid, rank_pinks
 from ssr.rate import gain
 from ssr.sim import simulate
-from ssr.team import TEAMS, Build, load_team
+from ssr.team import Build, load_team
 
 from pathlib import Path
 
-FIXTURES = Path(__file__).parent / "fixtures"   # frozen team files: the build page saves over teams/
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
 
 @pytest.fixture(scope="module")
 def short_team(gd):
-    return replace(load_team(gd, FIXTURES / "amber_flora_chixia.yaml"), fight_length=20)
+    return replace(load_team(gd, TEAMS / "amber_flora_chixia.yaml"), fight_length=20)
 
 
 def test_grid_current_level_is_removal_and_signs(gd, short_team):

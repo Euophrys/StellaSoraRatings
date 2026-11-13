@@ -4,7 +4,10 @@ from dataclasses import replace
 import pytest
 from ssr.builds import with_pinks
 from ssr.sim import _targets, simulate
-from ssr.team import Build, load_team, TEAMS
+from ssr.team import Build, load_team
+from pathlib import Path
+
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
 MISTIQUE, CHIXIA, COSETTE = 135, 141, 142
 DEFIANCE, BURST, EXTENDED, THREAD = 513501, 513502, 513503, 513504

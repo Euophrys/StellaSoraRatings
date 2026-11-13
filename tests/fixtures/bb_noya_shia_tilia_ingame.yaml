@@ -1,0 +1,71 @@
+# The user's in-game Boss Blitz run (2026-11-03): FL Noya / Shia / Tilia vs Lithe Beauty, 3 min.
+# In-game total 1,620M (Noya 1.6B, Shia 12M, Tilia 3.7M), 4-5 breaks. Calibration build: fixed potentials, no
+# reference build (docs/validation/2026-11-03-boss-blitz-breaks.md).
+# Not modelled: harmony skill levels (all Lv2, Infinite Sunshine Lv1; the engine uses the disc's copies only),
+# notes, movement / missed attacks, ult time-stop. Skill levels: normal / skill / support skill / ult.
+# "Veteran's Gift" (user) = Veteran's Grit, Noya's only "Veteran" potential.
+name: bb_noya_shia_tilia_ingame
+fight_length: 180
+tick: 0.05
+mark_icd: 1.0
+disc_level: 80
+enemy:
+  preset: lithe_beauty
+
+members:
+  - trekker: Firstlight Noya
+    role: main
+    level: 80
+    pinks: [Lucent Blitz, Dawnflare]
+    talents: 0
+    skill_levels: {auto: 7, skill: 11, ult: 7}
+    emblems: []
+    # build level 30: ATK +2541, HP +23720 (applied to Noya only; GUESS whether the build bonus is squad-wide);
+    # emblem: 93 Lux PEN, 7% Crit Rate
+    bonus_stats:
+      - {stat: 1, value: 2541}
+      - {stat: 3, value: 23720}
+      - {stat: 27, value: 93}
+      - {stat: 6, value: 0.07}
+    targets:
+      Prism Warp: 6
+      "Argent Mirage: Legion's End": 6
+      "Resolve: Blitz": 4
+      Searing Sun: 3
+      "Veteran's Grit": 2
+      Guiding Star: 2
+  - trekker: Shia
+    role: support
+    level: 70
+    pinks: [Bunny Torrent, Rabbit Flip]
+    skill_levels: {skill: 1, ult: 1}
+    emblems: []
+    targets:
+      Moonfall: 2
+      Howl to the Moon: 3
+      Silent Tide: 2
+      Wave to Oblivion: 1
+  - trekker: Tilia
+    role: support
+    level: 70
+    pinks: [Renewed Spectrum, Perfect Spiral]
+    skill_levels: {skill: 5, ult: 5}
+    emblems: []
+    targets:
+      Enemy Counter: 6
+      Banner of Glory: 4
+      Blinding Beam: 4
+      "Knight's Seal": 2
+
+discs:
+  main:
+    - {name: Summer Sanctuary, copies: 6}
+    - {name: Eternal Brilliance, copies: 6}
+    - {name: My Guiding Star, copies: 1}
+  support: [filler, filler, filler]   # the user's support discs weren't given: filler (Lv80 C6 stats)
+
+reference: {steps: 0}
+
+assumptions:
+  unknown_trigger_uptime: 1.0
+  disc_stats_target: team

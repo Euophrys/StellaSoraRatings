@@ -5,7 +5,10 @@ from ssr.effects import Modifier
 from ssr.formula import def_amend
 from ssr.sim import simulate
 from ssr.stats import DEF
-from ssr.team import Build, load_team, TEAMS
+from ssr.team import Build, load_team
+from pathlib import Path
+
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
 
 def _bar_off(team):

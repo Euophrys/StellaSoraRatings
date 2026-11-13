@@ -8,15 +8,15 @@ import urllib.request
 import pytest
 import yaml
 
-from ssr.team import TEAMS
 from ssr.web import server
 from ssr.web.jobs import JobBusy, JobRunner
 
 from pathlib import Path
 
-FIXTURES = Path(__file__).parent / "fixtures"   # frozen team files: the build page saves over teams/
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
-AFC = yaml.safe_load((FIXTURES / "amber_flora_chixia.yaml").read_text())
+
+AFC = yaml.safe_load((TEAMS / "amber_flora_chixia.yaml").read_text())
 
 
 class Client:
@@ -90,7 +90,7 @@ def test_catalog_says_which_role_kits_are_real(client):
 
 
 def test_team_list_and_get(client, monkeypatch):
-    monkeypatch.setattr(server, "TEAMS_DIR", FIXTURES)
+    monkeypatch.setattr(server, "TEAMS_DIR", TEAMS)
     assert "amber_flora_chixia" in client.get("/api/teams")
     assert client.get("/api/teams/amber_flora_chixia") == AFC
     assert client.call("GET", "/api/teams/nope")[0] == 404

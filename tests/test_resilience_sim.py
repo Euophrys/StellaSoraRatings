@@ -1,9 +1,12 @@
 import pytest
 from dataclasses import replace
 from ssr.sim import simulate
-from ssr.team import Build, load_team, TEAMS
+from ssr.team import Build, load_team
 from ssr.effects import Modifier, Trigger
 from ssr.stats import SKILL_DMG
+from pathlib import Path
+
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
 PRE_RESILIENCE_TOTAL = 222416708.8703382   # fl_noya_skill, Build(), bar off. Was 223,698,051.888 before Ripples of Nostalgia harmony 1 and Shock (A Moment in the Afternoon) got real triggers (2026-11-04). Was 239,320,242.148 before passive energy was removed (2026-11-03, user: no passive energy)
 

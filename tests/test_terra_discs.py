@@ -6,7 +6,10 @@ import pytest
 from ssr.effects import Modifier, Trigger, disc_modifiers
 from ssr.sim import simulate
 from ssr.stats import SKILL_DMG, AUTO_DMG
-from ssr.team import FILLER, TEAMS, load_team, team_build
+from ssr.team import FILLER, load_team, team_build
+from pathlib import Path
+
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
 TERRA_DMG, TERRA_TAKEN = 19, 37
 PILGRIM, CLAW, SHINING = 214036, 214037, 213020

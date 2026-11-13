@@ -8,7 +8,10 @@ from ssr.effects import Modifier
 from ssr.kit import ResolvedPotential
 from ssr.sim import simulate
 from ssr.stats import ATK_SPD
-from ssr.team import Build, load_team, TEAMS
+from ssr.team import Build, load_team
+from pathlib import Path
+
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
 AMBER = 103
 PTC, ECHO, DF, BS = 510303, 510304, 510301, 510302

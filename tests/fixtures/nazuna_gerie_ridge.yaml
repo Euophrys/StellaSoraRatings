@@ -1,0 +1,39 @@
+# Nazuna (main) / Gerie / Ridge, all Terra. User timings 2026-11-03 (specs/trekkers/149, 156, 116).
+# Compared against teams/gerie_nazuna_ridge.yaml (same Trekkers, Gerie main).
+name: nazuna_gerie_ridge
+fight_length: 120
+tick: 0.05
+mark_icd: 1.0
+enemy:
+  res: 250        # weak-element RES (docs/assumptions.md)
+  defense: 500
+  broken: 1.0
+  resilience: 0   # bar off: one break in 120 s makes totals hinge on whether an ult lands in the window
+
+members:
+  - trekker: Nazuna
+    role: main
+    pinks: [Small Force, Wobble Dance]
+    skill_levels: {auto: 10, skill: 10, ult: 10}
+    emblems: []
+  - trekker: Gerie
+    role: support
+    pinks: [Deeper into Sin, Sin-Bound Echo]
+    skill_levels: {skill: 10, ult: 10}
+    emblems: []
+  - trekker: Ridge
+    role: support
+    pinks: [Reblossom, Sense the Stir]
+    skill_levels: {skill: 10, ult: 10}
+    emblems: []
+
+discs:   # filler for both orders, so the comparison is about the kits
+  main: [filler, filler, filler]
+  support: [filler, filler, filler]
+
+reference: {steps: 2, main_picks: 2, support_picks: 1, level: 6}
+
+assumptions:
+  unknown_trigger_uptime: 1.0
+  disc_stats_target: team
+  dodge_spam: {interval: 3, potentials: [515611]}   # user 2026-11-04: Gerie does most of the damage, so with Swiftstep Nazuna dodges on cooldown

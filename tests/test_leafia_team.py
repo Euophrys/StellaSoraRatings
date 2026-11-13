@@ -4,7 +4,10 @@ from dataclasses import replace
 import pytest
 from ssr.builds import with_pinks
 from ssr.sim import simulate
-from ssr.team import Build, load_team, TEAMS
+from ssr.team import Build, load_team
+from pathlib import Path
+
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
 LEAFIA = 161
 OVERCLOCK, PENETRATION, ECHO, ASSAULT = 516101, 516102, 516103, 516104

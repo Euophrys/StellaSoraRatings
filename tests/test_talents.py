@@ -13,6 +13,9 @@ from ssr.refs import resolve
 from ssr.sim import simulate
 from ssr.stats import DMG_MULT, SKILL_DMG
 from ssr.team import Build, load_team
+from pathlib import Path
+
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
 
 @pytest.fixture(scope="module")
@@ -22,7 +25,7 @@ def gd():
 
 @pytest.fixture(scope="module")
 def shia_team(gd):
-    return load_team(gd, REPO_ROOT / "teams" / "fl_noya_t1_shia_tilia.yaml")
+    return load_team(gd, TEAMS / "fl_noya_t1_shia_tilia.yaml")
 
 
 def test_talent_groups_in_unlock_order(gd):
@@ -116,7 +119,7 @@ def test_talents_apply_to_both_roles(gd):
 
 
 def test_talent_tiers_add_damage_and_list_what_is_missing(gd):
-    team = load_team(gd, REPO_ROOT / "teams" / "nanoha_ann_tilia.yaml")
+    team = load_team(gd, TEAMS / "nanoha_ann_tilia.yaml")
     totals = []
     for tier in range(6):
         r = simulate(gd, replace(team, members=[replace(m, talents=tier) for m in team.members]), Build())
@@ -143,7 +146,7 @@ def test_damage_event_fires_once_per_hit(gd, shia_team):
 
 def test_squad_condition(gd, shia_team):
     all_lux = shia_team
-    mixed = load_team(gd, REPO_ROOT / "teams" / "nanoha_ann_tilia.yaml")
+    mixed = load_team(gd, TEAMS / "nanoha_ann_tilia.yaml")
     for team, gains in ((all_lux, True), (mixed, False)):
         m = _skill_dmg(1.0, "while:squad:5:3")
         base, buffed = simulate(gd, team, Build()).total, simulate(gd, team, Build(), extra=[(0, m)]).total
@@ -152,7 +155,7 @@ def test_squad_condition(gd, shia_team):
 
 def test_mark_element_events_ignore_other_elements(gd):
     """"When Ignis Mark is triggered" doesn't fire on Mistique's Umbra Marks: `mark:element<N>`."""
-    team = load_team(gd, REPO_ROOT / "teams" / "mistique_chixia_cosette.yaml")
+    team = load_team(gd, TEAMS / "mistique_chixia_cosette.yaml")
     base = simulate(gd, team, Build()).total
     ignis = _skill_dmg(1.0, "mark:element2")
     umbra = _skill_dmg(1.0, "mark:element6")
@@ -172,7 +175,7 @@ def test_kit_buff_always_every_icd(gd, shia_team):
 
 def test_stacks_gone_after_the_ult_count_for_its_hits(gd):
     """Afterrain Clarity (Chitose T4): all of the ult's hits get the stacks, then they're cleared."""
-    team = load_team(gd, REPO_ROOT / "teams" / "chitose_freesia_teresa.yaml")
+    team = load_team(gd, TEAMS / "chitose_freesia_teresa.yaml")
     def ult(kit_edit):
         m = team.members[0]
         t = replace(team, members=[replace(m, talents=4, kit=kit_edit(m.kit))] + team.members[1:])
@@ -186,7 +189,7 @@ def test_stacks_gone_after_the_ult_count_for_its_hits(gd):
 
 
 def test_toys_status_needs_a_shell(gd):
-    team = load_team(gd, REPO_ROOT / "teams" / "amber_laru_flora.yaml")
+    team = load_team(gd, TEAMS / "amber_laru_flora.yaml")
     i = next(i for i, m in enumerate(team.members) if m.char_id == 158)
     t = replace(team, members=[replace(m, talents=1 if j == i else 0) for j, m in enumerate(team.members)])
     r = simulate(gd, t, Build())

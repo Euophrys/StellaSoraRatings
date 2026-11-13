@@ -17,6 +17,8 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -e . pytest
 ```
 
+Tests never read `teams/`: the user edits those files and the build page saves over them, so a test that loads one breaks whenever they do. Copy the team into `tests/fixtures/` (frozen, from the committed version) and load it from there through each test file's `TEAMS` constant; if a test needs a particular setting such as `talents: 1`, set it in the test rather than relying on the file.
+
 Game data is required by the code and most tests, and is gitignored. It's a sparse clone of the mined tables at `data_src/StellaSoraData` (only `EN`). Pull it after a game patch; don't try to decrypt the game archives locally.
 
 ```bash

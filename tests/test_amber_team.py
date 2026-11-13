@@ -8,7 +8,10 @@ from ssr.effects import Modifier, Trigger, disc_modifiers
 from ssr.kit import ActionSpec, Followup, HitSpec, ResolvedPotential, SPECS, load_kit, resolve_potential
 from ssr.sim import simulate, _event_matches, _norm_event
 from ssr.stats import AUTO_DMG
-from ssr.team import Build, load_team, TEAMS
+from ssr.team import Build, load_team
+from pathlib import Path
+
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
 AMBER, LARU, FLORA = 103, 158, 126
 PTC, ECHO, DF, BS = 510303, 510304, 510301, 510302

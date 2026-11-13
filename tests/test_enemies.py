@@ -24,6 +24,9 @@ def test_count_of_the_duloos_values(gd):
 from ssr.enemies import enemy_from_doc, preset_names
 from ssr.team import team_from_doc, TeamDocError
 import pytest
+from pathlib import Path
+
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
 
 def test_preset_names():
@@ -57,7 +60,6 @@ def test_bar_off_and_overrides(gd):
 
 
 def test_unknown_preset(gd):
-    from ssr.team import TEAMS
     import yaml
     doc = yaml.safe_load(open(TEAMS / "fl_noya_skill.yaml"))
     doc["enemy"] = {"preset": "nope"}

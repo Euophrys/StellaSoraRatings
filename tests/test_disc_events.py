@@ -6,7 +6,10 @@ from dataclasses import replace
 from ssr.effects import Modifier, Trigger, disc_modifiers
 from ssr.sim import simulate
 from ssr.stats import SKILL_DMG, START_ENERGY
-from ssr.team import Build, load_team, TEAMS
+from ssr.team import Build, load_team
+from pathlib import Path
+
+TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
 
 def _bar_off(team):
