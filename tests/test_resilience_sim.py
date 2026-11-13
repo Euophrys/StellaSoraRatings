@@ -13,7 +13,8 @@ def _with_enemy(team, **kw):
 
 
 def test_bar_off_matches_pre_resilience_totals(gd, team):
-    team = replace(team, assumptions={**team.assumptions, "harmony_notes": 0, "dodge_time": 0})   # total predates notes and dodge costs
+    team = replace(team, assumptions={**team.assumptions, "harmony_notes": 0, "dodge_time": 0,
+                                      "stack_timers": "independent"})   # total predates notes, dodge costs, refreshing stacks
     r = simulate(gd, _with_enemy(team, resilience=0, res=145.0), Build())   # total predates raw enemy RES (was 250 - 105)
     assert r.total == pytest.approx(PRE_RESILIENCE_TOTAL, rel=1e-12) and r.breaks == []
 

@@ -10,6 +10,14 @@ Run: `python -m ssr teams/fl_noya_skill.yaml -o out/` → `out/fl_noya_skill.xls
 > - **Discs:** Spearman against Maygi's 11 discs is 0.818 (main C1), 0.809 (main C6), 1.0 (support C1).
 > - **Lux PEN emblem:** 9.79% / 0.69% against the reference build, which is what `python -m ssr` rates against (Maygi 8.65% / 0.05%); 24.34% / 7.12% against pinks only.
 >
+> **Update 2026-11-13: stacks refresh together** (`stack_timers: refresh`, now the default; user-tested on Gerie's Delight in Ruin: all 6 stacks drop at once). A new stack resets every stack's timer, so stacking buffs reach higher counts. Use these for regressions:
+>
+> - **Pinks-only total:** 216.4M (was 203.1M, +6.6%).
+> - **Reference build total:** 1,429.1M (was 1,112.4M, +28%). Tilia's Revealed Flaw (10 s ×4, about one stack every 7 s: 2 stacks before, 4 now) replaces Trick Boost; the rest is unchanged.
+> - **Lux PEN emblem:** 31.51% / 8.39% against the reference build (Maygi 8.65% / 0.05%). Pinks only it's 23.75% (was 24.34%): the move comes from the reference build, not the line.
+> - Stacking potentials gain most: Lucent Tide Lv1 +2.0% → +9.1%, Searing Sun −1.1% → +6.0%, Veteran's Grit +1.4% → +5.1%.
+> - `bb_noya_shia_tilia_ingame`: 1,819.1M, +12.3% against the in-game 1,620M (was +4.7%). The user's in-game build is weaker than the sim's.
+
 > **Update 2026-11-07, later: potentials can grant Energy.** Guiding Star now restores its 2.5 Energy/s during Starender, which moves this team. The numbers above are the last ones before that. The user's Lv2 clip shows the Energy starting during the ult but can't measure the amount, and the user trusts the text (`docs/assumptions.md`). This is further from Maygi on the emblems. The pinks-only total and disc ratings don't change. Use these for regressions:
 >
 > - **Reference build:** Argent Mirage, Guiding Star, Resolve: Blitz, Prism Warp (Noya); Domain of Purity, Stellar Crash (Firefly); Enemy Counter, Trick Boost (Tilia). Guiding Star replaces Astral Brilliance.

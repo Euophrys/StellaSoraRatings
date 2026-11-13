@@ -208,9 +208,9 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     discs_main, discs_support = discs if discs is not None else (team.discs_main, team.discs_support)
     unknown: set[str] = set()
     uptime_default = float(team.assumptions.get("unknown_trigger_uptime", 1.0))
-    # A new stack of a buff: "refresh" resets every stack's timer (BuffValue TimeSuperposition 2, nearly every buff;
-    # user's Co-Draw clip: a 3 s x5 buff fed once a second reaches 5), "independent" lets each expire on its own.
-    refresh_stacks = team.assumptions.get("stack_timers", "independent") == "refresh"
+    # A new stack of a buff resets every stack's timer (user, in game: Gerie's Delight in Ruin, 6 stacks all drop at
+    # once; BuffValue TimeSuperposition 2 on nearly every buff). "independent" lets each stack expire on its own.
+    refresh_stacks = team.assumptions.get("stack_timers", "refresh") == "refresh"
     disc_team = team.assumptions.get("disc_stats_target", "team") == "team"
 
     classes = [gd.table("Character")[str(m.char_id)].get("Class", 0) for m in team.members]

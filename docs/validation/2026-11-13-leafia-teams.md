@@ -96,3 +96,16 @@ Still open: questions 6 (partly answered), 7 and 8 above, and Springseek Coronis
 No assumed uptimes. Each disc swapped back to filler (pinks only): Emergency Evacuation +33–40%, The Lost Pilgrim +19–24%, Claw the Claw +18–21%.
 
 Emergency Evacuation is worth more with Ridge for two reasons. Ridge is Versatile, so her casts stack Anchored too: max stacks come sooner, and harmony 2's ATK is up longer. Its melody's +15% Auto DMG for Terra supports goes to Leafia's turret hits, which are Auto Attack DMG. Its spec comes from the text alone.
+
+## Third pass: Co-Draw clip, stack timers, emblems
+
+- **Co-Draw clip** (Ascending Draw Zone, Terra DMG Etching, Draw Zone Ascension / Bombardment / Support and Tier 2 Etching, all Lv6):
+  - Spawn strike 21649, then mapping hits growing to the 6th.
+  - The spawn ratio fits only if the first turret has no tiers yet (0.338 seen, model 0.345 untiered vs 0.192 tiered). Tiers now come as a turret expires (GUESS).
+  - The growth fits only with refreshing stacks.
+- **Stacks refresh together** (user-tested: Gerie's Delight in Ruin, all 6 drop at once); now the default. Calibration still beats Co-Draw by 28–66% at N=60.
+- **One Mark per element at a time** (user) and **the 1 s Mark ICD** (Amber timings) are confirmed.
+- **Gerie's Mark emblems:**
+  - Touch of Nature (+420% Mark DMG at Lv6) is EAT 64, the same additive bucket as the emblem's Mark DMG. A purple +80% line therefore adds only ~15% to her Marks in Nazuna teams.
+  - The user accepts that the community likely read "Mark DMG Multiplier" as a separate multiplier.
+- **Emblem optimizer:** `python -m ssr.compare ... --emblems <tier>`.
