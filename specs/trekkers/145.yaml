@@ -1,5 +1,5 @@
 # Otoha (145) — Umbra Versatile. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Ricochets need other targets: not counted.
+# Timings from animation frame data, see docs/assumptions.md "Frame data". Ricochets need other targets: not counted.
 # The ult's cooldown cuts (Subtle Tremor, Lonely Twin Shadows) aren't modelled, their Energy is.
 char_id: 145
 

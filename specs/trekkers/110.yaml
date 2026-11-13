@@ -1,5 +1,5 @@
 # Firenze (110) — Umbra Vanguard. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Shadow Clones (minions) are skipped:
+# Timings from animation frame data, see docs/assumptions.md "Frame data". Shadow Clones (minions) are skipped:
 # their damage, their Mark triggers and every clone-only potential are worth nothing here.
 char_id: 110
 

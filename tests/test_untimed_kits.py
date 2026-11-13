@@ -103,9 +103,15 @@ def test_kit_simulates_every_potential_and_talent(gd, cid, role):
                 and not any(k in u for k in known)]
 
 
-def test_untimed_is_a_role_status():
-    assert role_status(SPECS / "108.yaml", "main") == "untimed"
-    assert role_status(SPECS / "108.yaml", "support") == "untimed"
+def test_frames_is_a_role_status():
+    assert role_status(SPECS / "108.yaml", "main") == "frames"
+    assert role_status(SPECS / "108.yaml", "support") == "frames"
+
+
+def test_no_role_is_left_untimed():
+    """Every role guessed on 2026-11-07 is now timed from frame data (or by the user)."""
+    assert not [(p.stem, r) for p in sorted(SPECS.glob("*.yaml")) for r in ("main", "support")
+                if role_status(p, r) == "untimed"]
 
 
 def _squad(gd, *names, first_role="main"):

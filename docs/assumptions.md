@@ -201,9 +201,22 @@ All from the game text, none checked in game. Stat nodes were already read from 
 - **EAT 85 "DMG Multiplier" is now a real multiplier** (`DMG_MULT`, x (1 + value) on the hit), matching what the user's clips showed for Amber's recast. Night Watcher's Duty and Meeting You at Dawn use it. Resolve: Blitz, Surge: Thunderbolt and Firstlight Noya's per-Glimmer autos moved to it too (user, 2026-11-07), so `as_stat` no longer has any users. Lines on one hit add together inside the multiplier, as they did in the bucket. The bucket and the multiplier only differ when something else is in the general DMG bucket (EAT 49 / 50), and `fl_noya_skill`'s workbook has nothing that does: it comes out the same as before the move. Unscoped EAT 85 lines on stub support kits (Nimble Catwalk, Fiendbreaker, Breath of Light) were ignored before and now apply to all their hits; no team uses them.
 - **`damage:<who>`:** A Dance with Bullets (Amber T1) now stacks once per hit instead of once per tag and bucket. `amber_flora_chixia` moves -0.02%. No other team's total moved at its current talents.
 
+## Frame data (2026-11-13)
+
+The 60 roles authored on guesses (below) are now timed from the game's own animation data and marked `timing: frames`. The data is read from the installed game's plain Unity bundles (`python -m ssr.frames extract`, cached in `data_src/frames/`). Nothing is decrypted: the Lua, `global-metadata` and `Hotfix.dll` stay untouched, so what Lua decides (summon fire rates, which bullet a script spawns) stays a GUESS. `python -m ssr.inspect frames <char>` prints a character's clips, and `scripts/frames_propose.py <id>` prints them next to the spec. The rules below were calibrated on the user-timed kits (FL Noya, Gerie, Chitose, Mistique, Leafia, Noya), which they match within about 0.1 s:
+
+- **Strings and locks:** the next auto strike, and the main's next action after a skill or ult, starts at the end of the clip's combo window. An auto's `duration` is the chained strikes; a magazine is ammo × the shot clip + the reload's combo-window end.
+- **Ult:** the cutscene (TL) clip is used, not the no-cutscene one.
+- **Hits:** a hit event lands at its time. A hit window with a detect interval repeats every interval (limited by `damageImmuneDuration`). An area hits `hitDelay` after it spawns, then every `hitInterval` while it lasts.
+- **Bullets** fly 3 units to the boss (GUESS; Ann's ult measured +0.97 s fits), so a 40 u/s bullet takes 0.075 s, capped by its lifetime.
+- **Supports:** on the field for the skill clip(s) + 1.35 s, or the ult's TL clip + 1.65 s (the exit, calibrated on timed supports).
+- **The text wins over data** where it gives a count or rate and the data disagrees (noted in the spec). The user's own timings are kept where they exist.
+- **Counts the data can't give** (fans of bullets, Lua-driven summons, "multiple times") stay GUESSes and are marked. Notable ones: Shia's Snow Rabbit fan (2 of 18 bullets), Willow's Bubble Machine strike 3 (1 of 7 bubbles), Shia's skill Rabbits' fire rate, Willow's support bubbles (1/s).
+- **Pink-only clips:** where a pink plays a longer clip (Laru's Lance Sweep, Snowish Laru's Whipping Gale, Caramel's Melody Return), the hits follow it but the lock doesn't (potentials can't change a lock); noted in the spec.
+
 ## Untimed kits (2026-11-07)
 
-Every Trekker now has both roles, but the 60 roles marked `untimed: true` have never been timed in game. Validation: `docs/validation/2026-11-07-untimed-kits.md`. The aim is that timing them moves them up, so each guess sits on the slow side of the kits the user has timed. Each is a default that a measurement replaces.
+Every Trekker now has both roles. The 60 roles marked `untimed: true` hadn't been timed in game; they're all `timing: frames` now (above), and the table below is what they used before. The rest of this section still applies. Validation: `docs/validation/2026-11-07-untimed-kits.md`. The aim is that timing them moves them up, so each guess sits on the slow side of the kits the user has timed. Each is a default that a measurement replaces.
 
 | Thing | Guess | Timed kits, for comparison |
 | --- | --- | --- |

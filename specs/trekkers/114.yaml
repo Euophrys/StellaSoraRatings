@@ -1,5 +1,5 @@
 # Chaton (114) — Ignis Vanguard. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". The main skill is tapped (Dark Ray) unless the
+# Timings from animation frame data, see docs/assumptions.md "Frame data". The main skill is tapped (Dark Ray) unless the
 # build has a Bouncing Bomb pink; bombs are counted once each, as bounces need other targets.
 # Evil Eye Unleashed: Dark Burst replaces her autos for 15 s, written as ult-action hits inside a 15 s lock.
 char_id: 114

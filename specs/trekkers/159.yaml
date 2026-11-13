@@ -1,5 +1,5 @@
 # Springseek Coronis (159) — Terra Versatile. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits".
+# Timings from frame data (python -m ssr.inspect frames 159).
 char_id: 159
 
 talents:
@@ -20,27 +20,31 @@ talents:
       - {attribute: 15996511, event: always}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 159), not checked in game
   mark: {hit: 159000001}
 
   actions:
     auto:
-      duration: 6.0                # GUESS: 15 shots, 0.3 s each, 1.5 s reload
-      hits:
-        - {hit: 159100001, count: 15, offset: 0.3, interval: 0.3, tags: [needle]}
+      duration: 5.3                # frames: 5 strikes of 3 shots (combo-window end 0.9) + the reload's 0.8
+      hits:                        # frames: shots at +0.167/0.417/0.667 of each strike, 0.075 s flight
+        - {hit: 159100001, count: 3, offset: 0.242, interval: 0.25, tags: [needle]}
+        - {hit: 159100001, count: 3, offset: 1.142, interval: 0.25, tags: [needle]}
+        - {hit: 159100001, count: 3, offset: 2.042, interval: 0.25, tags: [needle]}
+        - {hit: 159100001, count: 3, offset: 2.942, interval: 0.25, tags: [needle]}
+        - {hit: 159100001, count: 3, offset: 3.842, interval: 0.25, tags: [needle]}
 
     skill:                         # Jade of Vitality; the Auspice's beam every 0.6 s for 8 s (text)
-      lock: 1.5                    # GUESS
-      cd_start: 1.5               # GUESS: the CD starts when the cast ends
+      lock: 1.067                  # frames: combo-window end
+      cd_start: 1.067              # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 159310001, offset: 0.6, tags: [jade], triggers_mark: true}
-        - {hit: 159310002, count: 13, offset: 1.2, interval: 0.6, tags: [beam], triggers_mark: true}
+        - {hit: 159310001, offset: 0.667, tags: [jade], triggers_mark: true}
+        - {hit: 159310002, count: 13, offset: 1.367, interval: 0.6, tags: [beam], triggers_mark: true}   # frames: the Auspice appears +0.767; GUESS: first beam 0.6 s later
 
     ult:                           # Burst of Blaze: the vial, then shards x8 (text)
-      lock: 4.0                    # GUESS
+      lock: 2.136                  # frames: the cutscene clip's combo-window end
       hits:
-        - {hit: 159400001, offset: 1.0, tags: [burst]}
-        - {hit: 159400002, count: 8, offset: 1.5, interval: 0.2, tags: [burst]}
+        - {hit: 159400001, offset: 1.233, tags: [burst]}
+        - {hit: 159400002, count: 8, offset: 1.817, interval: 0.09, tags: [burst]}   # frames: every 0.09 s; x8 (text)
 
   buffs:
     - {name: crystallized, event: "cast:self:skill", duration: 8}
@@ -48,12 +52,12 @@ main:
   potentials:
     515901:   # Radiance of Auspice (pink): interval -25%
       add_hits:
-        skill: [{hit: 159310002, count: 4, offset: 1.5, interval: 1.8, tags: [beam], triggers_mark: true}]
+        skill: [{hit: 159310002, count: 4, offset: 1.667, interval: 1.8, tags: [beam], triggers_mark: true}]
     515902:   # Reflection of Auspice (pink): a second Auspice and the link
       add_hits:
         skill:
-          - {hit: 159310002, count: 13, offset: 1.3, interval: 0.6, tags: [beam], triggers_mark: true}
-          - {hit: 159310201, count: 13, offset: 1.4, interval: 0.6, tags: [beam], triggers_mark: true}
+          - {hit: 159310002, count: 13, offset: 1.467, interval: 0.6, tags: [beam], triggers_mark: true}
+          - {hit: 159310201, count: 13, offset: 1.567, interval: 0.6, tags: [beam], triggers_mark: true}
     515903:   # Needle Shower (pink): the extra hit while Crystallized; the fire rate and bigger magazine aren't modelled
       procs:
         - {event: "hit:self:needle", when: "while:status:crystallized", hit: 159310301, tags: [crystal_bullet], triggers_mark: true}
@@ -98,10 +102,10 @@ main:
         - {index: 0, hit_tags: [], event: "hit:self:ult_dmg", duration: 20, max_stacks: 6}
 
 support:
-  untimed: true
-  on_field: {skill: 3.0, ult: 4.0}   # GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 3.02, ult: 3.98}   # frames: clips + the usual exit
   actions:
-    skill:                         # Instant Blossom: 6 Rose and 1 Wither Vial, a tick per 0.8 s for 6 s (text)
+    skill:                         # Instant Blossom: 6 Rose and 1 Wither Vial, a tick per 0.8 s for 6 s (text); frames: thrown +0.3, GUESS 0.5 s flight, first tick 1 s after landing
       hits:
         - {hit: 159320001, count: 42, offset: 1.8, interval: 0.133, tags: [rose], applies_mark: true, excludes: [515923]}
         - {hit: 159320001, count: 28, offset: 1.8, interval: 0.2, tags: [rose], applies_mark: true, requires: [515923]}
@@ -109,9 +113,9 @@ support:
         - {hit: 159320002, count: 21, offset: 1.8, interval: 0.267, tags: [wither], applies_mark: true, requires: [515923]}
     ult:
       hits:
-        - {hit: 159400001, offset: 1.0, tags: [burst], excludes: [515932]}
-        - {hit: 159400001, offset: 1.0, tags: [burst], applies_mark: true, requires: [515932]}
-        - {hit: 159400002, count: 8, offset: 1.5, interval: 0.2, tags: [burst]}
+        - {hit: 159400001, offset: 1.233, tags: [burst], excludes: [515932]}
+        - {hit: 159400001, offset: 1.233, tags: [burst], applies_mark: true, requires: [515932]}
+        - {hit: 159400002, count: 8, offset: 1.817, interval: 0.09, tags: [burst]}
 
   procs:
     - {event: "hit:self:wither", every: 5, hit: 159320004, tags: [wither_burst]}   # Wither at 5 stacks

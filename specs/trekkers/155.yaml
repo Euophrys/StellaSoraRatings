@@ -137,28 +137,28 @@ support:
         - {index: 0, hit_tags: [ult]}
 
 main:
-  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (support role)
+  timing: frames   # animation frame data (python -m ssr.inspect frames 155), not checked in game; the ult's hits are user-timed (support role)
   mark: {hit: 155000001}
 
   actions:
     auto:                          # the Rabbits, which deal her own Auto Attack DMG, not Minion DMG
-      duration: 4.4                # GUESS: 1 s per strike; bullet counts are a GUESS from the Energy cap per strike
-      hits:
-        - {hit: 155100001, count: 2, offset: 0.4, interval: 0.2, tags: [snow_auto]}
-        - {hit: 155100005, offset: 1.4, tags: [night_auto]}
-        - {hit: 155100003, count: 3, offset: 2.4, interval: 0.15, tags: [snow_auto]}
-        - {hit: 155100006, offset: 3.4, tags: [night_auto]}
+      duration: 5.267              # frames: strikes chained at each combo-window end; each strike's command starts a Rabbit clip
+      hits:                        # frames: bullets fly 0.075 s (40 u/s); missiles carry no damage, their 0.1 s explosions do
+        - {hit: 155100001, count: 2, offset: 0.738, interval: 0.034, tags: [snow_auto]}   # 18 bullets in a sweeping fan; GUESS: 2 reach the boss (the middle pair)
+        - {hit: 155100005, count: 3, offset: 1.442, interval: 0.25, tags: [night_auto]}   # frames: 3 missiles at +0.167/0.361/0.667
+        - {hit: 155100003, count: 8, offset: 3.376, interval: 0.069, tags: [snow_auto]}   # frames: 4 aimed pairs of straight bullets
+        - {hit: 155100006, count: 4, offset: 4.476, interval: 0.01, tags: [night_auto]}   # frames: 4 missiles at once
 
     skill:                         # Whirling Waves: 10 s; GUESS: each Snow Rabbit fires per second, the Night Rabbit per 2 s
-      lock: 1.0                    # GUESS
-      cd_start: 1.0               # GUESS: the CD starts when the cast ends
+      lock: 2.0                    # frames: combo-window end; the Rabbits' fire rate is in Lua, so the counts below stay GUESSes
+      cd_start: 2.0                # GUESS: the CD starts when the cast ends
       hits:
         - {hit: 155310001, count: 20, offset: 0.8, interval: 0.5, tags: [snow_skill], triggers_mark: true}
         - {hit: 155310002, count: 5, offset: 1.5, interval: 2.0, tags: [night], triggers_mark: true}
         - {hit: 155310003, count: 5, offset: 1.7, interval: 2.0, tags: [night], triggers_mark: true}
 
     ult:                           # Divine Deluge
-      lock: 6.5                    # GUESS: the last hit is at +5.9 (user-timed)
+      lock: 6.5                    # frames: the loop clip runs to the last hit (+5.9, user-timed), then the end clip's combo-window end 0.633
       hits:
         - {hit: 155400001, count: 28, offset: 1.0, interval: 0.18, tags: [ult], triggers_mark: true, excludes: [515543]}
         - {hit: 155400001, count: 40, offset: 1.0, interval: 0.125, tags: [ult], triggers_mark: true, requires: [515543]}

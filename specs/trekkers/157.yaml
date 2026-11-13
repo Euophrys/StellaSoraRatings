@@ -1,5 +1,5 @@
 # Karin (157) — Umbra Vanguard. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Boss Shark deals Ultimate DMG, not Minion DMG:
+# Timings from frame data (python -m ssr.inspect frames 157). Boss Shark deals Ultimate DMG, not Minion DMG:
 # modelled. Hunting Energy: 100 at 10/s: a chain and Hunter's Mark (3 s) every 10 s.
 char_id: 157
 
@@ -22,28 +22,28 @@ talents:
       - {attribute: 15796511, event: always}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 157), not checked in game
   mark: {hit: 157000001}
   procs:
     - {event: "mark:self", hit: 157000002, count: 10, offset: 0.067, interval: 0.5, mult: 0.1, restart: true, tags: [dark_burn_tick]}   # Dark Burn, as Mistique's
 
   actions:
     auto:
-      duration: 1.0                # GUESS: a shell per second
+      duration: 0.819              # frames: strikes 1 and 2 alternate, one shell each, chained at the combo-window end
       hits:
-        - {hit: 157100001, offset: 0.5, tags: [shell]}
+        - {hit: 157100001, offset: 0.206, tags: [shell]}   # frames: fired +0.056, 0.15 s flight (20 u/s)
 
     skill:                         # Bait and Catch: a fishcake, then Boss Shark
-      lock: 2.0                    # GUESS
-      cd_start: 2.0               # GUESS: the CD starts when the cast ends
+      lock: 1.75                   # frames: combo-window end
+      cd_start: 1.75               # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 157300001, offset: 0.5, tags: [fishcake], triggers_mark: true}
-        - {hit: 157300002, offset: 1.2, tags: [shark], triggers_mark: true}
+        - {hit: 157300001, offset: 1.05, tags: [fishcake], triggers_mark: true}   # frames: the shot at +1.05
+        - {hit: 157300002, offset: 1.64, tags: [shark], triggers_mark: true}      # frames: its second area, 0.59 s later
 
     ult:                           # Shark Assault x14 (text)
-      lock: 6.0                    # GUESS
+      lock: 4.5                    # frames: the cutscene clip's combo-window end
       hits:
-        - {hit: 157400001, count: 14, offset: 1.0, interval: 0.3, tags: [assault], triggers_mark: true}
+        - {hit: 157400001, count: 14, offset: 0.5, interval: 0.25, tags: [assault], triggers_mark: true}   # frames: every 0.25 s over 0.5-3.833
 
   buffs:
     - {name: dark_burn, event: "mark:self", duration: 5, target: enemy}
@@ -108,26 +108,32 @@ main:
         - {index: 1, hit_tags: [assault]}
     515742:   # Deep-Sea Conflict: GUESS: 2 volleys of 3
       add_hits:
-        ult: [{hit: 157400002, count: 6, offset: 2.0, interval: 0.4, tags: [bubble], triggers_mark: true}]
+        ult: [{hit: 157400002, count: 6, offset: 0.7, interval: 0.6, tags: [bubble], triggers_mark: true}]   # frames: during the bubble window 0.167-4.0
     515743:   # Self-Transcend
       overrides:
         - {index: 0, event: "cast:self:ult"}
 
 support:
-  untimed: true
-  on_field: {skill: 4.0, ult: 6.0}   # GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 7.35, ult: 6.95}   # frames: clips + the usual exit
   mark: {hit: 157000001}             # text: Raging Sea can trigger Umbra Mark
   procs:
     - {event: "mark:self", hit: 157000002, count: 10, offset: 0.067, interval: 0.5, mult: 0.1, restart: true, tags: [dark_burn_tick]}
   actions:
     skill:                         # Raging Sea: chains x4, Boss Shark x4, the slam (text)
       hits:
-        - {hit: 157300011, count: 4, offset: 0.8, interval: 0.6, tags: [chain], triggers_mark: true}
-        - {hit: 157300012, count: 4, offset: 0.9, interval: 0.6, tags: [shark], triggers_mark: true}
-        - {hit: 157300013, offset: 3.6, tags: [shark], triggers_mark: true}
+        - {hit: 157300011, offset: 0.533, tags: [chain], triggers_mark: true}   # frames: swings at 0.533 / 1.067 / 2.35 / 3.05
+        - {hit: 157300011, offset: 1.067, tags: [chain], triggers_mark: true}
+        - {hit: 157300011, offset: 2.35, tags: [chain], triggers_mark: true}
+        - {hit: 157300011, offset: 3.05, tags: [chain], triggers_mark: true}
+        - {hit: 157300012, offset: 0.683, tags: [shark], triggers_mark: true}  # frames: a shark per swing, 0.15 s delay
+        - {hit: 157300012, offset: 1.217, tags: [shark], triggers_mark: true}
+        - {hit: 157300012, offset: 2.5, tags: [shark], triggers_mark: true}
+        - {hit: 157300012, offset: 3.2, tags: [shark], triggers_mark: true}
+        - {hit: 157300013, offset: 4.083, tags: [shark], triggers_mark: true}
     ult:
       hits:
-        - {hit: 157400001, count: 14, offset: 1.0, interval: 0.3, tags: [assault], triggers_mark: true}
+        - {hit: 157400001, count: 14, offset: 0.5, interval: 0.25, tags: [assault], triggers_mark: true}
 
   buffs:
     - {name: dark_burn, event: "mark:self", duration: 5, target: enemy}
@@ -135,13 +141,17 @@ support:
   potentials:
     515721:   # Shark's Phantom (pink): GUESS: a second bite each time
       add_hits:
-        skill: [{hit: 157300012, count: 4, offset: 1.1, interval: 0.6, tags: [shark], triggers_mark: true}]
+        skill:
+          - {hit: 157300012, offset: 0.883, tags: [shark], triggers_mark: true}
+          - {hit: 157300012, offset: 1.417, tags: [shark], triggers_mark: true}
+          - {hit: 157300012, offset: 2.7, tags: [shark], triggers_mark: true}
+          - {hit: 157300012, offset: 3.4, tags: [shark], triggers_mark: true}
     515722:   # Dark Bite Mark (pink): every 2nd bite detonates the last one's mark
       procs:
         - {event: "hit:self:shark", every: 2, hit: 157300014, tags: [bite], triggers_mark: true}
     515723:   # Tidal Lash (pink): GUESS: 2 more swings
       add_hits:
-        skill: [{hit: 157300011, count: 2, offset: 3.0, interval: 0.3, tags: [chain], triggers_mark: true}]
+        skill: [{hit: 157300011, count: 2, offset: 3.35, interval: 0.3, tags: [chain], triggers_mark: true}]
     515724:   # Undercurrent Blast (pink): GUESS: one explosion per swing
       procs:
         - {event: "hit:self:chain", hit: 157300015, offset: 0.1, tags: [blast], triggers_mark: true}
@@ -179,7 +189,7 @@ support:
         - {index: 1, hit_tags: [assault]}
     515742:
       add_hits:
-        ult: [{hit: 157400002, count: 6, offset: 2.0, interval: 0.4, tags: [bubble], triggers_mark: true}]
+        ult: [{hit: 157400002, count: 6, offset: 0.7, interval: 0.6, tags: [bubble], triggers_mark: true}]   # frames: during the bubble window 0.167-4.0
     515743:
       overrides:
         - {index: 0, event: "cast:self:ult"}

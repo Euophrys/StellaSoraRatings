@@ -1,5 +1,5 @@
 # Caramel (147) — Umbra Vanguard. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Her Demonic Boombox (a minion, 15 s) is most of her
+# Timings from frame data. Her Demonic Boombox (a minion, 15 s) is most of her
 # main-role damage and is skipped, with its Mark triggers: expect a very low total as a main until it's modelled.
 char_id: 147
 
@@ -20,29 +20,30 @@ talents:
       - {effect: 14796511, event: "cast:self:skill", duration: {ref: "BuffValue,NoLevel,14796511,Time,10K"}}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 147), not checked in game
   mark: {hit: 147100000}
   procs:
     - {event: "mark:self", hit: 147000001, count: 10, offset: 0.067, interval: 0.5, mult: 0.1, restart: true, tags: [dark_burn_tick]}   # Dark Burn, as Mistique's
 
   actions:
     auto:
-      duration: 3.4                # GUESS: 1 s per strike
-      hits:
-        - {hit: 147100001, count: 2, offset: 0.4, interval: 0.2}
-        - {hit: 147100002, count: 2, offset: 1.4, interval: 0.2}
-        - {hit: 147100003, count: 5, offset: 2.4, interval: 0.1, tags: [s3]}
+      duration: 3.215              # frames: strikes chained at each combo-window end
+      hits:                        # frames: shots + 0.2 s flight (15 u/s)
+        - {hit: 147100001, count: 2, offset: 0.418, interval: 0.128}
+        - {hit: 147100002, count: 2, offset: 0.91, interval: 0.167}
+        - {hit: 147100003, count: 5, offset: 1.977, interval: 0.167, tags: [s3]}
 
     skill:                         # Co-Performance: the Boombox; only her connection ATK is kept
-      lock: 1.0                    # GUESS
-      cd_start: 1.0               # GUESS: the CD starts when the cast ends
+      lock: 0.444                  # frames: combo-window end
+      cd_start: 0.444              # GUESS: the CD starts when the cast ends
       hits: []
 
     ult:                           # Melodic Seraphim x6 (text)
-      lock: 4.5                    # GUESS
-      hits:
-        - {hit: 147400001, count: 6, offset: 1.0, interval: 0.5, tags: [seraphim], triggers_mark: true}
-        - {hit: 0, offset: 3.6, tags: [ult_done]}
+      lock: 4.133                  # frames: the cutscene clip's combo-window end
+      hits:                        # frames: 5 areas at 0.017/0.5/1.05/1.533/2.233, the last at 3.42
+        - {hit: 147400001, count: 5, offset: 0.017, interval: 0.554, tags: [seraphim], triggers_mark: true}
+        - {hit: 147400001, offset: 3.42, tags: [seraphim], triggers_mark: true}
+        - {hit: 0, offset: 4.133, tags: [ult_done]}
 
   buffs:
     - {effect: 14790001, level: skill, event: "cast:self:skill", duration: 15}   # near the Boombox, which lasts 15 s (Word 4016)
@@ -51,10 +52,10 @@ main:
   potentials:
     514701:   # Baseline Finale (pink): near the Boombox, one AoE hit on the last strike
       add_hits:
-        auto: [{hit: 147100005, offset: 2.9, tags: [finale], triggers_mark: true}]
+        auto: [{hit: 147100005, offset: 2.643, tags: [finale], triggers_mark: true}]
     514702:   # Cheer Sparkle (pink): a Mark trigger means an extra last strike
       procs:
-        - {event: "mark:self", hit: 147100003, count: 5, offset: 0.4, interval: 0.1, tags: [s3]}
+        - {event: "mark:self", hit: 147100003, count: 5, offset: 0.867, interval: 0.167, tags: [s3]}   # frames: as the last strike
     514703:   # Rhythm Pulse (pink): the Boombox
       note: "The Boombox isn't modelled."
     514704:   # Sonic Boom (pink): the Boombox
@@ -96,20 +97,21 @@ main:
         - {index: 0, event: "hit:self:seraphim", reset_on: ["marker:self:ult_done"]}
 
 support:
-  untimed: true
-  on_field: {skill: 3.0, ult: 4.5}   # GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 6.03, ult: 6.22}   # frames: clips (sweep then notes) + the usual exit
   mark: {hit: 147100000}             # text: Melodic Sweep can trigger Umbra Mark: Gloom
   procs:
     - {event: "mark:self", hit: 147000001, count: 10, offset: 0.067, interval: 0.5, mult: 0.1, restart: true, tags: [dark_burn_tick]}
   actions:
     skill:                         # Melodic Sweep x2, then 5 Notes (text)
-      hits:
-        - {hit: 147300006, count: 2, offset: 0.8, interval: 0.4, tags: [sweep], triggers_mark: true}
-        - {hit: 147300007, count: 5, offset: 1.8, interval: 0.2, tags: [note], triggers_mark: true}
+      hits:                        # frames: the sweep clip (combo end 1.25), then the notes clip
+        - {hit: 147300006, count: 2, offset: 0.567, interval: 0.166, tags: [sweep], triggers_mark: true}
+        - {hit: 147300007, count: 5, offset: 2.45, interval: 0.317, tags: [note], triggers_mark: true}
     ult:
       hits:
-        - {hit: 147400001, count: 6, offset: 1.0, interval: 0.5, tags: [seraphim], triggers_mark: true}
-        - {hit: 0, offset: 3.6, tags: [ult_done]}
+        - {hit: 147400001, count: 5, offset: 0.017, interval: 0.554, tags: [seraphim], triggers_mark: true}
+        - {hit: 147400001, offset: 3.42, tags: [seraphim], triggers_mark: true}
+        - {hit: 0, offset: 4.133, tags: [ult_done]}
 
   buffs:
     - {name: dark_burn, event: "mark:self", duration: {ref: "Buff,LevelUp,13590000,Time,10K"}, target: enemy}
@@ -117,7 +119,7 @@ support:
   potentials:
     514721:   # Melody Return (pink)
       add_hits:
-        skill: [{hit: 147300006, offset: 1.6, tags: [sweep], triggers_mark: true}]
+        skill: [{hit: 147300006, offset: 1.217, tags: [sweep], triggers_mark: true}]   # frames: 3rd sweep of the longer clip (the notes then start 0.57 s later; not modelled)
       overrides:
         - {index: 0, hit_tags: [sweep]}
     514722:   # Heavenly Dropbeat (pink): -1 s per sweep hit
@@ -128,7 +130,7 @@ support:
       note: "Ricochets need other targets."
     514724:   # Overflowing Passion (pink): 3 more Notes
       add_hits:
-        skill: [{hit: 147300007, count: 3, offset: 2.8, interval: 0.2, tags: [note], triggers_mark: true}]
+        skill: [{hit: 147300007, count: 3, offset: 4.034, interval: 0.317, tags: [note], triggers_mark: true}]
     514725:   # Bass Gravity
       overrides:
         - {index: 0, hit_tags: [sweep]}

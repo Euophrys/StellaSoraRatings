@@ -182,15 +182,15 @@ main:
         - {event: "timer:1", when: "while:status:starender", hit: 0, energy: {param: Param4}}   # every Param3 = 1 s (data, all levels)
 
 support:
-  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (main role)
-  on_field: {skill: 3.0, ult: 3.23}  # skill: GUESS; ult: the main role's lock
+  timing: frames   # animation frame data (python -m ssr.inspect frames 162), not checked in game; the ult's hits are user-timed (main role)
+  on_field: {skill: 9.22, ult: 8.38}  # frames: clips + the usual exit (ult: the greatsword cutscene clip)
   mark: {hit: 162000001}             # text: Thunderstrike: Break can trigger Lux Mark
   actions:
     skill:                         # Thunderstrike: Break x8, then x6 and a big hit (text)
       hits:
-        - {hit: 162320001, count: 8, offset: 0.5, interval: 0.15, tags: [longsword], triggers_mark: true}
-        - {hit: 162320002, count: 6, offset: 1.8, interval: 0.2, tags: [greatsword], triggers_mark: true}
-        - {hit: 162320003, offset: 3.0, tags: [greatsword], triggers_mark: true}
+        - {hit: 162320001, count: 8, offset: 0.85, interval: 0.164, tags: [longsword], triggers_mark: true}   # frames: 2 per 0.333 s loop, 4 loops after a 0.8 s start
+        - {hit: 162320002, count: 6, offset: 2.9, interval: 0.33, tags: [greatsword], triggers_mark: true}    # frames: greatsword clip from +2.133
+        - {hit: 162320003, offset: 5.4, tags: [greatsword], triggers_mark: true}
     ult:                           # Greatsword form by default; Aegis: Blitz swaps it (Aegis: Sunder is the default anyway)
       hits:
         - {hit: 162400001, count: 5, offset: 0.5, interval: 0.2, tags: [greatsword, ult_gs], triggers_mark: true, excludes: [516229]}
@@ -205,16 +205,16 @@ support:
   potentials:
     516221:   # Tempest Scourge (pink): a field, x6
       add_hits:
-        skill: [{hit: 162320006, count: 6, offset: 3.0, interval: 0.5, tags: [field]}]
+        skill: [{hit: 162320006, count: 6, offset: 5.466, interval: 0.5, tags: [field]}]   # frames: spawned +5.466
     516222:   # Inquisitor's Edge (pink): 11 Starfalls
       add_hits:
-        skill: [{hit: 162320004, count: 11, offset: 2.0, interval: 0.1, tags: [starfall]}]
+        skill: [{hit: 162320004, count: 11, offset: 2.983, interval: 0.167, tags: [starfall]}]   # frames: one per 0.167 s from +2.983
     516223:   # Skyrend Flash (pink): GUESS: a Glow per longsword attack
       add_hits:
-        skill: [{hit: 162320005, count: 8, offset: 0.6, interval: 0.15, tags: [glow]}]
+        skill: [{hit: 162320005, count: 8, offset: 0.95, interval: 0.164, tags: [glow]}]
     516224:   # Galeblade (pink): 10 more
       add_hits:
-        skill: [{hit: 162320001, count: 10, offset: 0.65, interval: 0.1, tags: [longsword], triggers_mark: true}]
+        skill: [{hit: 162320001, count: 10, offset: 0.9, interval: 0.12, tags: [longsword], triggers_mark: true}]
     516225:   # Radiant Sever
       overrides:
         - {index: 0, event: "hit:self:starfall"}

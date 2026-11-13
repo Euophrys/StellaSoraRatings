@@ -1,5 +1,5 @@
 # Suntide Willow (160) — Aqua Support. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits".
+# Timings from frame data (python -m ssr.inspect frames 160).
 # Main: Decibels come from autos: about 3/s at 13 per string, so 100 takes about 33 s. The first cast at 1 s does nothing
 # and the next ones launch the Bubble Frog, once per 34 s (cd_start). GUESS: the Frog lasts 12 s, 4 bounces.
 # Support: on the field for her 17 s of bubbles (text), GUESS: a bubble per second, so 2 Decibels per second: Safety Alert
@@ -25,30 +25,38 @@ talents:
       - {effect: 16096511, event: "hit:self:skill_dmg", target: enemy, duration: {ref: "BuffValue,NoLevel,16096511,Time,10K"}}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 160), not checked in game
 
   actions:
     auto:                          # Bubble Machine by default, Megaphone with a Megaphone pink; "multiple times" is counted once
-      duration: 4.4                # GUESS: 1 s per strike
+      duration: 2.0                # frames: strikes chained at each combo-window end (Bubble Machine 2.0, Megaphone 2.006)
       hits:
-        - {hit: 160100001, count: 3, offset: 0.4, interval: 1.0, tags: [bubble_auto], excludes: [516003, 516004]}
-        - {hit: 160100002, offset: 3.4, tags: [bubble_auto], excludes: [516003, 516004]}
-        - {hit: 160100006, count: 3, offset: 0.4, interval: 1.0, tags: [megaphone], requires: [516003]}
-        - {hit: 160100007, offset: 3.4, tags: [megaphone], requires: [516003]}
-        - {hit: 160100006, count: 3, offset: 0.4, interval: 1.0, tags: [megaphone], requires: [516004], excludes: [516003]}
-        - {hit: 160100007, offset: 3.4, tags: [megaphone], requires: [516004], excludes: [516003]}
+        # Bubble Machine: bubbles decelerate, ~0.2 s to the boss; strike 3 fires 7 over 0.2 s, still counted once (GUESS)
+        - {hit: 160100001, offset: 0.417, tags: [bubble_auto], excludes: [516003, 516004]}
+        - {hit: 160100001, offset: 0.817, tags: [bubble_auto], excludes: [516003, 516004]}
+        - {hit: 160100001, offset: 1.184, tags: [bubble_auto], excludes: [516003, 516004]}
+        - {hit: 160100002, offset: 1.841, tags: [bubble_auto], excludes: [516003, 516004]}
+        # Megaphone: one sound wave per strike, two in strike 3; 0.15 s flight
+        - {hit: 160100006, offset: 0.4, tags: [megaphone], requires: [516003]}
+        - {hit: 160100006, offset: 0.775, tags: [megaphone], requires: [516003]}
+        - {hit: 160100006, count: 2, offset: 0.958, interval: 0.348, tags: [megaphone], requires: [516003]}
+        - {hit: 160100007, offset: 1.864, tags: [megaphone], requires: [516003]}
+        - {hit: 160100006, offset: 0.4, tags: [megaphone], requires: [516004], excludes: [516003]}
+        - {hit: 160100006, offset: 0.775, tags: [megaphone], requires: [516004], excludes: [516003]}
+        - {hit: 160100006, count: 2, offset: 0.958, interval: 0.348, tags: [megaphone], requires: [516004], excludes: [516003]}
+        - {hit: 160100007, offset: 1.864, tags: [megaphone], requires: [516004], excludes: [516003]}
 
     skill:                         # Luminous Leaper at 100 Decibels: the Bubble Frog
-      lock: 0.5                    # GUESS
+      lock: 1.333                  # frames: combo-window end (the Frog is summoned +0.75)
       cd_start: 33.0               # GUESS: the time to 100 Decibels
       hits:
         - {hit: 160310001, count: 4, offset: 1.0, interval: 3.0, tags: [frog], applies_mark: true, from_cast: 2}
 
     ult:                           # Beach Warning x7 and a big hit (text)
-      lock: 4.5                    # GUESS
+      lock: 3.283                  # frames: the cutscene clip's combo-window end
       hits:
-        - {hit: 160400001, count: 7, offset: 1.0, interval: 0.3, tags: [beach], applies_mark: true}
-        - {hit: 160400002, offset: 3.5, tags: [beach], applies_mark: true}
+        - {hit: 160400001, count: 7, offset: 0.2, interval: 0.2, tags: [beach], applies_mark: true}
+        - {hit: 160400002, offset: 2.033, tags: [beach], applies_mark: true}
 
   buffs:
     - {attribute: 16000010, level: auto, name: bubble_mark, event: "hit:self:bubble_auto", duration: {ref: "BuffValue,NoLevel,16000010,Time,10K"}, target: enemy}
@@ -116,19 +124,19 @@ main:
         - {index: 0, event: "hit:self:beach"}
 
 support:
-  untimed: true
-  on_field: {skill: 17.0, ult: 4.5}  # skill: text; ult: GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 17.0, ult: 5.35}  # skill: text; ult: frames, clip + the usual exit
   actions:
     skill:                         # Frolic in the Sea: the dive, the Bath every 3 s, bubbles for 17 s
       hits:
-        - {hit: 160320001, offset: 0.8, tags: [dive], applies_mark: true}
-        - {hit: 160320002, count: 6, offset: 1.0, interval: 3.0, tags: [bath], applies_mark: true}
-        - {hit: 160320003, count: 17, offset: 1.0, interval: 1.0, tags: [bubble], applies_mark: true}
+        - {hit: 160320001, offset: 1.1, tags: [dive], applies_mark: true}
+        - {hit: 160320002, count: 6, offset: 2.1, interval: 3.0, tags: [bath], applies_mark: true}   # frames: the Bath spawns +1.1, first hit 1 s later
+        - {hit: 160320003, count: 17, offset: 2.8, interval: 1.0, tags: [bubble], applies_mark: true}   # frames: after the dive clip (2.25), 0.5 s delay; GUESS: one per second (Lua)
         - {hit: 0, offset: 0.0, tags: [safety_up], from_cast: 2}
     ult:
       hits:
-        - {hit: 160400001, count: 7, offset: 1.0, interval: 0.3, tags: [beach], applies_mark: true}
-        - {hit: 160400002, offset: 3.5, tags: [beach], applies_mark: true}
+        - {hit: 160400001, count: 7, offset: 0.2, interval: 0.2, tags: [beach], applies_mark: true}
+        - {hit: 160400002, offset: 2.033, tags: [beach], applies_mark: true}
 
   buffs:
     - {effect: 16094001, level: ult, event: "cast:self:ult", target: team, duration: {ref: "BuffValue,NoLevel,16094011,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,16094011,LaminatedNum,Fixed"}}

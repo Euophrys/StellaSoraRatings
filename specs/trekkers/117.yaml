@@ -1,5 +1,5 @@
 # Jinglin (117) — Lux Versatile. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". The Qilin is Ultimate DMG, not a minion: modelled,
+# Timings from animation frame data, see docs/assumptions.md "Frame data". The Qilin is Ultimate DMG, not a minion: modelled,
 # one hit per tick on a single boss (the text says it picks 4 random enemies).
 char_id: 117
 

@@ -5,6 +5,9 @@ description = "Stella Sora team ratings"
 requires-python = ">=3.13"
 dependencies = ["openpyxl", "pyyaml"]
 
+[project.optional-dependencies]
+frames = ["UnityPy"]   # only to extract frame data from the installed game: python -m ssr.frames extract
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"

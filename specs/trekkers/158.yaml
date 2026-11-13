@@ -21,34 +21,38 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
       - {effect: 15896311, event: "cast:self:ult", target: "element:2", duration: {ref: "BuffValue,NoLevel,15896311,Time,10K"}}
 
 main:
-  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"
+  timing: frames   # animation frame data (python -m ssr.inspect frames 158), not checked in game
   # Colonel Walnut, General Curly and the Clockwork Queen (minions) are skipped, and they're most of her main-role damage:
   # expect a very low total until they're modelled. Dame Laru deals Ultimate DMG, so she's modelled.
   mark: {hit: 158000001}
 
   actions:
     auto:
-      duration: 5.4                # GUESS: 1 s per strike
+      duration: 3.799              # frames: strikes chained at each combo-window end
       hits:
-        - {hit: 158100001, offset: 0.4}
-        - {hit: 158100002, offset: 1.4}
-        - {hit: 158100003, offset: 2.4}
-        - {hit: 158100004, count: 5, offset: 3.4, interval: 0.12}
-        - {hit: 158100005, count: 3, offset: 4.4, interval: 0.15}
+        - {hit: 158100001, offset: 0.25}
+        - {hit: 158100002, offset: 0.767}
+        - {hit: 158100003, offset: 1.3}
+        - {hit: 158100004, count: 5, offset: 1.8, interval: 0.167}
+        - {hit: 158100005, count: 3, offset: 2.616, interval: 0.275}
 
     skill:                         # Whip Assault
-      lock: 2.0                    # GUESS
-      cd_start: 2.0               # GUESS: the CD starts when the cast ends
+      lock: 1.044                  # frames: combo-window end
+      cd_start: 1.044              # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 158310001, offset: 0.6, tags: [whip], triggers_mark: true}
+        - {hit: 158310001, offset: 0.889, tags: [whip], triggers_mark: true}
 
-    ult:                           # Sweet Dream Waltz: Dame Laru for 12 s; GUESS: a shot per second; Candy Barrage x5 every 4 s (text)
-      lock: 12.0                   # text
+    ult:                           # Sweet Dream Waltz: Dame Laru for 12 s; Candy Barrage x5 every 4 s (text)
+      # frames: transforms at the cutscene's combo-window end (0.32); then Candy Barrage (combo end 1.0; its area hits
+      # +2.333, every 0.25 s) and 3 shots (one per 1.067 s, +0.267 and 0.075 s flight) until the barrage is ready again
+      lock: 13.153                 # frames: 0.32 + the 12 s form (text) + the end clip's combo-window end 0.833
       hits:
-        - {hit: 158400002, count: 12, offset: 0.5, interval: 1.0, tags: [shot]}
-        - {hit: 158400003, count: 5, offset: 1.0, interval: 0.2, tags: [barrage]}
-        - {hit: 158400003, count: 5, offset: 5.0, interval: 0.2, tags: [barrage]}
-        - {hit: 158400003, count: 5, offset: 9.0, interval: 0.2, tags: [barrage]}
+        - {hit: 158400002, count: 3, offset: 1.662, interval: 1.067, tags: [shot]}
+        - {hit: 158400002, count: 3, offset: 5.862, interval: 1.067, tags: [shot]}
+        - {hit: 158400002, count: 3, offset: 10.062, interval: 1.067, tags: [shot]}
+        - {hit: 158400003, count: 5, offset: 2.653, interval: 0.25, tags: [barrage]}
+        - {hit: 158400003, count: 5, offset: 6.853, interval: 0.25, tags: [barrage]}
+        - {hit: 158400003, count: 5, offset: 11.053, interval: 0.25, tags: [barrage]}
 
   potentials:
     515801:   # Solemn Look (pink): the toys
@@ -57,7 +61,7 @@ main:
       note: "The toys aren't modelled."
     515803:   # Whipping Gale (pink): a multi-hit whip
       replace_hits:
-        skill: [{hit: 158503001, count: 5, offset: 0.6, interval: 0.2, tags: [whip], triggers_mark: true}]
+        skill: [{hit: 158503001, count: 5, offset: 0.333, interval: 0.25, tags: [whip], triggers_mark: true}]   # frames: its own clip (combo end 1.667, longer than the lock; not modelled)
     515804:   # Crossing Welts (pink): the mark comes from the toys
       note: "The toys aren't modelled."
     515805:   # Burning Whip: the toys
@@ -160,12 +164,14 @@ support:
         - {hit: 158523001, count: 21, offset: 7.2, interval: 1, tags: [curly, minion], requires_all: [515825, 515829, 515823]}
         - {hit: 158320003, count: 20, offset: 9.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
         - {hit: 158320003, count: 20, offset: 11.5, interval: 1, tags: [walnut, minion], requires_all: [515825, 515829, 515823]}
-    ult:                           # Sweet Dream Waltz: only with Fuyuka (user; ult_only_with). UNTIMED, GUESS: as the main role's
-      hits:
-        - {hit: 158400002, count: 12, offset: 0.5, interval: 1.0, tags: [shot]}
-        - {hit: 158400003, count: 5, offset: 1.0, interval: 0.2, tags: [barrage]}
-        - {hit: 158400003, count: 5, offset: 5.0, interval: 0.2, tags: [barrage]}
-        - {hit: 158400003, count: 5, offset: 9.0, interval: 0.2, tags: [barrage]}
+    ult:                           # Sweet Dream Waltz: only with Fuyuka (user; ult_only_with). As the main role's (frames; the support's
+      hits:                        # own shot / barrage rows, 158400004/5, have the same values)
+        - {hit: 158400002, count: 3, offset: 1.662, interval: 1.067, tags: [shot]}
+        - {hit: 158400002, count: 3, offset: 5.862, interval: 1.067, tags: [shot]}
+        - {hit: 158400002, count: 3, offset: 10.062, interval: 1.067, tags: [shot]}
+        - {hit: 158400003, count: 5, offset: 2.653, interval: 0.25, tags: [barrage]}
+        - {hit: 158400003, count: 5, offset: 6.853, interval: 0.25, tags: [barrage]}
+        - {hit: 158400003, count: 5, offset: 11.053, interval: 0.25, tags: [barrage]}
 
   potentials:
     515821:   # Fire Downpour (pink): each explosion leaves a field, every 0.3 s for 2 s

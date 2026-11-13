@@ -1,5 +1,5 @@
 # Wraith (143) — Ventus Vanguard. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Her string is the close-range one.
+# Timings from animation frame data, see docs/assumptions.md "Frame data". Her string is the close-range one.
 char_id: 143
 
 talents:

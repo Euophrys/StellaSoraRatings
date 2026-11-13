@@ -1,5 +1,5 @@
 # Eleanor (137) — Ventus Versatile. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Her Sentries deal Skill or Auto Attack DMG, not
+# Timings from animation frame data, see docs/assumptions.md "Frame data". Her Sentries deal Skill or Auto Attack DMG, not
 # Minion DMG: modelled, at a GUESS rate. Cross Slash: 80% x 2 Energy per 2 s (Word 4048) = 10 Energy in 12.5 s; 13 s used.
 char_id: 137
 

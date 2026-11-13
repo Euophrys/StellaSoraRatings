@@ -1,5 +1,5 @@
 # Donna (130) — Aqua Versatile. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". The Advertising Doll (minion) is skipped, so its
+# Timings from animation frame data, see docs/assumptions.md "Frame data". The Advertising Doll (minion) is skipped, so its
 # damage, its Mark triggers and every doll-only potential are worth nothing here. Its only effect kept is Agile: while
 # the doll is out (12 s, Word 4017), her autos are the Agile shots, written as skill-action hits inside a 12 s lock.
 char_id: 130

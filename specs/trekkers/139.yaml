@@ -1,5 +1,5 @@
 # Allie (139) — Aqua Vanguard. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Not modelled: casting either ult phase through
+# Timings from animation frame data, see docs/assumptions.md "Frame data". Not modelled: casting either ult phase through
 # the Main Skill (Quick Sweep, Dusting Vortex) and all-Aqua Mark DMG conversion (Wide Blade Arc), which change her rotation.
 char_id: 139
 

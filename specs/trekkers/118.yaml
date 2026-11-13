@@ -1,5 +1,5 @@
 # Coronis (118) — Umbra Versatile. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits".
+# Timings from animation frame data, see docs/assumptions.md "Frame data".
 char_id: 118
 
 talents:

@@ -1,5 +1,5 @@
 # Iris (111) — Aqua Versatile. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits".
+# Timings from animation frame data, see docs/assumptions.md "Frame data".
 char_id: 111
 
 talents:

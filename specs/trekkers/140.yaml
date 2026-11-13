@@ -1,5 +1,5 @@
 # Sparkla (140) — Terra Vanguard. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". The skill's transformation (10 s, text) replaces her
+# Timings from animation frame data, see docs/assumptions.md "Frame data". The skill's transformation (10 s, text) replaces her
 # autos and is written as skill-action hits inside a 10 s lock; the CD starts when it ends (text). Rapid Fire by default;
 # Bunny Jaws with a Jaws pink. Her doll deals Ultimate DMG, so it counts. Her autos are unusually big (861% per volley in the
 # data), so a volley every 3 s is a deliberately slow GUESS.

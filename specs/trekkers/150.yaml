@@ -1,5 +1,5 @@
 # Laru (150) — Lux Vanguard (the original Laru, not Snowish). Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits".
+# Timings from frame data (python -m ssr.inspect frames 150).
 char_id: 150
 
 talents:
@@ -20,32 +20,32 @@ talents:
       - {attribute: 15096511, event: always}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 150), not checked in game
   mark: {hit: 150000001}
 
   actions:
     auto:
-      duration: 5.4                # GUESS: 1 s per strike
+      duration: 4.452              # frames: strikes chained at each combo-window end
       hits:
-        - {hit: 150100001, count: 2, offset: 0.4, interval: 0.2}
-        - {hit: 150100002, offset: 1.4}
-        - {hit: 150100003, offset: 2.4}
-        - {hit: 150100004, count: 2, offset: 3.4, interval: 0.2}
-        - {hit: 150100005, count: 2, offset: 4.4, interval: 0.1}
-        - {hit: 150100007, count: 6, offset: 4.6, interval: 0.1}
+        - {hit: 150100001, count: 2, offset: 0.258, interval: 0.348}
+        - {hit: 150100002, offset: 1.074}
+        - {hit: 150100003, offset: 1.702}
+        - {hit: 150100004, count: 2, offset: 2.442, interval: 0.222}
+        - {hit: 150100005, count: 2, offset: 3.185, interval: 0.6}
+        - {hit: 150100007, count: 6, offset: 3.802, interval: 0.075}   # frames: 3 moving areas from +3.652, first hit 0.15 s later; x6 (text), spacing GUESS
 
     skill:                         # Thunderflare Strike: a sweep, then the laser
-      lock: 2.5                    # GUESS
-      cd_start: 2.5               # GUESS: the CD starts when the cast ends
+      lock: 1.564                  # frames: sweep clip 0.514 + the laser's combo-window end 1.05
+      cd_start: 1.564              # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 150310001, offset: 0.5, tags: [sweep], triggers_mark: true}
-        - {hit: 150310002, offset: 1.5, tags: [laser], triggers_mark: true}
-        - {hit: 0, offset: 1.6, tags: [laser_done]}
+        - {hit: 150310001, offset: 0.444, tags: [sweep], triggers_mark: true}
+        - {hit: 150310002, offset: 0.881, tags: [laser], triggers_mark: true}
+        - {hit: 0, offset: 0.981, tags: [laser_done]}
 
     ult:                           # Thunderfall Thrust
-      lock: 3.0                    # GUESS
+      lock: 1.25                   # frames: the cutscene clip's combo-window end
       hits:
-        - {hit: 150400001, offset: 1.0, tags: [thrust], triggers_mark: true}
+        - {hit: 150400001, offset: 0.3, tags: [thrust], triggers_mark: true}   # frames: area at +0.2, 0.1 s delay
 
   buffs:
     - {name: shock, event: "hit:self:laser", duration: 7, target: enemy, requires: [515002]}   # GUESS: the 20 hits come in about 7 s
@@ -54,16 +54,20 @@ main:
   potentials:
     515001:   # Aerial Suspension (pink): every 0.5 s for 10 s
       add_hits:
-        skill: [{hit: 150310101, count: 20, offset: 2.0, interval: 0.5, tags: [domain]}]
+        skill: [{hit: 150310101, count: 20, offset: 1.347, interval: 0.5, tags: [domain]}]   # frames: the grid appears +0.847, first hit 0.5 s later
     515002:   # Arc Chain Laser (pink)
       procs:
         - {event: "hit:self:auto_dmg|hit:self:sweep|hit:self:laser", when: "while:status:shock", hit: 150310201, tags: [shock_hit]}
         - {event: "hit:self:auto_dmg|hit:self:sweep|hit:self:laser", every: 20, when: "while:status:shock", hit: 150310203, tags: [shock_hit]}
     515003:   # Lance Sweep (pink): 3 sweeps
-      add_hits:
+      # frames: sweeps at 0.444 / 1.097 / 1.775, laser 2.467; the cast is 3.192 s, longer than the base lock (not modelled)
+      replace_hits:
         skill:
-          - {hit: 150310301, offset: 0.9, tags: [sweep], triggers_mark: true}
-          - {hit: 150310302, offset: 1.3, tags: [sweep], triggers_mark: true}
+          - {hit: 150310001, offset: 0.444, tags: [sweep], triggers_mark: true}
+          - {hit: 150310301, offset: 1.097, tags: [sweep], triggers_mark: true}
+          - {hit: 150310302, offset: 1.775, tags: [sweep], triggers_mark: true}
+          - {hit: 150310002, offset: 2.467, tags: [laser], triggers_mark: true}
+          - {hit: 0, offset: 2.567, tags: [laser_done]}
     515004:   # Lightning Lance Dance (pink): 3 sweeps make the next laser x12
       procs:
         - {event: "hit:self:laser", when: "while:status:sweep_stack>=3", hit: 150310401, count: 12, offset: 0.25, interval: 0.25, tags: [laser_x12]}
@@ -99,7 +103,7 @@ main:
         - {index: 0, event: "damage:self&once"}
     515041:   # Lancefall: Light Realm: every 0.5 s for 10 s
       add_hits:
-        ult: [{hit: 150404101, count: 20, offset: 1.5, interval: 0.5, tags: [lancefall]}]
+        ult: [{hit: 150404101, count: 20, offset: 0.7, interval: 0.5, tags: [lancefall]}]   # frames: from +0.2, first hit 0.5 s later
     515042:   # Lancefall: Electro Bind: bosses count; 5 Energy per ult hit
       procs:
         - {event: "hit:self:thrust", hit: 0, energy: {param: Param3}}
@@ -110,42 +114,42 @@ main:
         - {index: 0, event: "cast:self:ult", max_stacks: 1}
 
 support:
-  untimed: true
-  on_field: {skill: 3.5, ult: 3.0}   # GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 7.08, ult: 5.02}   # frames: clips + the usual exit
   mark: {hit: 150000001}             # text: Divine Thunderquake can trigger Lux Mark
   actions:
     skill:                         # Divine Thunderquake; GUESS: 2 of the 4 random Thunder Domains catch the boss
       hits:
-        - {hit: 150320002, offset: 0.8, tags: [quake], triggers_mark: true}
-        - {hit: 150320003, count: 12, offset: 1.2, interval: 0.1, tags: [quake], triggers_mark: true}
-        - {hit: 150320001, count: 2, offset: 2.5, interval: 0.3, tags: [domain], triggers_mark: true}
-        - {hit: 0, offset: 3.2, tags: [skill_done]}
+        - {hit: 150320002, offset: 1.75, tags: [quake], triggers_mark: true}
+        - {hit: 150320003, count: 12, offset: 2.133, interval: 0.3, tags: [quake], triggers_mark: true}   # frames: infusing area from +1.833, every 0.3 s
+        - {hit: 150320001, count: 2, offset: 3.767, interval: 0.15, tags: [domain], triggers_mark: true}   # GUESS: the domains erupt as the end clip starts (+3.667), 0.1 s delay
+        - {hit: 0, offset: 5.734, tags: [skill_done]}
     ult:
       hits:
-        - {hit: 150400001, offset: 1.0, tags: [thrust], triggers_mark: true}
+        - {hit: 150400001, offset: 0.3, tags: [thrust], triggers_mark: true}
 
   potentials:
     515021:   # Radiant Flame: Cycle Restart (pink): every 0.3 s for 1 s, per domain
       add_hits:
-        skill: [{hit: 150322101, count: 8, offset: 2.6, interval: 0.15, tags: [domain_erupt]}]
+        skill: [{hit: 150322101, count: 6, offset: 4.067, interval: 0.15, tags: [domain_erupt]}]   # frames: 3 per domain (every 0.3 s for 1 s, first after 0.3 s)
     515022:   # Radiant Flame: Flash Point (pink): 2 more domains, so 1 more lands
       add_hits:
-        skill: [{hit: 150320001, offset: 3.1, tags: [domain], triggers_mark: true}]
+        skill: [{hit: 150320001, offset: 3.767, tags: [domain], triggers_mark: true}]
       overrides:
         - {index: 0, hit_tags: [domain]}
     515023:   # Radiant Flame: Convergence (pink): per domain; the eruption part needs Cycle Restart
       add_hits:
         skill:
-          - {hit: 150322301, count: 2, offset: 2.5, interval: 0.3, tags: [domain_center]}
-          - {hit: 150322302, count: 8, offset: 2.6, interval: 0.15, tags: [domain_erupt], requires: [515021]}
+          - {hit: 150322301, count: 2, offset: 3.767, interval: 0.15, tags: [domain_center]}
+          - {hit: 150322302, count: 6, offset: 4.067, interval: 0.15, tags: [domain_erupt], requires: [515021]}
     515024:   # Radiant Flame: Pursuit (pink): a domain always lands
       add_hits:
-        skill: [{hit: 150320001, offset: 2.4, tags: [domain], triggers_mark: true}]
+        skill: [{hit: 150320001, offset: 3.767, tags: [domain], triggers_mark: true}]
       overrides:
         - {index: 0, hit_tags: []}
     515025:   # Radiant Downpour: every 0.3 s for 6 s
       add_hits:
-        skill: [{hit: 150322501, count: 20, offset: 3.3, interval: 0.3, tags: [downpour]}]
+        skill: [{hit: 150322501, count: 20, offset: 3.867, interval: 0.3, tags: [downpour]}]   # GUESS: with the domains; 0.1 s delay, every 0.3 s for 6 s
     515026:   # Light Unleashed
       overrides:
         - {index: 0, hit_tags: [domain], event: "hit:self:domain", duration: 15, max_stacks: 6}
@@ -155,8 +159,8 @@ support:
     515028:   # Skybreak Raid: the cast, then constantly while infusing
       add_hits:
         skill:
-          - {hit: 150322801, offset: 0.8, tags: [raid]}
-          - {hit: 150322802, count: 6, offset: 1.2, interval: 0.2, tags: [raid]}
+          - {hit: 150322801, offset: 0.238, tags: [raid]}   # frames: its own clips; the base hits aren't moved earlier (~1.1 s)
+          - {hit: 150322802, count: 6, offset: 2.191, interval: 0.3, tags: [raid]}
     515029:   # Dawn Break
       overrides:
         - {index: 0, hit_tags: [], event: "cast:main:skill", duration: inf, max_stacks: 5, reset_on: ["marker:self:skill_done"]}
@@ -174,7 +178,7 @@ support:
         - {index: 0, event: always, target: "element:5"}
     515041:
       add_hits:
-        ult: [{hit: 150404101, count: 20, offset: 1.5, interval: 0.5, tags: [lancefall]}]
+        ult: [{hit: 150404101, count: 20, offset: 0.7, interval: 0.5, tags: [lancefall]}]
     515042:
       procs:
         - {event: "hit:self:thrust", hit: 0, energy: {param: Param3}}

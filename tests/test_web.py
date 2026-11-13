@@ -86,7 +86,7 @@ def test_catalog_lists_spec_trekkers(client):
 def test_catalog_says_which_role_kits_are_real(client):
     by_name = {t["name"]: t for t in client.get("/api/catalog")["trekkers"]}
     assert by_name["Firstlight Noya"]["roles"]["main"]["kit"] == "ok"
-    assert by_name["Tilia"]["roles"]["main"]["kit"] == "untimed"
+    assert by_name["Tilia"]["roles"]["main"]["kit"] == "frames"
 
 
 def test_team_list_and_get(client, monkeypatch):

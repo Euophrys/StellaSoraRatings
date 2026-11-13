@@ -1,5 +1,5 @@
 # Fuyuka (134) — Ignis Vanguard. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Fiery Punches: the skill reloads 3 rounds, spent on
+# Timings from animation frame data, see docs/assumptions.md "Frame data". Fiery Punches: the skill reloads 3 rounds, spent on
 # the next autos, written as skill-action hits. Snowish Laru's ult is meant for this pairing and isn't authored yet.
 char_id: 134
 

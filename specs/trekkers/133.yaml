@@ -1,5 +1,5 @@
 # Nazuka (133) — Ventus Versatile. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". GUESS: each tornado hits once.
+# Timings from animation frame data, see docs/assumptions.md "Frame data". GUESS: each tornado hits once.
 char_id: 133
 
 talents:

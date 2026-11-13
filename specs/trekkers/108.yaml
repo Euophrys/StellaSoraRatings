@@ -1,5 +1,5 @@
 # Kasimira (108) — Ignis Versatile. Hits scale with ATK (data).
-# UNTIMED: conservative guesses, see docs/assumptions.md "Untimed kits". Pellets per volley aren't in the data:
+# Timings from animation frame data, see docs/assumptions.md "Frame data". Pellets per volley aren't in the data:
 # 10 is a GUESS sized so her ult is in line with other ults for its Energy.
 char_id: 108
 
