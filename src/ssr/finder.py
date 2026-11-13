@@ -13,14 +13,17 @@ Design: docs/superpowers/specs/2026-11-13-team-finder-design.md.
 from __future__ import annotations
 
 import copy
+from dataclasses import dataclass
 from itertools import combinations
 
 from .data import GameData
 from .game import potential_pools
-from .guide import _pool
+from .builds import search_pinks
+from .compare import greedy_emblems
+from .guide import _pool, optimize, without_breaks
 from .kit import SPECS, role_status
 from .parallel import simulate_many
-from .team import Build, TeamConfig
+from .team import Build, TeamConfig, team_from_doc
 
 ROLES = ("main", "support", "any")
 
@@ -110,3 +113,88 @@ def coarse_build(gd: GameData, team: TeamConfig, picks: tuple[int, int, int] = (
         if progress:
             progress("screen", step + 1, steps)
     return build, cur
+
+
+@dataclass
+class FinderRow:
+    members: list[str]                 # trekker names, main first
+    pinks: list[list[str]]             # per member, 2 names
+    screen_total: float | None
+    total: float | None = None         # finalists only: after optimize (+ emblems)
+    finalist: bool = False
+    method: str = ""                   # optimize's method string, finalists only
+    doc: dict | None = None            # pinks + targets (screen build, or optimized for finalists) + emblems (finalists)
+    error: str | None = None
+
+
+def _err(e: Exception) -> str:
+    return f"{type(e).__name__}: {e}"
+
+
+def _fill_doc(gd: GameData, doc: dict, team: TeamConfig, build: Build, emblem_slots: dict | None = None) -> dict:
+    doc = copy.deepcopy(doc)
+    for i, (m, md) in enumerate(zip(team.members, doc["members"])):
+        md["pinks"] = [gd.item_name(p) for p in m.pinks]
+        md["targets"] = {gd.item_name(p): lv for p, lv in sorted(build.levels_for(m.char_id).items())}
+        md["emblems"] = [{"slot": s, "lines": [{"line": n, "tier": t} for n, t in lines]}
+                         for s, lines in sorted((emblem_slots or {}).get(i, {}).items()) if lines]
+    return doc
+
+
+def find_teams(gd: GameData, template: dict, trekker: str, role: str = "main", top: int = 5,
+               emblems: str = "purple", picks=(5, 3, 3), breaks: bool = False, exclude=(),
+               progress=None) -> list[FinderRow]:
+    """Every team with `trekker` in `role` (see team_docs), ranked. Each gets its own pinks (searched on its
+    reference build with the template's discs) and a screen build (coarse_build); the top `top` by screen are
+    optimized with the template's budget, then get greedy emblems at tier `emblems` ("none" skips them).
+    Rows: finalists by total, then the rest by screen total, failed teams last."""
+    docs = team_docs(gd, template, trekker, role, exclude)
+    rows: list[FinderRow] = []
+    teams: list[TeamConfig | None] = []
+
+    def tick(phase, done, total):
+        if progress:
+            progress(phase, done, total)
+    for k, doc in enumerate(docs):
+        names = [m["trekker"] for m in doc["members"]]
+        phase = f"screen: {doc['name']}"
+        tick(phase, k, len(docs))
+        try:
+            team = team_from_doc(gd, doc, doc["name"])
+            rated = team if breaks else without_breaks(team)
+            rated, _ = search_pinks(gd, rated, [0, 1, 2], own_discs=False,
+                                    progress=lambda _i, _pair: tick(phase, k, len(docs)))
+            build, screen = coarse_build(gd, rated, picks, progress=lambda *_: tick(phase, k, len(docs)))
+        except Exception as e:   # noqa: BLE001 - one bad team is listed, not fatal (JobCancelled isn't an Exception)
+            rows.append(FinderRow(names, [[] for _ in names], None, doc=doc, error=_err(e)))
+            teams.append(None)
+            continue
+        rows.append(FinderRow(names, [[gd.item_name(p) for p in m.pinks] for m in rated.members], screen,
+                              doc=_fill_doc(gd, doc, rated, build)))
+        teams.append(rated)
+    tick("screen", len(docs), len(docs))
+
+    ok = sorted((k for k, r in enumerate(rows) if r.error is None), key=lambda k: -rows[k].screen_total)
+    finalists = ok[:top]
+    for n, k in enumerate(finalists):
+        row, team = rows[k], teams[k]
+        phase = f"finalist {n + 1}/{len(finalists)}: {docs[k]['name']}"
+        tick(phase, n, len(finalists))
+        row.finalist = True
+        try:
+            r = optimize(gd, team, list(team.budget), max_level=team.max_level, total=team.budget_total,
+                         progress=lambda *_: tick(phase, n, len(finalists)))
+            row.total, row.method, slots = r.total, r.method, None
+            if emblems != "none":
+                er = greedy_emblems(gd, team, r.build, tier=emblems, progress=lambda _m: tick(phase, n, len(finalists)))
+                row.total, slots = (er.totals[-1] if er.totals else er.base_total), er.slots
+            row.doc = _fill_doc(gd, docs[k], team, r.build, slots)
+        except Exception as e:   # noqa: BLE001
+            row.error = _err(e)
+    tick("done", len(finalists), len(finalists))
+
+    def key(r: FinderRow):
+        if r.error is not None:
+            return (2, 0.0)
+        return (0, -r.total) if r.finalist else (1, -r.screen_total)
+    return sorted(rows, key=key)

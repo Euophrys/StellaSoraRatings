@@ -76,15 +76,17 @@ def score_pinks(gd: GameData, team: TeamConfig, member: int, pinks: tuple[int, .
 
 
 def search_pinks(gd: GameData, team: TeamConfig, members: list[int], progress=None,
-                 disc_ids: list[int] | None = None) -> tuple[TeamConfig, dict[int, list[PinkBuildRow]]]:
-    """Search each member in order; returns the team with the winning pinks and all rows per member."""
+                 disc_ids: list[int] | None = None,
+                 own_discs: bool = True) -> tuple[TeamConfig, dict[int, list[PinkBuildRow]]]:
+    """Search each member in order; returns the team with the winning pinks and all rows per member.
+    own_discs=False keeps the team's main discs (never re-picked per pair)."""
     results: dict[int, list[PinkBuildRow]] = {}
     for i in members:
         rows = []
         for pair in pink_pairs(gd, team, i):
             if progress:
                 progress(i, pair)
-            rows.append(score_pinks(gd, team, i, pair, disc_ids))
+            rows.append(score_pinks(gd, team, i, pair, disc_ids, own_discs=own_discs))
         rows.sort(key=lambda r: -r.total_own_discs)
         results[i] = rows
         team = with_pinks(team, i, list(rows[0].pinks))

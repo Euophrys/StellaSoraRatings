@@ -4,9 +4,13 @@ from pathlib import Path
 
 import yaml
 
-from ssr.finder import coarse_build, team_docs
+import pytest
+
+from ssr import finder
+from ssr.finder import coarse_build, find_teams, team_docs
 from ssr.sim import simulate
 from ssr.team import Build, load_team, team_from_doc
+from ssr.web.jobs import JobCancelled
 
 TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 TEMPLATE = yaml.safe_load((TEAMS / "nazuna_leafia_gerie.yaml").read_text())
@@ -75,3 +79,50 @@ def test_coarse_build_picks_and_level(gd):
 def test_coarse_build_level_param(gd):
     build, _ = coarse_build(gd, small_team(gd), picks=(1, 0, 0), level=3)
     assert list(build.potentials.values()) == [3]
+
+
+FAST = {**TEMPLATE, "fight_length": 20, "reference": {"steps": 0}, "budget": [2, 1, 1], "budget_total": None}
+
+
+def test_find_teams_ranks_and_finalists(gd):
+    rows = find_teams(gd, FAST, "Nazuna", "main", top=2, emblems="none", picks=(1, 1, 0),
+                      exclude=["Ridge", "Sparkla"])          # 3 teams
+    assert len(rows) == 3 and [r.finalist for r in rows] == [True, True, False]
+    assert rows[0].total >= rows[1].total and all(r.error is None for r in rows)
+    assert min(r.screen_total for r in rows[:2]) >= rows[2].screen_total
+    assert all(len(p) == 2 for r in rows for p in r.pinks)
+    assert all(r.members[0] == "Nazuna" and r.method for r in rows[:2])
+    for r in rows:
+        t = team_from_doc(gd, r.doc)
+        assert [len(m.pinks) for m in t.members] == [2, 2, 2]
+    assert [sum(m["targets"].values()) for m in rows[0].doc["members"]] == [2, 1, 1]
+
+
+def test_finalist_emblems_round_trip(gd):
+    rows = find_teams(gd, FAST, "Nazuna", "main", top=1, emblems="green", picks=(1, 0, 0),
+                      exclude=["Ridge", "Sparkla", "Springseek Coronis"])   # 1 team
+    t = team_from_doc(gd, rows[0].doc)
+    assert any(m.emblem_slots and any(m.emblem_slots) for m in t.members)
+
+
+def test_failing_team_is_reported(gd, monkeypatch):
+    real = finder.coarse_build
+
+    def boom(gd_, team, *a, **k):
+        if any(m.char_id == 161 for m in team.members):
+            raise RuntimeError("kaput")
+        return real(gd_, team, *a, **k)
+    monkeypatch.setattr(finder, "coarse_build", boom)
+    rows = find_teams(gd, FAST, "Nazuna", "main", top=1, emblems="none", picks=(1, 0, 0),
+                      exclude=["Ridge", "Sparkla"])
+    assert rows[-1].error == "RuntimeError: kaput" and rows[0].error is None and rows[0].finalist
+    assert sum(r.error is not None for r in rows) == 2   # both Leafia teams
+
+
+def test_cancel_is_not_swallowed(gd):
+    def progress(phase, done, total):
+        if done >= 1:
+            raise JobCancelled()
+    with pytest.raises(JobCancelled):
+        find_teams(gd, FAST, "Nazuna", "main", top=1, emblems="none", picks=(1, 0, 0),
+                   exclude=["Ridge", "Sparkla"], progress=progress)

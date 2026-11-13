@@ -12,8 +12,9 @@ class JobBusy(RuntimeError):
     pass
 
 
-class JobCancelled(Exception):
-    pass
+class JobCancelled(BaseException):
+    """Not an Exception, so library code's `except Exception` (e.g. the team finder's per-team catch) can't swallow
+    a cancel."""
 
 
 class JobRunner:
