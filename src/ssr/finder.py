@@ -12,14 +12,20 @@ Design: docs/superpowers/specs/2026-11-13-team-finder-design.md.
 """
 from __future__ import annotations
 
+import argparse
 import copy
+import sys
 from dataclasses import dataclass
 from itertools import combinations
+from pathlib import Path
+
+import yaml
 
 from .data import GameData
 from .game import potential_pools
 from .builds import search_pinks
-from .compare import greedy_emblems
+from .compare import COLOUR_RANK, greedy_emblems
+from .data import DEFAULT_DATA_ROOT
 from .guide import _pool, optimize, without_breaks
 from .kit import SPECS, role_status
 from .parallel import simulate_many
@@ -198,3 +204,61 @@ def find_teams(gd: GameData, template: dict, trekker: str, role: str = "main", t
             return (2, 0.0)
         return (0, -r.total) if r.finalist else (1, -r.screen_total)
     return sorted(rows, key=key)
+
+
+def _picks(s: str) -> tuple[int, int, int]:
+    out = tuple(int(x) for x in s.split(","))
+    if len(out) != 3 or min(out) < 0:
+        raise argparse.ArgumentTypeError("picks must be 3 non-negative whole numbers, e.g. 5,3,3")
+    return out
+
+
+def format_rows(rows: list[FinderRow]) -> list[str]:
+    best = max((r.total for r in rows if r.finalist and r.total), default=None)
+    lines = []
+    for n, r in enumerate(rows, 1):
+        team = " / ".join(r.members)
+        pinks = "  ".join("+".join(p) for p in r.pinks if p)
+        screen = f"{r.screen_total:>12,.0f}" if r.screen_total is not None else " " * 12
+        if r.error is not None:
+            tail = f"error: {r.error}"
+        elif r.finalist:
+            tail = f"{r.total:>12,.0f}  {100 * r.total / best:7.2f}%  ({r.method})"
+        else:
+            tail = "cut"
+        lines.append(f"{n:>3}. {team:<44} screen {screen}  {tail}")
+        if pinks:
+            lines.append(f"     pinks: {pinks}")
+    return lines
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description="Rank every same-element team for one Trekker, each at its own best build")
+    ap.add_argument("trekker")
+    ap.add_argument("--template", required=True, help="team file whose discs, enemy, fight and budget every team uses")
+    ap.add_argument("--role", choices=ROLES, default="main")
+    ap.add_argument("--top", type=int, default=5, help="finalists that get the full optimize + emblems")
+    ap.add_argument("--emblems", choices=[*sorted(COLOUR_RANK, key=COLOUR_RANK.get), "none"], default="purple")
+    ap.add_argument("--picks", type=_picks, default=(5, 3, 3), help="screen picks per member at Lv6 (main first)")
+    ap.add_argument("--breaks", action="store_true", help="rate with enemy breaks (off by default, as on the page)")
+    ap.add_argument("--exclude", nargs="*", default=[], metavar="TREKKER")
+    ap.add_argument("-o", "--out", help="write the finalists' team documents here (a YAML list)")
+    a = ap.parse_args(argv)
+    gd = GameData(DEFAULT_DATA_ROOT)
+    template = yaml.safe_load(Path(a.template).read_text(encoding="utf-8"))
+    last = [None]
+
+    def progress(phase, _done, _total):
+        if phase != last[0]:
+            last[0] = phase
+            print(phase, file=sys.stderr, flush=True)
+    rows = find_teams(gd, template, a.trekker, a.role, top=a.top, emblems=a.emblems, picks=a.picks,
+                      breaks=a.breaks, exclude=a.exclude, progress=progress)
+    print("\n".join(format_rows(rows)))
+    if a.out:
+        Path(a.out).write_text(yaml.safe_dump([r.doc for r in rows if r.finalist and r.error is None],
+                                              sort_keys=False, allow_unicode=True), encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()

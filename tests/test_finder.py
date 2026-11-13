@@ -126,3 +126,15 @@ def test_cancel_is_not_swallowed(gd):
     with pytest.raises(JobCancelled):
         find_teams(gd, FAST, "Nazuna", "main", top=1, emblems="none", picks=(1, 0, 0),
                    exclude=["Ridge", "Sparkla"], progress=progress)
+
+
+def test_cli(gd, tmp_path, capsys):
+    tpl = tmp_path / "tpl.yaml"
+    tpl.write_text(yaml.safe_dump(FAST))
+    out = tmp_path / "out.yaml"
+    finder.main(["Nazuna", "--template", str(tpl), "--top", "1", "--emblems", "none", "--picks", "1,0,0",
+                 "--exclude", "Ridge", "Sparkla", "Springseek Coronis", "-o", str(out)])
+    text = capsys.readouterr().out
+    assert "Nazuna / Gerie / Leafia" in text and "100.00%" in text
+    docs = yaml.safe_load(out.read_text())
+    assert len(docs) == 1 and team_from_doc(gd, docs[0]).members[0].pinks
