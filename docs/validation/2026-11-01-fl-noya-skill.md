@@ -10,6 +10,12 @@ Run: `python -m ssr teams/fl_noya_skill.yaml -o out/` → `out/fl_noya_skill.xls
 > - **Discs:** Spearman against Maygi's 11 discs is 0.818 (main C1), 0.809 (main C6), 1.0 (support C1).
 > - **Lux PEN emblem:** 9.79% / 0.69% against the reference build, which is what `python -m ssr` rates against (Maygi 8.65% / 0.05%); 24.34% / 7.12% against pinks only.
 >
+> **Update 2026-11-13, later: Astral Brilliance is always in the reference** (`reference.include`, user: its 105 Lux PEN is in every FL Noya build, so emblem PEN lines are rated on top of it). Use these for regressions:
+>
+> - **Reference build:** Astral Brilliance, Guiding Star, Argent Mirage, Resolve: Blitz, Prism Warp (Noya); Domain of Purity, Stellar Crash (Firefly); Enemy Counter, Revealed Flaw (Tilia). Total 1,839.8M.
+> - **Lux PEN emblem:** 9.75% / 0.53% (Maygi 8.65% / 0.05%), against 31.51% / 8.39% without Astral Brilliance in the reference.
+> - Pinks-only total unchanged (216.4M).
+
 > **Update 2026-11-13: stacks refresh together** (`stack_timers: refresh`, now the default; user-tested on Gerie's Delight in Ruin: all 6 stacks drop at once). A new stack resets every stack's timer, so stacking buffs reach higher counts. Use these for regressions:
 >
 > - **Pinks-only total:** 216.4M (was 203.1M, +6.6%).

@@ -33,7 +33,7 @@ discs:
     - {name: "A Moment in the Aft", prefix: true, copies: 1}
   support: [filler, filler, filler]
 
-reference: {steps: 2, main_picks: 2, support_picks: 1, level: 6}
+reference: {steps: 2, main_picks: 2, support_picks: 1, level: 6, include: [Astral Brilliance]}   # its 105 Lux PEN is in every FL Noya build (user): emblem PEN is rated on top of it
 
 assumptions:
   unknown_trigger_uptime: 1.0   # modifiers whose trigger isn't known: constant uptime, full stacks

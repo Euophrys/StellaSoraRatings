@@ -38,7 +38,9 @@ def test_support_slot_ignores_effects(gd, team):
 def test_reference_size(gd, team):
     ref = build_reference(gd, team, Build())
     main = [k for k in ref.potentials if k[0] == 162]
-    assert len(main) == 4 and all(ref.potentials[k] == 6 for k in main)
+    # 2 steps x 2 picks, plus Astral Brilliance from `reference.include`
+    assert len(main) == 5 and all(ref.potentials[k] == 6 for k in main)
+    assert any(gd.item_name(p) == "Astral Brilliance" for _, p in main)
     for cid in (115, 107):
         assert len([k for k in ref.potentials if k[0] == cid]) == 2
 

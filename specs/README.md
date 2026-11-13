@@ -290,6 +290,8 @@ members:
       - { stat: 1, value: 0.05, pct: true }
 ```
 
+`reference: {..., include: [<potential name>, ...]}`: normal / common potentials always in the reference build at its level, with the greedy picks on top (FL Noya teams: Astral Brilliance, so emblem PEN is rated on top of its 105 Lux PEN).
+
 `assumptions.stack_timers`: `refresh` (default; a new stack resets every stack's timer, user-tested) or `independent` (each stack expires on its own).
 
 `hold` conditions are any `while:` condition, plus `while:cast_within:<member>:<action>:<seconds>` (that member cast that action within the last N seconds), `while:cd_within:<member>:<action>:<seconds>` (its cooldown has N s or less left) and `while:mark:<element>` (a Mark of that element is on the enemy). `only_if` is checked when the action becomes ready: if false, it's cast at once ("wait for Cosette's skill if it shows 7 s or less, else fire now"). Mistique holds her ult for Cosette's skill so the ult's hits find Gloom (Full Frame Focus).

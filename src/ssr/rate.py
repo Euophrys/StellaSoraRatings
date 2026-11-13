@@ -114,9 +114,18 @@ def _candidates(gd: GameData, team: TeamConfig, i: int) -> list[tuple[int, str]]
 
 
 def build_reference(gd: GameData, team: TeamConfig, base: Build) -> Build:
+    """`reference.include`: potential names always in the reference at its level (e.g. FL Noya's Astral Brilliance,
+    so emblem PEN lines are rated on top of its 105 Lux PEN); the greedy picks come on top."""
     ref = base
     cfg = team.reference
     lv = int(cfg.get("level", 6))
+    for name in cfg.get("include") or ():
+        hits = [(m.char_id, p) for i, m in enumerate(team.members) for p, _ in _candidates(gd, team, i)
+                if gd.item_name(p) == name]
+        if not hits:
+            raise KeyError(f"reference.include: no member has a normal / common potential named {name!r}")
+        for cid, p in hits:
+            ref = ref.with_potential(cid, p, lv)
     for _ in range(int(cfg.get("steps", 2))):
         cur = simulate(gd, team, ref)
         picks = []
