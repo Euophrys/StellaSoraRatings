@@ -6,7 +6,7 @@ fight_length: 120
 tick: 0.05
 mark_icd: 1
 enemy:
-  res: 250        # weak-element RES (docs/assumptions.md)
+  res: 250
   defense: 500
   broken: 1
 members:
@@ -42,13 +42,14 @@ members:
       tier: blue
   targets:
     Confident Mode: 1
-    Weakness Mark: 1
-    Grand Finale: 5
+    Weakness Mark: 2
+    Grand Finale: 6
     Fiery Rhythm: 1
+    Blazing Waltz: 1
     Keen Accent: 6
-    Bursting Spark: 4
+    Bursting Spark: 6
     Overloaded Spark: 1
-    Soul-Hunting Spark: 1
+    Soul-Hunting Spark: 6
   talents: 1
 - trekker: Flora
   role: support
@@ -60,10 +61,10 @@ members:
     ult: 10
   emblems: []
   targets:
-    Foreshadowing Verification: 1
-    Perfect Acting: 3
-    Visual Impact: 2
-    Reinforced Impression: 1
+    Foreshadowing Verification: 6
+    Perfect Acting: 6
+    Visual Impact: 1
+    Reinforced Impression: 4
     Guest Performer: 6
     Lethal Inferno: 6
     Reincarnation of Fire: 1
@@ -77,11 +78,11 @@ members:
     ult: 10
   emblems: []
   targets:
-    'Ink Sigil: Horn Call': 4
+    'Ink Sigil: Horn Call': 6
     'Ink Sigil: Trail Seeker': 6
     'Ink Sigil: Blood Fed': 6
-    'Ink Sigil: Ambush': 1
-    'Sigil Unleashed: Flame Glow': 3
+    'Ink Sigil: Ambush': 6
+    'Sigil Unleashed: Flame Glow': 6
 discs:
   main:
   - name: A Gift for the Journey
@@ -104,6 +105,6 @@ assumptions:
   disc_stats_target: team
 budget:
 - 30
-- 20
-- 20
-budget_total: 60
+- 30
+- 30
+budget_total: null
