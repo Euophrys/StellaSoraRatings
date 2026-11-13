@@ -106,7 +106,7 @@ def test_talent_numbers_are_the_talents_own(gd, path):
             if m.trigger:
                 seen |= {round(float(m.trigger.duration), 6), m.trigger.max_stacks, round(m.trigger.icd, 6), m.trigger.every}
         for k, ref in row.items():
-            if k.startswith("Param"):
+            if k.startswith("Param") and ref.split(",")[2:3] != [""]:   # empty placeholders (Leader's Duty Param3)
                 assert round(float(resolve(gd, ref, 1).value), 6) in seen, f"{row['Id']} {k} {ref}"
 
 

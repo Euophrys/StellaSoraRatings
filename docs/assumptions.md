@@ -224,3 +224,20 @@ Every Trekker now has both roles, but the 60 roles marked `untimed: true` have n
 - **Sub-actions as long locks:** a state that replaces the autos is written as hits on the action, inside a lock as long as the state, and skills can still be cast: Chaton's Evil Eye, Freesia's Berserk, Donna's Agile, Sparkla's modes, Firefly's Artillery Form, Snowish Laru's Dame Laru. Potentials that lengthen these states aren't modelled.
 - **`ult_cost_scale`** (Minova's Urgent Reinforcement, "25% more Energy") multiplies the ult's Energy cost.
 
+
+## Leafia: Resource Markers and Observation Points (2026-11-13)
+
+Leafia (161) is user-timed in both roles (`specs/trekkers/161.yaml`). Her Observation Points deal her own Auto Attack DMG (DamageType 1), so they use her stat sheet; they're minion pools only for their lifetimes and attack loops. Resource Markers are a kit `resources:` counter (`specs/README.md`).
+
+- **Amplification Crystals replace the strike** (GUESS): with Crystal Overclock, each of the 6 swings per string is an Amplification Crystal (rows `161100004`–`6`, the crystal versions of strikes 1–3) when 3 Markers are held (2 with Marker Overload), else a normal strike. Crystals count as autos dealing DMG, so they generate Markers too. With Focused Penetration that's +2 per hit and about 2/3 of swings become crystals; with Marker Overload, all of them. The user's first hit (99276, then 14136 four frames later) fits a crystal followed by a Vector Crystal: 62.9% × 1.7 / (332% × (1 + 0.7 + 0.5)) = 0.146 against 0.142 seen. That also means EAT 85 lines on one hit add (as `docs/assumptions.md` already has).
+- **6 hits per auto string** (user), cycling the three strike rows (all 185% at Lv10). The text names 3 strikes.
+- **Focused Penetration's extra Marker** is on every auto hit, not only on hits that already generate one (GUESS). Markers are picked up as they appear in every build (GUESS; Focused Penetration absorbs them).
+- **Turret limit:** a new Observation Point at the limit replaces the oldest (GUESS, `at_max: replace`), which costs its 1.8 s windup. `at_max: block` would keep the old one. Observer Array's limit is 1 / 2 / 3 at Lv1–3 / 4–5 / 6+ (data).
+- **Field Echo's waves** come every 3 turret attacks: 3.1 s apart with Field Assault (user), 9 s without (GUESS). Field Assault's Marker comes every 3 shots.
+- **Ult interval:** text says every 3 s; the user saw every 2 s, taken as Draw Zone Bombardment's "reduces its attack interval" (GUESS: 7 hits base, 11 with it).
+- **Main skill lock** 1.5 s (GUESS).
+- **Obsidian Field / Observer Array** stack once per turret out.
+- **Draw Zone Support:** its +50% Auto DMG ("while the ult is on cooldown or its energy isn't full") is always on; the +10% "in the ult's range" lasts 20 s from the cast. Both go to Terra Vanguard and Versatile Trekkers (so not Nazuna).
+- **Support Calibration Marks:** each stack inflicted deals one Calibration hit ~2 s later (it detonates at 3 stacks or after 3 s). Calibration Expansion's extra stacks from a Vanguard main aren't modelled. Vanguard Calibration's "expire after 10 s" isn't forced on Co-Draw's longer turrets.
+- **"In an all-Terra squad"** lines (Co-Draw's debuff, Terra DMG Etching, Mark Etching, Leyline Amp) use `while:squad:3:3`; "only 1 Terra Trekker" uses `while:not:squad:3:2`.
+- **Greedy builds look ahead** (`compare.py`, web optimizer): each step also tries jumping a potential straight to its cap, and takes the jump when it gains more per level. Totals inside a jump are interpolated.

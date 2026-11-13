@@ -1,0 +1,297 @@
+# Leafia (161) — Terra, Versatile. Hits scale with ATK (data). Observation Points (turrets) deal Leafia's own
+# Auto Attack DMG (HitDamage DamageType 1, not Minion DMG), so they use her stat sheet; they're minion pools here
+# only for their lifetimes and attack loops.
+# Schema: specs/README.md. Every guessed number is marked GUESS.
+#
+# User, frame-timed 2026-11-13 (30 fps, ss,ff):
+# MAIN BUILD 1 (Focused Penetration + Crystal Overclock):
+#   autos: string starts 49,02; hits 49,15 (99276, then a second number 14136 at 49,19) / 50,02 / 50,24 / 51,18 /
+#     52,04 / 52,28; next string's first hit 53,22 (4.233 s period).
+#     14136 / 99276 = 0.142 ~ a Vector Crystal (62.9% x 1.7) after an Amplification Crystal (332% x (1 + 0.7 + 0.5)):
+#     0.146. So the first hit was a crystal, followed by a Vector Crystal (Marker Overload) 4 frames later.
+#   skill: cast 55,25, cooldown starts at once; hit 56,21 (+0.867).
+#   ult: cast 08,15; first hit 11,16 (+3.033); control back 11,28 (+3.433); hits every 2 s; field gone 31,23.
+# MAIN BUILD 2 (Field Assault + Field Echo, turret limit 3 = Observer Array):
+#   skill: cast 3,17; hit 4,14 (+0.9); turret ready 6,01; shots 6,08 / 7,09 / 8,10 (1.033 s apart);
+#     pulses (Field Echo waves) 8,01 / 11,04 / 14,07 (3.1 s apart); turret gone ~34,28 (~30.5 s after the hit).
+# SUPPORT (Tactical Co-Draw + Observer Iteration):
+#   skill: cast 03,12; turret pulses on summon: hits 5,12 (Vanguard Strike) and 5,19 (first Tactical Mapping);
+#     Leafia leaves 6,01 (2.633 s); mapping 6,20 / 7,21 / ... (1.033 s apart); turret gone 26,03, aura 26,11.
+#   ult: cast 44,16; first hit 47,17 (+3.033); Leafia leaves 49,15 (4.967 s); same as the main's ult.
+char_id: 161
+
+talents:   # key talents, unlocked by dupes (specs/README.md)
+  1610116:   # Genius Surveyor (T1): any Trekker inflicts a Terra Mark -> target takes more Terra DMG
+    buffs:
+      - {effect: 16196111, event: "mark_applied:element3", target: enemy, duration: {ref: "BuffValue,NoLevel,16196111,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,16196111,LaminatedNum,Fixed"}}
+  1610232:   # Starsea Voyage (T2): her Auto DMG -> ATK
+    buffs:
+      - {effect: 16196212, event: "hit:self:auto_dmg", duration: {ref: "BuffValue,NoLevel,16196212,Time,10K"}}
+  1610348:   # Leader's Duty (T3): her skill cast -> Terra Trekkers' Auto DMG
+    buffs:
+      - {effect: 16196311, event: "cast:self:skill", target: "element:3", duration: {ref: "BuffValue,NoLevel,16196311,Time,10K"}}
+  1610464:   # Relentless Mapping (T4): a Terra Mark is triggered -> her Terra DMG
+    buffs:
+      - {effect: 16196411, event: "mark:element3", duration: {ref: "BuffValue,NoLevel,16196411,Time,10K"}}
+  1610580:   # Wildland Sigil (T5): Auto DMG vs elite or higher (every boss preset)
+    buffs:
+      - {attribute: 16196511, event: always}
+
+main:
+  mark: {hit: 161000001}          # Terra Mark DMG: skill, turrets and Amplification Crystals trigger it (text)
+  resources:
+    markers: {max: 20}            # Resource Markers (Word 4056): up to 20 held
+
+  procs:
+    # Resource Markers. Base: autos 10% per hit, at most 1 per second. Crystal Overclock (always 1) and Field Echo
+    # (none) replace this; Focused Penetration adds 1 per hit on top.
+    - {event: "hit:self:leafia_auto", hit: 0, chance: 0.1, icd: 1.0, gain: {markers: 1}, excludes: [516101, 516103]}
+    - {event: "hit:self:echo", hit: 0, gain: {markers: 5}}   # Stratum Echo generates 5
+    # More than 10 Markers: spend 10 on an Observation Point (not after Crystal Overclock). Also checked when one
+    # vanishes, in case Markers banked while the pool was full.
+    - {event: "gain:self:markers|vanish:self:point", hit: 0, when: "while:resource:self:markers>10", cost: {markers: 10},
+       summon: [point, echo], excludes: [516101]}
+
+  actions:
+    auto:
+      duration: 4.233             # user: next string's first hit 4.233 s after this one's
+      hits:
+        # GUESS: 6 hits per string as the user saw them, cycling the 3 strike rows (all 185% at Lv10).
+        - {hit: 161100001, offset: 0.433, tags: [leafia_auto], excludes: [516101]}
+        - {hit: 161100002, offset: 1.000, tags: [leafia_auto], excludes: [516101]}
+        - {hit: 161100003, offset: 1.733, tags: [leafia_auto], excludes: [516101]}
+        - {hit: 161100001, offset: 2.533, tags: [leafia_auto], excludes: [516101]}
+        - {hit: 161100002, offset: 3.067, tags: [leafia_auto], excludes: [516101]}
+        - {hit: 161100003, offset: 3.867, tags: [leafia_auto], excludes: [516101]}
+        # Crystal Overclock: each swing is a strike, or an Amplification Crystal when Markers allow (procs there)
+        - {hit: 0, offset: 0.433, tags: [swing], requires: [516101]}
+        - {hit: 0, offset: 1.000, tags: [swing], requires: [516101]}
+        - {hit: 0, offset: 1.733, tags: [swing], requires: [516101]}
+        - {hit: 0, offset: 2.533, tags: [swing], requires: [516101]}
+        - {hit: 0, offset: 3.067, tags: [swing], requires: [516101]}
+        - {hit: 0, offset: 3.867, tags: [swing], requires: [516101]}
+
+    skill:                        # Crystal Vein Survey; CD starts at the cast (user)
+      lock: 1.5                   # GUESS
+      hits:
+        - {hit: 161310001, offset: 0.883, tags: [echo], triggers_mark: true}
+
+    ult:                          # Terrain Mapping: 20 s field
+      lock: 3.433
+      hits:
+        # Text: every 3 s. The user saw every 2 s (GUESS: they had Draw Zone Bombardment, "reduces its attack interval").
+        - {hit: 161400001, count: 7, offset: 3.033, interval: 3.0, tags: [ult], excludes: [516112, 516142]}
+        - {hit: 161400001, count: 7, offset: 3.033, interval: 3.0, tags: [ult], triggers_mark: true, requires: [516112], excludes: [516142]}
+        - {hit: 161400001, count: 11, offset: 3.033, interval: 2.0, tags: [ult], requires: [516142], excludes: [516112]}
+        - {hit: 161400001, count: 11, offset: 3.033, interval: 2.0, tags: [ult], triggers_mark: true, requires_all: [516112, 516142]}
+
+  minions:
+    point:                        # Observation Point: summoned by the Marker proc above (and Field Echo's skill proc)
+      max: 1                      # text: max 1 active; Observer Array: 3
+      duration: 10
+      at_max: replace             # GUESS: a new one replaces the oldest
+      windup: 1.8                 # user (build 2): first shot 1.8 s after the skill's hit
+      interval: 3.0               # text: every 3 s
+      attacks:
+        - {hit: 161310002, tags: [point], triggers_mark: true, excludes: [516104]}
+        - {hit: 161310004, tags: [point, fa_bullet], triggers_mark: true, requires: [516104]}
+    echo:                         # Field Echo's wave, every 3 turret attacks (one per Observation Point)
+      max: 1
+      duration: 10
+      at_max: replace
+      windup: 7.5                 # GUESS: just before the 3rd 3-second shot (user saw it 0.3 s before the 3rd)
+      interval: 9.0
+      attacks:
+        - {hit: 161310003, tags: [point, wave], triggers_mark: true, requires: [516103]}
+
+  potentials:
+    516101:   # Crystal Overclock (pink): Markers from every auto; spend 3 per swing on an Amplification Crystal
+      procs:
+        # GUESS: the crystal replaces the swing's strike (rows 161100004-6 are crystal strikes 1-3), and crystals
+        # count as autos dealing DMG, so they generate Markers too.
+        - {event: "marker:self:swing", hit: 161100001, when: "while:not:resource:self:markers>=3", tags: [leafia_auto], excludes: [516107]}
+        - {event: "marker:self:swing", hit: 161100004, cost: {markers: 3}, tags: [leafia_auto, crystal], triggers_mark: true, excludes: [516107]}
+        - {event: "marker:self:swing", hit: 161100001, when: "while:not:resource:self:markers>=2", tags: [leafia_auto], requires: [516107]}
+        - {event: "marker:self:swing", hit: 161100004, cost: {markers: 2}, tags: [leafia_auto, crystal], triggers_mark: true, requires: [516107]}
+        - {event: "hit:self:leafia_auto", hit: 0, gain: {markers: 1}, excludes: [516103]}
+      overrides:
+        - {index: 0, hit_tags: [crystal]}
+      note: "Crystals replace strikes when 3 Markers are held (GUESS); Markers from every auto incl. crystals."
+    516102:   # Focused Penetration (pink): +1 Marker per auto hit, autos' DMG Multiplier
+      procs:
+        - {event: "hit:self:leafia_auto", hit: 0, gain: {markers: 1}, excludes: [516103]}
+      overrides:
+        - {index: 0, hit_tags: [leafia_auto]}
+      note: "+1 Marker on every auto hit (GUESS: not only on hits that already generate one)."
+    516103:   # Field Echo (pink): no Markers from autos; skill CD -10 s; turrets +20 s; skill puts one out (1 per 20 s)
+      cd_scale: {skill: 0.4444}   # 18 s -> 8 s
+      minion_rules:
+        point: {duration_add: 20}
+        echo: {duration_add: 20}
+      procs:
+        - {event: "cast:self:skill", hit: 0, offset: 0.9, icd: 20, summon: [point, echo]}
+    516104:   # Field Assault (pink): turrets fire every second (new row); 1 Marker every 3 shots; Marker pickups stack
+      minion_rules:
+        point: {interval: 1.033}             # user: 1.033 s apart
+        echo: {windup: 3.567, interval: 3.1} # user: 3.567 s after the skill's hit, then 3.1 s apart
+      procs:
+        - {event: "hit:self:fa_bullet", every: 3, hit: 0, gain: {markers: 1}}
+      overrides:
+        - {index: 0, hit_tags: [point], event: "gain:self:markers", duration: {param: Param3}, max_stacks: {param: Param4}}
+      note: "Markers are picked up as they appear (GUESS)."
+    516105:   # Terra DMG Amp: crystals -> enemy Terra DMG Taken stacks
+      overrides:
+        - {index: 0, event: "hit:self:crystal"}
+    516106:   # Terra Mark Resonance: a crystal triggers Terra Mark -> ATK stacks
+      overrides:
+        - {index: 0, event: "mark:self&recent:crystal:0.05"}
+    516107:   # Marker Overload: Auto DMG; 80% per crystal a Vector Crystal; crystals cost 2 (variants in 516101)
+      procs:
+        - {event: "hit:self:crystal", hit: 161100007, chance: 0.8, offset: 0.133, tags: [leafia_auto, vector]}   # user: 4 frames after
+      overrides:
+        - {index: 0, hit_tags: []}
+    516108:   # Obsidian Field: targets in turret range take more Terra DMG, one stack per turret (GUESS)
+      overrides:
+        - {index: 0, event: "while:status:point", per_stack: true}
+    516109:   # Survey Field Amp: turret hits -> their ATK stacks
+      overrides:
+        - {index: 0, hit_tags: [point], event: "hit:self:point", duration: {param: Param3}, max_stacks: {param: Param4}}
+    516111:   # Mobility Amp: dodging -> ATK
+      overrides:
+        - {index: 0, event: "dodge:main"}
+    516113:   # Earth Vein Synergy: Auto DMG per Terra Trekker on the squad
+      overrides:
+        - {index: 0, hit_tags: [], copies: [{event: "while:squad:3:1"}, {event: "while:squad:3:2"}, {event: "while:squad:3:3"}]}
+    516110:   # Observer Array: up to 3 turrets; Auto DMG per turret out
+      minion_rules:
+        point: {max: {param: Param1}}
+        echo: {max: {param: Param1}}
+      overrides:
+        - {index: 0, hit_tags: [], event: "while:status:point", per_stack: true}
+    516112:   # Terra Mark Awakening: ult triggers Terra Marks (variants above); ATK after the ult
+      overrides:
+        - {index: 0, event: "cast:self:ult"}
+    516141:   # Draw Zone Ascension (common): ult hits -> ATK stacks
+      overrides:
+        - {index: 0, event: "hit:self:ult_dmg"}
+    516142:   # Draw Zone Bombardment (common): Ult DMG, shorter interval (variants above)
+      overrides:
+        - {index: 0, hit_tags: []}
+    516143:   # Draw Zone Support (common): Terra Vanguard / Versatile Trekkers' Auto DMG
+      overrides:
+        # "while the ult is on cooldown or its energy isn't full": all but the instant it's cast
+        - {index: 1, event: always, copies: [{target: "class:1"}, {target: "class:2"}]}
+        # "while the main is in the ult's range": the 20 s field (from the cast, GUESS)
+        - {index: 0, event: "cast:self:ult", copies: [{target: "class:1"}, {target: "class:2"}]}
+      note: "Terra Vanguard / Versatile only; all teams so far are all-Terra."
+
+support:
+  on_field: {skill: 2.633, ult: 4.967}
+
+  procs:
+    # The turret's Vanguard Strike on summon (user: 5,12, 2.0 s after the cast)
+    - {event: "summon:self:point", hit: 161320001, tags: [point, vanguard], applies_mark: true, excludes: [516124]}
+    - {event: "summon:self:point", hit: 161320004, tags: [point, vanguard], applies_mark: true, requires: [516124]}
+
+  actions:
+    skill:                        # Area Plotting: the turret (pools below) deals the damage
+      hits: []
+    ult:
+      hits:
+        - {hit: 161400001, count: 7, offset: 3.033, interval: 3.0, tags: [ult], excludes: [516132, 516142]}
+        - {hit: 161400001, count: 7, offset: 3.033, interval: 3.0, tags: [ult], applies_mark: true, requires: [516132], excludes: [516142]}
+        - {hit: 161400001, count: 11, offset: 3.033, interval: 2.0, tags: [ult], requires: [516142], excludes: [516132]}
+        - {hit: 161400001, count: 11, offset: 3.033, interval: 2.0, tags: [ult], applies_mark: true, requires_all: [516132, 516142]}
+
+  buffs:
+    # Observation Point tiers: one per Area Plotting cast (two with Ascending Draw Zone), up to 4 (Observer Iteration)
+    - {name: tier, event: "cast:self:skill", max_stacks: 4, excludes: [516127]}
+    - {name: tier, event: "cast:self:skill", max_stacks: 4, add: 2, requires: [516127]}
+
+  minions:
+    point:                        # Observation Point + its Tactical Mapping
+      summon: {event: "cast:self:skill", offset: 2.0, count: 1}
+      max: 1                      # Tactical Co-Draw: 2
+      duration: 10
+      windup: 0.233               # user: first mapping 0.233 s after the Vanguard Strike
+      interval: 2.0               # text; Co-Draw: 1.033 (user)
+      attacks:
+        - {hit: 161320002, tags: [point, mapping], applies_mark: true, excludes: [516124]}
+    vanguard:                     # Vanguard Calibration: a Vanguard Strike every second from each turret
+      summon: {event: "cast:self:skill", offset: 2.0, count: 1}
+      max: 1
+      duration: 10
+      windup: 1.0
+      interval: 1.0
+      attacks:
+        - {hit: 161320001, tags: [point, vanguard], applies_mark: true, requires: [516123], excludes: [516124]}
+        - {hit: 161320004, tags: [point, vanguard], applies_mark: true, requires_all: [516123, 516124]}
+
+  potentials:
+    516121:   # Tactical Co-Draw (pink): turrets +10 s, 2 at once, mapping 1/s; all-Terra: mapping -> Terra DMG Taken
+      minion_rules:
+        point: {duration_add: 10, max: 2, interval: 1.033}
+        vanguard: {duration_add: 10, max: 2}
+      overrides:
+        - {index: 0, event: "hit:self:mapping&while:squad:3:3"}
+    516122:   # Observer Iteration (pink): mapping DMG Multiplier per tier
+      overrides:
+        - {index: 0, hit_tags: [mapping], event: "while:status:tier", per_stack: true}
+    516123:   # Vanguard Calibration (pink): Vanguard Strike every second (pool); stacks; 1 Calibration stack on expiry
+      procs:
+        - {event: "vanish:self:point", hit: 161320003, offset: 3.0, tags: [calib]}   # detonates 3 s after (Word 4055)
+      overrides:
+        - {index: 0, hit_tags: [vanguard, calib], event: "hit:self:vanguard", duration: {ref: "BuffValue,NoLevel,16123012,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,16123012,LaminatedNum,Fixed"}}
+      note: "The 10 s expiry is not forced on Co-Draw's longer turrets (GUESS)."
+    516124:   # Calibration Detonation (pink): no mapping; enhanced Vanguard Strike; each strike inflicts Calibration
+      procs:
+        # Each stack deals one Calibration hit when it detonates (at 3 stacks, or 3 s after). GUESS: ~2 s later on average.
+        - {event: "hit:self:vanguard", hit: 161320003, offset: 2.0, tags: [calib], excludes: [516130]}
+        - {event: "hit:self:vanguard", hit: 161320003, count: 2, offset: 2.0, interval: 0.0, tags: [calib], requires: [516130]}
+      overrides:
+        - {index: 0, hit_tags: [vanguard, calib]}
+    516125:   # Terra DMG Etching: all-Terra: a turret appearing -> enemy Mark DMG Taken
+      overrides:
+        - {index: 0, event: "summon:self:point&while:squad:3:3"}
+    516126:   # Tier 2 Etching: mapping Auto DMG at 2+ tiers
+      overrides:
+        - {index: 0, hit_tags: [mapping], event: "while:status:tier>=2"}
+    516127:   # Ascending Draw Zone: 2 tiers per cast (buff above); mapping hits -> its Terra DMG stacks
+      overrides:
+        - {index: 0, hit_tags: [mapping], event: "hit:self:mapping", duration: {param: Param3}, max_stacks: {param: Param4}}
+    516128:   # Calibration Expansion: Vanguard Strike / Calibration Auto DMG and Crit Rate
+      overrides:
+        - {index: 0, hit_tags: [vanguard, calib]}
+        - {index: 1, hit_tags: [vanguard, calib]}
+      note: "Extra Calibration stacks from a Vanguard main's hits: not modelled."
+    516130:   # Mark Suppression: Vanguard Strike / Calibration Terra DMG and Crit DMG; 2 stacks (in 516124)
+      overrides:
+        - {index: 0, hit_tags: [vanguard, calib]}
+        - {index: 1, hit_tags: [vanguard, calib]}
+    516131:   # Earth Vein Activation: inflicting Earth Vein -> ATK stacks
+      overrides:
+        - {index: 0, event: "mark_applied:self"}
+    516132:   # Earthen Deposition: ult inflicts Earth Vein (variants above); ult hits -> Terra DMG
+      overrides:
+        - {index: 0, event: "hit:self:ult_dmg"}
+    516129:   # Mark Etching: Calibration hits -> enemy Terra DMG Taken (all-Terra) / squad Auto DMG (only Terra)
+      overrides:
+        - {index: 0, event: "hit:self:calib&while:squad:3:3"}
+        - {index: 1, event: "hit:self:calib&while:not:squad:3:2", target: team}
+        - {index: 2, event: "hit:self:calib&while:not:squad:3:2"}
+    516133:   # Leyline Amp: all-Terra: squad ATK; only Terra: squad ATK + her Auto DMG
+      overrides:
+        - {index: 0, event: "while:squad:3:3", target: team}
+        - {index: 1, event: "while:not:squad:3:2", target: team}
+        - {index: 2, event: "while:not:squad:3:2", hit_tags: []}
+    516141:   # Draw Zone Ascension (common)
+      overrides:
+        - {index: 0, event: "hit:self:ult_dmg"}
+    516142:   # Draw Zone Bombardment (common)
+      overrides:
+        - {index: 0, hit_tags: []}
+    516143:   # Draw Zone Support (common)
+      overrides:
+        - {index: 1, event: always, copies: [{target: "class:1"}, {target: "class:2"}]}
+        - {index: 0, event: "cast:self:ult", copies: [{target: "class:1"}, {target: "class:2"}]}
+      note: "Terra Vanguard / Versatile only; all teams so far are all-Terra."

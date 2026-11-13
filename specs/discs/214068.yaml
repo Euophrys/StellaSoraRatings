@@ -1,0 +1,14 @@
+# Beneath Billowing Sails (Terra), Leafia's disc. Melody's Mark DMG and harmony 1's Terra DMG come from EffectIds;
+# Calibration (a disc debuff, not Leafia's Calibration Mark), Voyage and the vs-Calibration bonuses are scripted.
+melody:
+  # A Versatile Terra Trekker deals DMG -> Calibration: Terra Skill DMG Taken (as Skill DMG Taken: all-Terra teams)
+  - {stat: 61, value: Param2, name: sails_calibration, target: enemy, event: "damage:class2/element3", duration: Param3}
+  # ... their Auto DMG on a Calibrated target -> Auto DMG Taken
+  - {stat: 60, value: Param4, target: enemy, event: "hit:class2/element3:auto_dmg&while:status:sails_calibration", duration: Param5}
+harmony1:
+  - {stat: 56, value: Param2, target: "element:3", event: "while:status:sails_calibration", note: "Auto DMG vs Calibrated targets"}
+  - {stat: 57, value: Param2, target: "element:3", event: "while:status:sails_calibration", note: "Skill DMG vs Calibrated targets"}
+harmony2:
+  # A support deals Auto DMG -> Voyage on them: Terra Auto DMG, 10 s, x5 (one shared count for both supports, GUESS)
+  - {stat: 56, value: Param1, target: support, event: "hit:support:auto_dmg", duration: Param2, max_stacks: 5}
+  - {stat: 57, value: Param3, target: main, event: "while:status:sails_calibration", note: "Terra main's Skill DMG vs Calibrated targets"}

@@ -191,6 +191,8 @@ class _Member:
     last_use: dict = field(default_factory=dict)
     cast_count: dict = field(default_factory=lambda: defaultdict(int))
     minions: dict = field(default_factory=dict)        # pool name -> MinionSpec (potential rules applied)
+    resources: dict = field(default_factory=dict)      # resource name -> amount held now
+    res_max: dict = field(default_factory=dict)        # resource name -> most that can be held
 
 
 def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
@@ -291,13 +293,24 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             reset_cd={**kit.reset_cd, **{k: v for rp in resolved for k, v in rp.reset_cd.items()}},
             cd_reduce=[rp.cd_reduce for rp in resolved if rp.cd_reduce],
             cd_when=[(c["action"], float(c["scale"]), _norm_event(c["when"], i)) for rp in resolved for c in rp.cd_when],
-            procs=[(_norm_event(_expand_who(p.event, n, classes, elements), i), p)
+            procs=[(_norm_event(_expand_who(p.event, n, classes, elements), i),
+                    replace(p, when=_norm_event(p.when, i), gain=tuple((r, float(v)) for r, v in p.gain),
+                            cost=tuple((r, float(v)) for r, v in p.cost)) if (p.when or p.gain or p.cost) else p)
                    for p in [*kit.procs, *(p for rp in resolved for p in rp.procs)] if keep(p)],
         )
+        m.res_max = dict(kit.resources)
+        m.resources = {r: 0.0 for r in kit.resources}
         for _, p in m.procs:
             if p.chance < 1 and p.restart:
                 raise ValueError(f"{gd.char_name(mc.char_id)}: proc {p.hit_id} on {p.event!r}: `chance` with `restart` "
                                  "isn't supported (an expected-value refreshed DoT isn't modelled)")
+            if p.chance < 1 and (p.cost or p.summon):
+                raise ValueError(f"{gd.char_name(mc.char_id)}: proc {p.hit_id} on {p.event!r}: `chance` with `cost` "
+                                 "or `summon` isn't supported (an expected-value spend or summon isn't modelled)")
+            for r, _ in (*p.gain, *p.cost):
+                if r not in kit.resources:
+                    raise ValueError(f"{gd.char_name(mc.char_id)}: proc {p.hit_id} uses resource {r!r}, "
+                                     "which the kit section's `resources:` doesn't declare")
         for name, a in actions.items():
             if a.skill_id:
                 m.cd[name] = skill_cd(gd, a.skill_id)
@@ -452,6 +465,10 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             return int(not condition("while:" + ":".join(parts[2:]), t))
         if parts[1] == "status":
             return status_stacks(parts[2], t)
+        if parts[1] == "resource":   # while:resource:<member>:<name>>=N (or >N): that member holds that much
+            name, op, want = re.split("(>=?)", parts[3])
+            have = members[int(parts[2])].resources.get(name, 0.0)
+            return int(have >= float(want) - 1e-9 if op == ">=" else have > float(want) + 1e-9)
         if parts[1] == "cd_within":   # while:cd_within:<member>:<action>:<seconds>: cooldown left <= N s
             mm = members[int(parts[2])]
             left = mm.cd_ready.get(parts[3], 0.0) - t
@@ -642,6 +659,10 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                 if chancy or t >= proc_ready[(m.idx, p)]:
                     if p.when and not condition(p.when, t):
                         continue
+                    if p.cost and any(m.resources[r] < c - 1e-9 for r, c in p.cost):
+                        continue   # not enough of the resource: the proc doesn't fire (nothing is spent)
+                    if p.summon and all(pool_blocked(m, pool) for pool in p.summon):
+                        continue   # every pool it summons into is full and refuses new ones (at_max: block)
                     if p.every > 1:
                         proc_count[(m.idx, p)] += 1
                         if proc_count[(m.idx, p)] % p.every:
@@ -663,6 +684,10 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                             bar.damage(t, amount)
                     if p.energy:   # flat: Charge Efficiency applies to Energy from hits, not to this
                         m.energy += float(p.energy) * mass
+                    for r, c in p.cost:
+                        m.resources[r] -= c
+                    for r, g in p.gain:
+                        gain_resource(m, r, g * mass, t)
                     if chancy:
                         if not p.hit_id:
                             continue
@@ -699,6 +724,18 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                         heapq.heappush(queue, (t + ms.offset + k * ms.every, seq[0], m.idx, None, "summon",
                                                f"{key}#{restart_gen[key]}"))
 
+    def gain_resource(m: _Member, r: str, amount: float, t: float):
+        """Add to a resource (capped); emits gain:<who>:<name> once per whole unit gained."""
+        old = m.resources[r]
+        new = min(m.res_max[r], old + amount)
+        m.resources[r] = new
+        for _ in range(int(math.floor(new + 1e-9) - math.floor(old + 1e-9))):
+            emit(f"gain:{m.idx}:{r}", t)
+
+    def pool_blocked(m: _Member, pool: str) -> bool:
+        ms = m.minions.get(pool)
+        return ms is None or (ms.at_max == "block" and len(alive[(m.idx, pool)]) >= ms.max)
+
     def summon(m: _Member, pool: str, t: float):
         ms = m.minions[pool]
         minion_uid[0] += 1
@@ -725,6 +762,8 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         lst = alive[(m.idx, pool)]
         emit(f"minion_tick:{m.idx}:{pool}", t)
         if len(lst) >= ms.max:
+            if ms.at_max == "block":   # full: no new one (e.g. a turret limit)
+                return
             if ms.at_max == "refresh":
                 for mn in lst:
                     mn["expire"] = t + ms.duration
@@ -893,6 +932,9 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
 
     def land(t: float, mi: int, h: HitSpec, action: str, cid: str):
         m = members[mi]
+        for pool in h.summon:   # e.g. a proc that spends Resource Markers to put out a turret
+            if pool in m.minions:
+                summon_tick(m, pool, t)
         if h.hit_id == 0:   # marker: no damage, only emits marker:<who>:<tag> (and can inflict a Mark)
             for tag in h.tags:
                 emit(f"marker:{mi}:{tag}", t)

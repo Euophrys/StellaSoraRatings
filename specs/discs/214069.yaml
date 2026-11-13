@@ -1,0 +1,9 @@
+# Emergency Evacuation (Terra), Leafia's disc. Harmony 1's Skill DMG comes from EffectIds; the rest is scripted.
+melody:
+  - {stat: 56, value: Param1, target: support, event: always, note: "Support Terra Trekkers' Auto DMG"}
+  # A Versatile Terra Trekker casts a skill -> Anchored on the main: Terra DMG, 15 s, x2
+  - {stat: 19, value: Param2, name: anchored, target: main, event: "cast:class2/element3:skill", duration: Param3, max_stacks: 2}
+harmony1:
+  - {stat: 58, value: Param2, target: team, event: "mark:element3", duration: Param3, note: "any Terra Mark trigger -> Terra Trekkers' Ult DMG"}
+harmony2:
+  - {stat: 1, pct: true, value: Param1, target: team, event: "while:status:anchored>=2", note: "Anchored at max stacks -> Terra ATK"}

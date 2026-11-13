@@ -3,7 +3,8 @@
 Damage shares only say how a team's damage splits; totals are comparable across teams because every team runs
 through the same simulator (enemy, fight length, skill levels, stat model). Each team gets its pinks for free,
 then a greedy build: every step adds +1 level to whichever normal/common potential (any member) raises team
-damage the most, up to `max_level` per potential.
+damage the most, up to `max_level` per potential. Each step also tries jumping a potential straight to its cap and
+takes the jump if it gains more per level spent (values that come in steps, e.g. Observer Array's turret limit).
 
     python -m ssr.compare teams/a.yaml teams/b.yaml --budget 60 --max-level 6
 """
@@ -46,28 +47,38 @@ def greedy_build(gd: GameData, team: TeamConfig, budget: int = 60, max_level: in
     build = Build()
     cur = simulate(gd, team, build).total
     res = GreedyResult(team.name, cur, build=build)
-    for step in range(budget):
-        todo = []
+    step = 0
+    while step < budget:
+        todo = []   # (cid, p, new level, levels spent)
         for cid, p in cands:
             lv = build.potentials.get((cid, p), 0)
-            if lv >= max_level or (split and used[owner[(cid, p)]] >= split[owner[(cid, p)]]):
+            room = min(max_level - lv, budget - step)
+            if split:
+                room = min(room, split[owner[(cid, p)]] - used[owner[(cid, p)]])
+            if room <= 0:
                 continue
-            todo.append((cid, p, lv + 1))
-        results = simulate_many(gd, team, [dict(build=build.with_potential(cid, p, lv)) for cid, p, lv in todo])
+            todo.append((cid, p, lv + 1, 1))
+            if room > 1:   # lookahead: a potential whose value comes in steps (Observer Array: 1/2/3 turrets at Lv1/4/6)
+                todo.append((cid, p, lv + room, room))
+        results = simulate_many(gd, team, [dict(build=build.with_potential(cid, p, lv)) for cid, p, lv, _ in todo])
         best = None
-        for (cid, p, lv), r in zip(todo, results):   # in candidate order: the first of equal totals wins
-            if best is None or r.total > best[0]:
-                best = (r.total, cid, p, lv)
+        for (cid, p, lv, k), r in zip(todo, results):   # in candidate order: the first of equal rates wins
+            rate = (r.total - cur) / k   # gain per level spent; a jump only wins if it beats every single level
+            if best is None or rate > best[0] + 1e-9 * abs(cur):
+                best = (rate, r.total, cid, p, lv, k)
         if best is None:
             break
-        cur, cid, p, lv = best
+        _, new, cid, p, lv, k = best
+        for j in range(1, k + 1):   # a jump's steps: totals interpolated, levels as reached
+            step += 1
+            used[owner[(cid, p)]] += 1
+            res.totals.append(cur + (new - cur) * j / k)
+            res.picks.append((gd.char_name(cid), gd.item_name(p), lv - k + j))
+            if progress:
+                progress(f"  [{team.name}] {step}/{budget}: {gd.char_name(cid)} {gd.item_name(p)} Lv{lv - k + j}  "
+                         f"total {res.totals[-1] / res.base_total:.3f}x pinks-only")
+        cur = new
         build = build.with_potential(cid, p, lv)
-        used[owner[(cid, p)]] += 1
-        res.totals.append(cur)
-        res.picks.append((gd.char_name(cid), gd.item_name(p), lv))
-        if progress:
-            progress(f"  [{team.name}] {step + 1}/{budget}: {gd.char_name(cid)} {gd.item_name(p)} Lv{lv}  "
-                     f"total {cur / res.base_total:.3f}x pinks-only")
     res.build = build
     return res
 

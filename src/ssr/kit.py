@@ -43,6 +43,9 @@ class HitSpec:
     chance: float = 1.0    # probability per matching event (expected value; `icd` is then an expected-value ICD)
     resilience: object = 0.0   # fraction of the enemy's max resilience bar removed per proc (number or {param/ref})
     energy: object = 0.0       # Energy granted to the proc's owner per proc (number or {param/ref})
+    gain: tuple = ()       # ((resource, amount), ...): the proc adds to its owner's resources (kit `resources:`)
+    cost: tuple = ()       # ((resource, amount), ...): the proc only fires if the owner has that much, and spends it
+    summon: tuple = ()     # minion pools: the hit summons one into each when it lands (a summon tick)
 
 
 @dataclass
@@ -169,6 +172,7 @@ class Kit:
     procs: list[HitSpec] = field(default_factory=list)   # base-kit procs (e.g. a DoT after each Mark trigger)
     wait_on_field: bool = False   # support: no new cast while still on the field (an ult would cancel the skill)
     ult_only_with: tuple[int, ...] = ()   # the ult is only used in a squad with one of these Trekkers (char ids)
+    resources: dict[str, float] = field(default_factory=dict)   # name -> most that can be held (e.g. Resource Markers)
 
 
 @dataclass
@@ -204,6 +208,9 @@ def _hitspec(d: dict) -> HitSpec:
         event=str(d.get("event", "")), icd=d.get("icd", 0.0), every=d.get("every", 1), when=str(d.get("when", "")),
         restart=bool(d.get("restart", False)), chance=float(d.get("chance", 1.0)), resilience=d.get("resilience", 0.0),
         energy=d.get("energy", 0.0),
+        gain=tuple((str(k), v) for k, v in (d.get("gain") or {}).items()),
+        cost=tuple((str(k), v) for k, v in (d.get("cost") or {}).items()),
+        summon=tuple([d["summon"]] if isinstance(d.get("summon"), str) else d.get("summon", ())),
     )
 
 
@@ -320,6 +327,7 @@ def load_kit(gd: GameData, path: Path, role: str) -> Kit:
         procs=[_hitspec(p) for p in sec.get("procs", [])],
         wait_on_field=bool(sec.get("wait_on_field", False)),
         ult_only_with=tuple(int(x) for x in sec.get("ult_only_with", ())),
+        resources={k: float((v or {}).get("max", math.inf)) for k, v in (sec.get("resources") or {}).items()},
     )
 
 
@@ -419,6 +427,8 @@ def resolve_potential(gd: GameData, kit: Kit, potential_id: int, level: int) -> 
     procs = [HitSpec(**{**p.__dict__, "icd": value(gd, p.icd, level, pot),
                         "resilience": value(gd, p.resilience, level, pot),
                         "energy": value(gd, p.energy, level, pot),
+                        "gain": tuple((r, value(gd, v, level, pot)) for r, v in p.gain),
+                        "cost": tuple((r, value(gd, v, level, pot)) for r, v in p.cost),
                         "every": max(1, int(round(value(gd, p.every, level, pot))))}) for p in spec.procs]
     add_actions = {n: replace(a, followup=replace(a.followup, every=max(1, int(round(value(gd, a.followup.every, level, pot))))))
                    if a.followup else a for n, a in spec.add_actions.items()}

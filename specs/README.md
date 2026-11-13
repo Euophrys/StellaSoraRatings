@@ -50,6 +50,9 @@ main:
 | `chance` | procs only: probability per matching event (default 1); not allowed with `restart`; `every` counts events before the chance. The sim uses the expected value: the proc lands with `mult` x its expected share, and `icd` becomes an expected-value ICD (procs in one ICD window are mutually exclusive) |
 | `resilience` | procs only: fraction of the enemy's max resilience bar removed per proc (number or `{param: ParamN}`); with `hit: 0` the proc deals no damage, e.g. Cosette's Form Breaker `{hit: 0, event: "hit:self:claw", chance: 0.3, icd: 0.5, resilience: {param: Param1}}` |
 | `energy` | procs only: Energy granted to the proc's owner per proc (number or `{param: ParamN}`), scaled by `chance` as an expected value. It's flat: Charge Efficiency doesn't apply, and supports don't get a share. E.g. Knight's Seal `{hit: 0, event: "mark:any", energy: {param: Param3}}` |
+| `gain` | procs only: `{<resource>: N}` added to the owner's resource (number or `{param: ParamN}`), scaled by `chance` as an expected value, capped at the resource's `max`. Emits `gain:<who>:<resource>` once per whole unit gained |
+| `cost` | procs only: `{<resource>: N}`: the proc fires only if the owner holds that much, and spends it (not with `chance`) |
+| `summon` | procs only: a pool name or list of them: the proc's hit puts a minion into each pool when it lands (a summon tick; not with `chance`). If every pool is full with `at_max: block`, the proc doesn't fire |
 
 A hit with `hit: 0` is a **marker**: it deals no damage and only emits `marker:<who>:<tag>` for each tag at its time. Use it for things that happen on a schedule without dealing damage (a summon becoming ready, a stack every 2 s):
 
@@ -59,6 +62,18 @@ A hit with `hit: 0` is a **marker**: it deals no damage and only emits `marker:<
 ```
 
 Cooldown and ult energy cost come from `Skill.json`. **Stored uses:** a skill whose row has `SectionAmount` > 1 (Chitose's Torrent Flash: 2) stores that many uses; a cast spends one and the cooldown recharges them one at a time, keeping its progress across casts (user, in game: at 2.5 uses, a cast leaves 1.5). Stored uses are cast at least `UseInterval` apart (data). An action can set `charges: N` / `use_interval: <s>` to override. `cd_start: <s>`: the action's cooldown starts that many seconds after its cast (Noya's skill: 2.0 s, user-timed); stored uses ignore it, as their one timer keeps running. Energy gained per hit is `HitDamage.EnergyCharge`, capped per cast by `Skill.GetEnergyLimit`.
+
+**Resources:** a kit section can declare counters that procs gain and spend (Leafia's Resource Markers):
+
+```yaml
+resources:
+  markers: { max: 20 }
+procs:
+  - { event: "hit:self:leafia_auto", hit: 0, gain: { markers: 1 } }
+  - { event: "gain:self:markers", hit: 0, when: "while:resource:self:markers>10", cost: { markers: 10 }, summon: [point] }
+```
+
+`while:resource:<who>:<name>>=N` (or `>N`) holds while that member has that much; it works in proc `when`, modifier events and `not:`. Two procs on one event can make an either/or: a strike with `when: "while:not:resource:self:markers>=3"` listed before a crystal with `cost: {markers: 3}` (procs run in order, so they see the same count). A proc naming a resource its kit section doesn't declare is an error.
 
 A support kit can leave out `ult` (the support never casts it), or set `ult_only_with: [<char ids>]` to use it only in a squad with one of those Trekkers (Snowish Laru's ult, only with Fuyuka).
 
@@ -113,7 +128,7 @@ minions:
     summon: { event: "cast:self:skill", offset: 0.7, every: 3.0, count: 5 } # summon ticks; a new schedule cancels the old (restart: true)
     max: 4 # out at once
     duration: 15.0 # lifetime from its summon
-    at_max: replace # a tick with `max` out: replace (the oldest vanishes) | refresh (all lifetimes reset)
+    at_max: replace # a tick with `max` out: replace (the oldest vanishes) | refresh (all lifetimes reset) | block (no new one)
     windup: 1.433 # first attack after the summon
     interval: 0.7 # then one attack per interval, cycling through `attacks`
     attacks:
