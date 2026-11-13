@@ -1,9 +1,12 @@
+from collections import Counter
+from dataclasses import replace
 from pathlib import Path
 
 import yaml
 
-from ssr.finder import team_docs
-from ssr.team import team_from_doc
+from ssr.finder import coarse_build, team_docs
+from ssr.sim import simulate
+from ssr.team import Build, load_team, team_from_doc
 
 TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 TEMPLATE = yaml.safe_load((TEAMS / "nazuna_leafia_gerie.yaml").read_text())
@@ -53,3 +56,22 @@ def test_template_settings_kept_and_member_bits_dropped(gd):
         assert d["reference"] == {"steps": 1, "include": ["Touch of Nature"]}   # Nazuna main has it
         team_from_doc(gd, d)   # every generated doc loads
     assert tpl["hold"]   # template not mutated
+
+
+def small_team(gd):
+    team = load_team(gd, TEAMS / "nazuna_leafia_gerie.yaml")
+    return replace(team, fight_length=20, reference={"steps": 0})
+
+
+def test_coarse_build_picks_and_level(gd):
+    team = small_team(gd)
+    build, total = coarse_build(gd, team, picks=(2, 1, 0))
+    per = Counter(cid for cid, _p in build.potentials)
+    assert per[156] == 2 and per[161] == 1 and per[149] == 0
+    assert set(build.potentials.values()) == {6}
+    assert total == simulate(gd, team, build).total > simulate(gd, team, Build()).total
+
+
+def test_coarse_build_level_param(gd):
+    build, _ = coarse_build(gd, small_team(gd), picks=(1, 0, 0), level=3)
+    assert list(build.potentials.values()) == [3]

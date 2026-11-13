@@ -17,7 +17,10 @@ from itertools import combinations
 
 from .data import GameData
 from .game import potential_pools
+from .guide import _pool
 from .kit import SPECS, role_status
+from .parallel import simulate_many
+from .team import Build, TeamConfig
 
 ROLES = ("main", "support", "any")
 
@@ -81,3 +84,29 @@ def team_docs(gd: GameData, template: dict, trekker: str, role: str = "main", ex
             teams += [(main, tuple(sorted((cid, s)))) for s in sup]
     teams.sort(key=lambda t: (t[0], t[1]))
     return [_doc(gd, template, main, sup) for main, sup in teams]
+
+
+def coarse_build(gd: GameData, team: TeamConfig, picks: tuple[int, int, int] = (5, 3, 3), level: int = 6,
+                 progress=None) -> tuple[Build, float]:
+    """The screen: each step adds the one potential at `level` (any member with picks left) that raises team damage
+    the most, until every member has used its `picks` or nothing helps. Returns (build, its total)."""
+    build = Build()
+    pools = [_pool(gd, team, i) for i in range(len(team.members))]
+    left = list(picks)
+    steps = sum(picks)
+    cur = simulate_many(gd, team, [dict(build=build)])[0].total
+    for step in range(steps):
+        cands = [(i, p) for i, m in enumerate(team.members) if left[i] > 0
+                 for p in pools[i] if (m.char_id, p) not in build.potentials]
+        if not cands:
+            break
+        builds = [build.with_potential(team.members[i].char_id, p, level) for i, p in cands]
+        results = simulate_many(gd, team, [dict(build=b) for b in builds])
+        best = max(range(len(cands)), key=lambda k: results[k].total)   # first of equal totals wins
+        if results[best].total <= cur * (1 + 1e-12):
+            break
+        build, cur = builds[best], results[best].total
+        left[cands[best][0]] -= 1
+        if progress:
+            progress("screen", step + 1, steps)
+    return build, cur
