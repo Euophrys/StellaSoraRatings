@@ -11,13 +11,25 @@
 #     0.146. So the first hit was a crystal, followed by a Vector Crystal (Marker Overload) 4 frames later.
 #   skill: cast 55,25, cooldown starts at once; hit 56,21 (+0.867).
 #   ult: cast 08,15; first hit 11,16 (+3.033); control back 11,28 (+3.433); hits every 2 s; field gone 31,23.
+#     Every trial build has Draw Zone Bombardment ("reduces its attack interval"); the text's 3 s is the base.
+#   follow-up clip (Marker Overload in the trial build), attack by attack: 1 extra crystal, spawns 2 Markers;
+#     2 nothing; 3 spawns 2, then the Marker icon (Buff 16100011, the Marker count) shows; 4 extra crystal, absorbs 2;
+#     5 extra crystal; 6 nothing, absorbs 2; 7 no extra but 200k instead of 60k, icon gone; 8 nothing; 9 absorbs 2;
+#     10 stronger... So Markers come 2 at a time at most once per second (every 2nd attack), the "stronger"
+#     attack is the Amplification Crystal (spending 2 with Marker Overload empties the count), and the "extra
+#     crystal" is Marker Overload's 80% Vector Crystal. Skill 55,25: 5 Markers, absorbed; first auto hit 57,14,
+#     a crystal with a Vector Crystal (autos resume 1.2 s after the cast).
 # MAIN BUILD 2 (Field Assault + Field Echo, turret limit 3 = Observer Array):
 #   skill: cast 3,17; hit 4,14 (+0.9); turret ready 6,01; shots 6,08 / 7,09 / 8,10 (1.033 s apart);
 #     pulses (Field Echo waves) 8,01 / 11,04 / 14,07 (3.1 s apart); turret gone ~34,28 (~30.5 s after the hit).
+#   At the limit a new turret replaces the oldest (user).
 # SUPPORT (Tactical Co-Draw + Observer Iteration):
 #   skill: cast 03,12; turret pulses on summon: hits 5,12 (Vanguard Strike) and 5,19 (first Tactical Mapping);
 #     Leafia leaves 6,01 (2.633 s); mapping 6,20 / 7,21 / ... (1.033 s apart); turret gone 26,03, aura 26,11.
 #   ult: cast 44,16; first hit 47,17 (+3.033); Leafia leaves 49,15 (4.967 s); same as the main's ult.
+# SUPPORT (Vanguard Calibration + Calibration Detonation): Vanguard Strikes 5,25 (204965) / 6,28 (four numbers:
+#   75248, 131298, 36020, 54655) / 8,00 (421622) / then every second, growing (broken: ~700k at 9,00, ~800k at 10,00,
+#   ~1M at 11,02). A full enhanced strike every second; the 3rd strike's big number fits the first detonation at 3 stacks.
 char_id: 161
 
 talents:   # key talents, unlocked by dupes (specs/README.md)
@@ -43,8 +55,8 @@ main:
     markers: {max: 20}            # Resource Markers (Word 4056): up to 20 held
 
   procs:
-    # Resource Markers. Base: autos 10% per hit, at most 1 per second. Crystal Overclock (always 1) and Field Echo
-    # (none) replace this; Focused Penetration adds 1 per hit on top.
+    # Resource Markers. Base: autos 10% per hit, at most 1 per second. Crystal Overclock (always, still at most once
+    # per second: user) and Field Echo (none) replace this; Focused Penetration adds 1 each time one is generated.
     - {event: "hit:self:leafia_auto", hit: 0, chance: 0.1, icd: 1.0, gain: {markers: 1}, excludes: [516101, 516103]}
     - {event: "hit:self:echo", hit: 0, gain: {markers: 5}}   # Stratum Echo generates 5
     # More than 10 Markers: spend 10 on an Observation Point (not after Crystal Overclock). Also checked when one
@@ -72,14 +84,15 @@ main:
         - {hit: 0, offset: 3.867, tags: [swing], requires: [516101]}
 
     skill:                        # Crystal Vein Survey; CD starts at the cast (user)
-      lock: 1.5                   # GUESS
+      lock: 1.2                   # user: first auto hit 1.633 s after the cast (the string's first hit is at 0.433)
       hits:
         - {hit: 161310001, offset: 0.883, tags: [echo], triggers_mark: true}
 
     ult:                          # Terrain Mapping: 20 s field
       lock: 3.433
       hits:
-        # Text: every 3 s. The user saw every 2 s (GUESS: they had Draw Zone Bombardment, "reduces its attack interval").
+        # Text: every 3 s. With Draw Zone Bombardment ("reduces its attack interval") every 2 s (user: every trial
+        # build has it).
         - {hit: 161400001, count: 7, offset: 3.033, interval: 3.0, tags: [ult], excludes: [516112, 516142]}
         - {hit: 161400001, count: 7, offset: 3.033, interval: 3.0, tags: [ult], triggers_mark: true, requires: [516112], excludes: [516142]}
         - {hit: 161400001, count: 11, offset: 3.033, interval: 2.0, tags: [ult], requires: [516142], excludes: [516112]}
@@ -89,7 +102,7 @@ main:
     point:                        # Observation Point: summoned by the Marker proc above (and Field Echo's skill proc)
       max: 1                      # text: max 1 active; Observer Array: 3
       duration: 10
-      at_max: replace             # GUESS: a new one replaces the oldest
+      at_max: replace             # user: a new one replaces the oldest
       windup: 1.8                 # user (build 2): first shot 1.8 s after the skill's hit
       interval: 3.0               # text: every 3 s
       attacks:
@@ -107,22 +120,21 @@ main:
   potentials:
     516101:   # Crystal Overclock (pink): Markers from every auto; spend 3 per swing on an Amplification Crystal
       procs:
-        # GUESS: the crystal replaces the swing's strike (rows 161100004-6 are crystal strikes 1-3), and crystals
-        # count as autos dealing DMG, so they generate Markers too.
+        # The crystal replaces the swing's strike (rows 161100004-6 are crystal strikes 1-3; user: 200k instead of 60k).
         - {event: "marker:self:swing", hit: 161100001, when: "while:not:resource:self:markers>=3", tags: [leafia_auto], excludes: [516107]}
         - {event: "marker:self:swing", hit: 161100004, cost: {markers: 3}, tags: [leafia_auto, crystal], triggers_mark: true, excludes: [516107]}
         - {event: "marker:self:swing", hit: 161100001, when: "while:not:resource:self:markers>=2", tags: [leafia_auto], requires: [516107]}
         - {event: "marker:self:swing", hit: 161100004, cost: {markers: 2}, tags: [leafia_auto, crystal], triggers_mark: true, requires: [516107]}
-        - {event: "hit:self:leafia_auto", hit: 0, gain: {markers: 1}, excludes: [516103]}
+        - {event: "hit:self:leafia_auto", hit: 0, icd: 1.0, gain: {markers: 1}, excludes: [516103]}
       overrides:
         - {index: 0, hit_tags: [crystal]}
-      note: "Crystals replace strikes when 3 Markers are held (GUESS); Markers from every auto incl. crystals."
+      note: "Crystals replace strikes when 3 Markers are held (2 with Marker Overload); Markers at most once per second."
     516102:   # Focused Penetration (pink): +1 Marker per auto hit, autos' DMG Multiplier
-      procs:
-        - {event: "hit:self:leafia_auto", hit: 0, gain: {markers: 1}, excludes: [516103]}
+      procs:   # +1 each time one is generated (in step with the generation's 1 s limit)
+        - {event: "hit:self:leafia_auto", hit: 0, icd: 1.0, gain: {markers: 1}, requires: [516101], excludes: [516103]}
+        - {event: "hit:self:leafia_auto", hit: 0, chance: 0.1, icd: 1.0, gain: {markers: 1}, excludes: [516101, 516103]}
       overrides:
         - {index: 0, hit_tags: [leafia_auto]}
-      note: "+1 Marker on every auto hit (GUESS: not only on hits that already generate one)."
     516103:   # Field Echo (pink): no Markers from autos; skill CD -10 s; turrets +20 s; skill puts one out (1 per 20 s)
       cd_scale: {skill: 0.4444}   # 18 s -> 8 s
       minion_rules:
@@ -245,9 +257,10 @@ support:
       note: "The 10 s expiry is not forced on Co-Draw's longer turrets (GUESS)."
     516124:   # Calibration Detonation (pink): no mapping; enhanced Vanguard Strike; each strike inflicts Calibration
       procs:
-        # Each stack deals one Calibration hit when it detonates (at 3 stacks, or 3 s after). GUESS: ~2 s later on average.
-        - {event: "hit:self:vanguard", hit: 161320003, offset: 2.0, tags: [calib], excludes: [516130]}
-        - {event: "hit:self:vanguard", hit: 161320003, count: 2, offset: 2.0, interval: 0.0, tags: [calib], requires: [516130]}
+        # Each stack deals one Calibration hit when it detonates: at 3 stacks, i.e. on every 3rd strike (user: the 3rd
+        # strike's number is the big one), so 2 / 1 / 0 s after it was inflicted: 1 s on average.
+        - {event: "hit:self:vanguard", hit: 161320003, offset: 1.0, tags: [calib], excludes: [516130]}
+        - {event: "hit:self:vanguard", hit: 161320003, count: 2, offset: 1.0, interval: 0.0, tags: [calib], requires: [516130]}
       overrides:
         - {index: 0, hit_tags: [vanguard, calib]}
     516125:   # Terra DMG Etching: all-Terra: a turret appearing -> enemy Mark DMG Taken

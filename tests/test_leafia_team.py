@@ -32,16 +32,18 @@ def _hits(gd, team, build=Build()):
 
 
 def test_crystals_spend_markers(gd, lng):
-    # Skill at 1.0 (+5 Markers at 1.883); autos from 2.5. +2 per auto hit, 3 per crystal:
-    # 5 -> C(4) -> C(3) -> C(2) -> strike(4) -> C(3) -> C(2): 5 crystals and 1 strike in the first string.
+    # Skill at 1.0 (+5 Markers at 1.883); swings from 2.2 at +0.433 / 1.0 / 1.733 / 2.533 / 3.067 / 3.867.
+    # +2 Markers at most once per second (user), 3 per crystal:
+    # 5 -> C(2)+2 -> C(1) -> strike(1)+2 -> C(0) -> strike(0)+2 -> strike(2): 3 crystals, 3 strikes.
     seen, _ = _hits(gd, replace(lng, fight_length=6.5))
-    assert seen.count(CRYSTAL) == 5 and seen.count(STRIKE) == 1
+    assert seen.count(CRYSTAL) == 3 and seen.count(STRIKE) == 3
 
 
-def test_marker_overload_makes_every_swing_a_crystal(gd, lng):
+def test_marker_overload_crystals_cost_two(gd, lng):
+    # 5 -> C(3)+2 -> C(3) -> C(1)+2 -> C(1) -> strike(1)+2 -> C(1): 5 crystals, 1 strike
     seen, _ = _hits(gd, replace(lng, fight_length=6.5), Build().with_potential(LEAFIA, MARKER_OVERLOAD, 1))
-    assert seen.count(CRYSTAL) == 6 and seen.count(STRIKE) == 0
-    assert seen.count(VECTOR) == 6   # 80% chance: expected value, each lands at 0.8 of the hit
+    assert seen.count(CRYSTAL) == 5 and seen.count(STRIKE) == 1
+    assert seen.count(VECTOR) == 5   # 80% chance: expected value, each lands at 0.8 of the hit
 
 
 def test_turrets_from_skill_and_observer_array(gd, lng):

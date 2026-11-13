@@ -44,3 +44,42 @@ Kit: `specs/trekkers/161.yaml`, with the user's timings in its header. Modelling
 6. **Support Calibration pinks:** does Vanguard Calibration fire a full Vanguard Strike (327%, or 786% with Detonation) every second from each turret? How long do Calibration stacks take to detonate in practice? A clip would show whether the pink search's preference for them is real.
 7. **Field Echo without Field Assault:** wave timing is guessed (every 9 s).
 8. **New discs:** "Support Trekker" in Billowing Sails' harmony 2 is taken as the support slots, and Voyage stacks are shared between the two supports.
+
+## Second pass (same day): user follow-up
+
+The user answered most of the open questions:
+
+- **Turrets replace the oldest.**
+- **Ult every 2 s comes from Draw Zone Bombardment**, which every trial build has.
+- **Crystals:** an attack-by-attack clip, read in `specs/trekkers/161.yaml`:
+  - Markers come 2 at a time, at most once per second.
+  - The "stronger" attack is the Amplification Crystal.
+  - The "extra crystal" is Marker Overload's Vector Crystal.
+  - The skill lock is 1.2 s.
+- **Calibration support clip:** a Vanguard Strike every second, with the first 3-stack detonation on the 3rd strike. The model's ratio for that strike is 1.9x the first, against 2.06x seen.
+
+The Marker limit cuts the crystal build: at N=60 it drops from 165M to 134M with Gerie and from 243M to 188M with Ridge. The turret build is now clearly the better main build.
+
+New teams: `teams/nazuna_leafia_ridge.yaml` and `teams/nazuna_leafia_springseek_coronis.yaml`. Springseek Coronis uses Essence Extraction + Vernal Breath, the top pair in the pink search.
+
+`--split 30,15,15`, N=60. Rows marked "Calibration" give Leafia Vanguard Calibration + Calibration Detonation (scratch copies):
+
+| team | N=0 | N=30 | N=60 |
+| --- | --- | --- | --- |
+| Nazuna / Leafia / Gerie | 35.2M | 177.8M | 317.9M |
+| Nazuna / Leafia / Ridge | 33.4M | 181.4M | 315.7M |
+| Nazuna / Leafia / Springseek Coronis | 67.3M | 288.2M | 487.9M |
+| Nazuna / Leafia Calibration / Gerie | 36.9M | 266.1M | 405.8M |
+| Nazuna / Leafia Calibration / Ridge | 35.4M | 276.0M | 485.2M |
+| Nazuna / Leafia Calibration / Springseek Coronis | 66.9M | 354.9M | 624.6M |
+| Leafia (crystal) / Nazuna / Gerie | 13.1M | 86.2M | 134.4M |
+| Leafia (turret) / Nazuna / Gerie | 10.4M | 113.6M | 198.9M |
+| Leafia (crystal) / Nazuna / Ridge | 13.4M | 97.0M | 187.6M |
+| Leafia (turret) / Nazuna / Ridge | 11.4M | 123.6M | 276.9M |
+| Gerie / Nazuna / Ridge | 17.1M | 150.8M | 314.9M |
+
+- **Gerie vs Ridge with Nazuna + Leafia** is a wash on Co-Draw + Observer Iteration. With the Calibration pinks, Ridge is ahead (485M vs 406M).
+- **The Calibration support pinks** beat Co-Draw + Observer Iteration by 28–53% at N=60. Their build is Mark Suppression and Calibration Expansion at Lv6. The clip supports the strike cadence and the 3rd-strike detonation.
+- **Springseek Coronis** comes out far ahead (57% of the team's damage), but her support kit is untimed. Her number rests on all 6 Rose Vials hitting the boss for their full 6 s, plus Essence Extraction's six 715% hits as the vials expire. Treat it as unverified until her timings are measured.
+
+Still open: questions 6 (partly answered), 7 and 8 above, and Springseek Coronis's support timings (cast to first vial tick, how many vials hit a boss, on-field time).
