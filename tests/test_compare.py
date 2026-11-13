@@ -46,3 +46,19 @@ def test_greedy_emblems_respect_slots_and_gain(gd):
     assert all(kinds[n] in ("stat", "potential") for n, _ in sl[3])
     assert all(len(v) <= 2 and len({n for n, _ in v}) == len(v) for v in sl.values())   # once per emblem
     assert e.totals == sorted(e.totals) and e.totals[0] > e.base_total
+
+
+def test_greedy_pins_count_toward_budget(gd):
+    # Touch of Nature pinned at 2: spent first, inside the budget and Nazuna's cap
+    team = load_team(gd, TEAMS / "nazuna_gerie_ridge.yaml")
+    r = greedy_build(gd, team, max_level=6, split=[3, 0, 0], pins={(156, 515612): 2})
+    assert r.picks[:2] == [("Nazuna", "Touch of Nature", 1), ("Nazuna", "Touch of Nature", 2)]
+    assert sum(r.build.potentials.values()) == 3 and r.build.potentials[(156, 515612)] >= 2
+
+
+def test_greedy_emblem_pins_fill_first(gd):
+    from ssr.compare import greedy_emblems
+    team = load_team(gd, TEAMS / "nazuna_gerie_ridge.yaml")
+    e = greedy_emblems(gd, team, Build(), "purple", members=[1], per_slot=1, pins=[(1, "Mark DMG", 3)])
+    assert [e.slots[1][s] for s in (1, 2, 3)] == [[("Mark DMG", "purple")]] * 3
+    assert len(e.totals) == 3 and e.totals[0] > e.base_total

@@ -9,6 +9,10 @@ takes the jump if it gains more per level spent (values that come in steps, e.g.
     python -m ssr.compare teams/a.yaml teams/b.yaml --budget 60 --max-level 6
 
 With `--emblems <tier>`, each team's emblems are then filled greedily on top of that build (`greedy_emblems`).
+
+`--pin "Nazuna:Touch of Nature=6"` starts the build with that potential at that level (it counts toward the budget
+and the member's cap, and the greedy can still raise it); `--pin-emblem "Gerie:Mark DMG=3"` puts that emblem line
+in that many emblems before the greedy fill. Both repeat, and apply to every team with that Trekker.
 """
 from __future__ import annotations
 
@@ -34,9 +38,13 @@ class GreedyResult:
 
 
 def greedy_build(gd: GameData, team: TeamConfig, budget: int = 60, max_level: int = 6,
-                 progress=None, split: list[int] | None = None, total: int | None = None) -> GreedyResult:
+                 progress=None, split: list[int] | None = None, total: int | None = None,
+                 pins: dict[tuple[int, int], int] | None = None) -> GreedyResult:
     """split: per-member level caps in team order (e.g. [30, 15, 15]). The budget is their sum, or `total` when given
-    (a shared pool the members draw from up to their caps, e.g. total 60 with caps 30/20/20)."""
+    (a shared pool the members draw from up to their caps, e.g. total 60 with caps 30/20/20).
+
+    pins: {(char_id, potential_id): level} the build starts with. They are spent first, as the first steps (totals
+    interpolated, as for a jump), and count toward the budget and the owner's cap. The greedy can raise them further."""
     cands = []
     owner = {}
     for i, m in enumerate(team.members):
@@ -51,6 +59,26 @@ def greedy_build(gd: GameData, team: TeamConfig, budget: int = 60, max_level: in
     cur = simulate(gd, team, build).total
     res = GreedyResult(team.name, cur, build=build)
     step = 0
+    if pins:
+        for (cid, p), lv in pins.items():
+            if (cid, p) not in owner:
+                raise KeyError(f"pin {gd.item_name(p)!r}: not a normal/common potential of {gd.char_name(cid)} here")
+            build = build.with_potential(cid, p, lv)
+        pinned = simulate(gd, team, build).total
+        k = sum(pins.values())
+        if k > budget:
+            raise ValueError(f"pins spend {k} levels, more than the budget ({budget})")
+        j = 0
+        for (cid, p), lv in pins.items():
+            used[owner[(cid, p)]] += lv
+            if split and used[owner[(cid, p)]] > split[owner[(cid, p)]]:
+                raise ValueError(f"pins on {gd.char_name(cid)} exceed the member's cap")
+            for level in range(1, lv + 1):
+                j += 1
+                step += 1
+                res.totals.append(cur + (pinned - cur) * j / k)
+                res.picks.append((gd.char_name(cid), gd.item_name(p), level))
+        cur = pinned
     while step < budget:
         todo = []   # (cid, p, new level, levels spent)
         for cid, p in cands:
@@ -99,12 +127,15 @@ class EmblemResult:
 
 
 def greedy_emblems(gd: GameData, team: TeamConfig, build: Build, tier: str = "purple",
-                   members: list[int] | None = None, per_slot: int = 4, progress=None) -> EmblemResult:
+                   members: list[int] | None = None, per_slot: int = 4, progress=None,
+                   pins: list[tuple[int, str, int]] | None = None) -> EmblemResult:
     """Fill each member's 3 emblems (Lv70 / 80 / 90 slots, `per_slot` lines each) one line at a time: every step adds
     the line (any member) that raises team damage the most. Every line rolls at `tier` (its highest tier of that
     colour or lower: purple = the top roll, "+3" on skill / potential lines). A line appears at most once per emblem,
     and only in the slots it can roll in (skill levels Lv80, potential levels Lv90). The team file's own emblems
-    are ignored."""
+    are ignored.
+
+    pins: [(member index, line name, count)]: that line goes in `count` emblems (lowest slots first) before the fill."""
     want = COLOUR_RANK[tier]
     members = list(range(len(team.members))) if members is None else members
     opts = {}
@@ -120,7 +151,20 @@ def greedy_emblems(gd: GameData, team: TeamConfig, build: Build, tier: str = "pu
     cur = simulate(gd, team, build, emblems=False).total
     res = EmblemResult(team.name, cur)
     total_lines = per_slot * 3 * len(members)
-    for step in range(total_lines):
+    for i, name, count in pins or []:
+        if (i, name) not in opts:
+            raise KeyError(f"emblem pin {name!r}: not a line {gd.char_name(team.members[i].char_id)} can use")
+        o, t = opts[(i, name)]
+        for _ in range(count):
+            free = [s for s in sorted(o.slots) if len(slots[i][s]) < per_slot and name not in slots[i][s]]
+            if not free:
+                raise ValueError(f"emblem pin {name!r} x{count}: no free emblem left for it")
+            extra.append((i, t.line))
+            slots[i][free[0]].append(name)
+    if extra:
+        cur = simulate(gd, team, build, emblems=False, extra=extra).total
+        res.totals.extend([cur] * len(extra))
+    for step in range(len(extra), total_lines):
         todo = []
         for (i, name), (o, t) in opts.items():
             # the lowest slot it can roll in that has room and doesn't have it yet (stat lines fill Lv70 first,
@@ -149,6 +193,22 @@ def greedy_emblems(gd: GameData, team: TeamConfig, build: Build, tier: str = "pu
     return res
 
 
+def _parse_pin(s: str) -> tuple[str, str, int]:
+    """'Trekker:Name=N' -> (trekker, name, N)."""
+    who, _, rest = s.partition(":")
+    name, _, n = rest.rpartition("=")
+    if not who or not name or not n.isdigit():
+        raise SystemExit(f"bad pin {s!r}: expected TREKKER:NAME=N")
+    return who.strip(), name.strip(), int(n)
+
+
+def _member(gd: GameData, team: TeamConfig, who: str) -> int | None:
+    for i, m in enumerate(team.members):
+        if gd.char_name(m.char_id).lower() == who.lower():
+            return i
+    return None
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Compare teams at an equal potential-level budget")
     ap.add_argument("teams", nargs="+")
@@ -159,6 +219,10 @@ def main(argv=None):
                     help="with --split: a shared budget; the split values become per-member caps (e.g. --total 60 --split 30,20,20)")
     ap.add_argument("--emblems", choices=sorted(COLOUR_RANK, key=COLOUR_RANK.get), default=None,
                     help="also fill every member's emblems greedily, every line at this tier (e.g. purple)")
+    ap.add_argument("--pin", action="append", default=[], metavar="TREKKER:POTENTIAL=LEVEL",
+                    help='start the build with this potential level, e.g. "Nazuna:Touch of Nature=6" (repeatable)')
+    ap.add_argument("--pin-emblem", action="append", default=[], metavar="TREKKER:LINE=COUNT",
+                    help='put this emblem line in COUNT emblems before the fill, e.g. "Gerie:Mark DMG=3" (repeatable)')
     ap.add_argument("--quiet", action="store_true")
     a = ap.parse_args(argv)
     gd = GameData()
@@ -168,12 +232,31 @@ def main(argv=None):
         t0 = time.time()
         team = load_team(gd, path)
         split = [int(x) for x in a.split.split(",")] if a.split else None
+        pins = {}
+        for who, name, lv in map(_parse_pin, a.pin):
+            i = _member(gd, team, who)
+            if i is None:
+                print(f"{team.name}: no {who}, pin {name!r} skipped", flush=True)
+                continue
+            m = team.members[i]
+            pools = potential_pools(gd, m.char_id, m.role)
+            by_name = {gd.item_name(p): p for p in pools["normal"] + pools["common"]}
+            if name not in by_name:
+                raise SystemExit(f"--pin {name!r}: not a {m.role} potential of {who}; have {sorted(by_name)}")
+            pins[(m.char_id, by_name[name])] = lv
+        epins = []
+        for who, name, n in map(_parse_pin, a.pin_emblem):
+            i = _member(gd, team, who)
+            if i is None:
+                print(f"{team.name}: no {who}, emblem pin {name!r} skipped", flush=True)
+                continue
+            epins.append((i, name, n))
         r = greedy_build(gd, team, a.budget, a.max_level, None if a.quiet else (lambda s: print(s, flush=True)), split,
-                         a.total)
+                         a.total, pins=pins)
         out.append(r)
         if a.emblems:
             emb.append(greedy_emblems(gd, team, r.build, a.emblems,
-                                      progress=None if a.quiet else (lambda s: print(s, flush=True))))
+                                      progress=None if a.quiet else (lambda s: print(s, flush=True)), pins=epins))
         print(f"{team.name}: done in {time.time() - t0:.0f}s", flush=True)
     ref = out[0]
     total = sum(int(x) for x in a.split.split(",")) if a.split else a.budget
