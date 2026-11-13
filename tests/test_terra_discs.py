@@ -75,3 +75,16 @@ def test_terra_discs_add_damage(gd):
     real = replace(team, discs_main=[(PILGRIM, 1), (CLAW, 1), (SHINING, 1)])
     b = team_build(team)
     assert simulate(gd, real, b).total > simulate(gd, filler, b).total
+
+
+def test_touch_of_nature_is_a_separate_mark_multiplier(gd):
+    """User test 2026-11-13: Lv6 Touch of Nature alone 32864 per Mark, +33% Mark DMG emblem on Gerie 43736 (x1.331)."""
+    from ssr.stats import MARK_DMG
+    team = load_team(gd, TEAMS / "nazuna_gerie_ridge.yaml")
+    build = team_build(team).with_potential(156, 515612, 6)
+    emblem = Modifier(stat=MARK_DMG, value=0.33, source="probe")
+    no_ton = simulate(gd, team, team_build(team)).by_slot[(1, "mark")]
+    ton = simulate(gd, team, build).by_slot[(1, "mark")]
+    both = simulate(gd, team, build, extra=[(1, emblem)]).by_slot[(1, "mark")]
+    assert ton / no_ton == pytest.approx(1 + 4.2)
+    assert both / ton == pytest.approx(1.33)

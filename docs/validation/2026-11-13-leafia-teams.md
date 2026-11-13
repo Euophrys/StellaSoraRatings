@@ -106,6 +106,5 @@ Emergency Evacuation is worth more with Ridge for two reasons. Ridge is Versatil
 - **Stacks refresh together** (user-tested: Gerie's Delight in Ruin, all 6 drop at once); now the default. Calibration still beats Co-Draw by 28–66% at N=60.
 - **One Mark per element at a time** (user) and **the 1 s Mark ICD** (Amber timings) are confirmed.
 - **Gerie's Mark emblems:**
-  - Touch of Nature (+420% Mark DMG at Lv6) is EAT 64, the same additive bucket as the emblem's Mark DMG. A purple +80% line therefore adds only ~15% to her Marks in Nazuna teams.
-  - The user accepts that the community likely read "Mark DMG Multiplier" as a separate multiplier.
+  - ~~Touch of Nature (+420% Mark DMG at Lv6) is EAT 64, the same additive bucket as the emblem's Mark DMG.~~ Corrected the same day: the user measured it as a separate multiplier (32864 -> 43736 with a +33% Mark DMG emblem, x1.331). See `docs/assumptions.md`, "Touch of Nature is a separate Mark multiplier".
 - **Emblem optimizer:** `python -m ssr.compare ... --emblems <tier>`.

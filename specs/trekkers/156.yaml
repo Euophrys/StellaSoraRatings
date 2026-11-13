@@ -120,8 +120,8 @@ main:
 
     515612:   # Touch of Nature: all Terra Trekkers' Mark DMG Multiplier
       overrides:
-        - {index: 0, event: always, target: "element:3"}
-      note: "'Mark DMG Multiplier' added to the Mark DMG bucket (GUESS: it may add to the hit's multiplier instead)."
+        - {index: 0, event: always, target: "element:3", as_stat: 85, hit_tags: [mark]}
+      note: "Data says EAT 64 (Mark DMG), but it's a separate multiplier on Mark hits (EAT 85, x(1+value)), as its text says. User test 2026-11-13: Lv6 alone 32864, +33% Mark DMG emblem 43736 (x1.331; a shared bucket would give x1.063)."
 
     515641:   # Operation: Pandemonium: ult cast -> squad Skill Crit Rate 15 s
       overrides:
