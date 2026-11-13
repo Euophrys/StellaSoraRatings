@@ -586,6 +586,83 @@ function emblemSection() {
 
 SECTIONS.push(potentialsSection, optimizeSection, emblemSection);
 
+// ================================================================ find teams
+const FINDER_TIERS = ["purple", "yellow", "blue", "green", "none"];
+const finderOpts = () => (ui.finderOpts = ui.finderOpts || { trekker: "", role: "main", top: 5, emblems: "purple" });
+
+async function runFinder() {
+  const o = finderOpts();
+  const who = o.trekker || state.members[0].trekker;
+  if (!trekker(who)) { message("err", "pick a Trekker to find teams for"); return; }
+  try {
+    const rows = await runJob("finder", { trekker: who, role: o.role, top: o.top, emblems: o.emblems, exclude: [] });
+    ui.finder = { rows, trekker: who, role: o.role, emblems: o.emblems, breaks: ui.breaks };
+    render();
+  } catch (e) { /* shown */ }
+}
+
+function openFinderRow(row) {
+  if (!confirmDiscard()) return;
+  state = normalise(JSON.parse(JSON.stringify(row.doc)));
+  ui.stem = null; results = null; ui.pinkRows = {}; ui.optimizeNote = null;
+  savedKey = JSON.stringify(state);
+  render();
+  recalc();
+}
+
+function finderTable(title, rows, value, finalists) {
+  const best = Math.max(...rows.filter((r) => value(r) != null).map(value), 0);
+  const memberCell = (r, k) => h("td", { class: "who" }, h("div", {}, r.members[k]),
+    h("div", { class: "small muted" }, k === 0 ? "Main" : "Support"),
+    h("div", { class: "small muted" }, (r.pinks[k] || []).join(" · ")));
+  return h("div", { class: "scroll" }, h("table", { class: "finder" },
+    h("caption", {}, title),
+    h("thead", {}, h("tr", {}, ["Team", "Damage %", "Raw Damage", "Main", "Support 1", "Support 2"].map((c) => h("th", {}, c)))),
+    h("tbody", {}, rows.map((r, n) => {
+      const v = value(r);
+      const team = h("td", { class: "team" }, `#${n + 1}`,
+        finalists && !r.error ? h("button", { onclick: () => openFinderRow(r), disabled: !!ui.job }, "Open in editor") : null);
+      const dmg = r.error
+        ? [h("td", { colspan: 2, class: "neg" }, r.error)]
+        : [h("td", { class: "pct" }, h("span", {}, `${(100 * v / best).toFixed(2)}%`),
+              h("span", { class: "bar" }, h("span", { style: `width:${(100 * v / best).toFixed(2)}%` }))),
+           h("td", { class: "raw" }, Math.round(v).toLocaleString("en-US"))];
+      return h("tr", {}, team, dmg, [0, 1, 2].map((k) => memberCell(r, k)));
+    }))));
+}
+
+function finderSection() {
+  const o = finderOpts();
+  const names = catalog.trekkers.map((t) => ({ value: t.name, label: `${t.name} (${t.element})` }));
+  const cur = o.trekker || state.members[0].trekker || "";
+  const f = ui.finder;
+  let tables = null;
+  if (f) {
+    const fin = f.rows.filter((r) => r.finalist && !r.error);
+    const scr = f.rows.filter((r) => !r.error).sort((a, b) => b.screen_total - a.screen_total)
+      .concat(f.rows.filter((r) => r.error));
+    tables = [
+      h("h3", {}, `Optimized: ${f.trekker} as ${f.role}, emblems ${f.emblems}, breaks ${f.breaks ? "on" : "off"}`),
+      fin.length ? finderTable("Full build: optimize with this page's budget, then greedy emblems", fin, (r) => r.total, true)
+        : h("div", { class: "small muted" }, "No finalists."),
+      h("h3", {}, "Screened (every team)"),
+      finderTable("Screen: pinks on the reference build, then potentials straight to Lv6 (5 / 3 / 3 picks)", scr, (r) => r.screen_total, false),
+    ];
+  }
+  return h("section", {}, h("h2", {}, "Find teams"),
+    h("div", { class: "panel" },
+      h("div", { class: "field" },
+        h("label", {}, "Trekker", select(cur, [{ value: "", label: "—" }].concat(names), (v) => { o.trekker = v; render(); })),
+        h("label", {}, "as", select(o.role, ["main", "support", "any"].map((r) => ({ value: r, label: r })), (v) => { o.role = v; })),
+        h("label", {}, "Finalists", h("input", { type: "number", min: 1, max: 20, step: 1, value: o.top,
+          onchange: (e) => { const v = Math.round(Number(e.target.value)); if (v >= 1 && v <= 20) o.top = v; else render(); } })),
+        h("label", {}, "Emblems", select(o.emblems, FINDER_TIERS.map((t) => ({ value: t, label: t, class: t })), (v) => { o.emblems = v; })),
+        h("button", { class: "primary", onclick: runFinder, disabled: !!ui.job || !trekker(cur) }, "Find")),
+      h("div", { class: "small muted" }, "Every same-element team with this Trekker in that role, each at its own best build. Uses this page's discs, enemy, fight length, budget, max level and breaks setting as the template; the team above isn't used. Takes minutes: about 10 s per team, plus 40 s per finalist."),
+      tables));
+}
+SECTIONS.push(finderSection);
+
 // ================================================================ export
 async function exportHtml() {
   const css = await fetch("/static/app.css").then((r) => r.text()).catch(() => "");

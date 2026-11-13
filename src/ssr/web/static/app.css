@@ -3,12 +3,14 @@
   --accent: #3b6fe0; --pos: #1a8f3c; --neg: #c63a3a; --pink: #d9539e; --pink-bg: rgba(217, 83, 158, .10);
   --t-green: #3aa65a; --t-blue: #3b82f6; --t-yellow: #d7a516; --t-purple: #9b5de5;
   --warn-bg: #fff4d6; --warn-border: #e2b740; --err-bg: #fde6e6; --err-border: #d66;
+  --th-bg: #2d4a6b; --th-text: #ffffff; --row-alt: #e9eef5; --bar: #d4aa6a;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #15171c; --panel: #1e2128; --panel2: #262a33; --text: #e6e8ee; --muted: #9298a8; --border: #363b47;
     --accent: #6d9bff; --pos: #4cc874; --neg: #ff7a7a; --pink: #f27ac0; --pink-bg: rgba(242, 122, 192, .12);
     --warn-bg: #3a3118; --warn-border: #a3842c; --err-bg: #3d1f22; --err-border: #a44;
+    --th-bg: #24364d; --th-text: #e6e8ee; --row-alt: #232831; --bar: #b8904f;
   }
 }
 * { box-sizing: border-box; }
@@ -107,3 +109,18 @@ table.em tr.irrelevant td { color: var(--muted); opacity: .6; }
 .scroll { overflow-x: auto; }
 table.em .tier { min-width: 4.2em; }
 .legend { display: inline-flex; gap: 4px; margin-left: 8px; }
+
+/* find teams */
+table.finder { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 13px; background: var(--panel); margin-bottom: 14px; }
+table.finder caption { text-align: left; color: var(--muted); font-size: 12px; padding: 0 0 4px; }
+table.finder th { background: var(--th-bg); color: var(--th-text); padding: 7px 8px; text-align: center; border: 1px solid var(--border); }
+table.finder td { padding: 5px 8px; border: 1px solid var(--border); vertical-align: middle; }
+table.finder tbody tr:nth-child(even) td { background: var(--row-alt); }
+table.finder td.team { font-weight: 600; white-space: nowrap; }
+table.finder td.team button { margin-left: 8px; font-weight: normal; }
+table.finder td.pct { white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums; }
+table.finder td.pct > span:first-child { display: inline-block; width: 4.6em; text-align: right; margin-right: 6px; }
+table.finder .bar { display: inline-block; width: 140px; height: 18px; vertical-align: middle; }
+table.finder .bar span { display: block; height: 100%; background: var(--bar); }
+table.finder td.raw { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.finder td.who div:first-child { font-weight: 600; }

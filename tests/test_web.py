@@ -279,3 +279,23 @@ def test_team_doc_with_preset(gd):
     from ssr.web.server import _team
     doc = yaml.safe_load(open(TEAMS / "fl_noya_skill.yaml")); doc["enemy"] = {"preset": "lithe_beauty"}
     assert _team(gd, doc).enemy.name == "lithe_beauty"
+
+
+def test_finder_job(client):
+    cat = client.get("/api/catalog")
+    keep = {"Amber", "Flora", "Chixia"}
+    exclude = [t["name"] for t in cat["trekkers"] if t["element"] == "Ignis" and t["name"] not in keep]
+    doc = state(fight_length=20, reference={"steps": 0}, budget=[1, 0, 0], budget_total=None)
+    body = {"kind": "finder", "state": doc, "trekker": "Amber", "top": 1, "emblems": "none", "exclude": exclude}
+    s = client.wait(client.json("POST", "/api/jobs", body)["id"], timeout=300)
+    assert s["state"] == "done", s
+    assert len(s["result"]) == 1
+    row = s["result"][0]
+    assert row["finalist"] and row["members"][0] == "Amber" and row["doc"]["members"][0]["targets"]
+
+
+def test_finder_job_validation(client):
+    base = {"kind": "finder", "state": state()}
+    for bad in ({"trekker": "Nobody"}, {"trekker": "Amber", "role": "dps"}, {"trekker": "Amber", "top": 0},
+                {"trekker": "Amber", "emblems": "gold"}, {"trekker": "Amber", "exclude": "Flora"}):
+        client.json("POST", "/api/jobs", {**base, **bad}, expect=400)

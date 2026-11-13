@@ -12,7 +12,9 @@ from urllib.parse import unquote, urlparse
 
 import yaml
 
+from ..compare import COLOUR_RANK
 from ..data import GameData
+from ..finder import find_teams, team_docs
 from ..sharecode import SharePreset, decode_share, encode_share
 from ..guide import emblem_table, optimize, potential_grid, rank_pinks, without_breaks
 from ..sim import simulate
@@ -88,6 +90,40 @@ def _pinks(gd: GameData, team: TeamConfig, member: int):
     return run
 
 
+def _finder(gd: GameData, template: dict, trekker: str, role: str, top: int, emblems: str, breaks: bool, exclude):
+    def run(progress):
+        return [asdict(r) for r in find_teams(gd, template, trekker, role, top=top, emblems=emblems, breaks=breaks,
+                                              exclude=exclude, progress=progress)]
+    return run
+
+
+def _finder_job(gd: GameData, body: dict, breaks: bool):
+    doc = body.get("state")
+    if not isinstance(doc, dict):
+        raise ApiError(400, "state must be a team document")
+    try:
+        team_from_doc(gd, {**doc, "members": []})   # the template's own settings (members are replaced)
+    except TeamDocError as e:
+        raise ApiError(400, str(e)) from e
+    trekker, role, exclude = body.get("trekker"), body.get("role", "main"), body.get("exclude", [])
+    if not isinstance(trekker, str):
+        raise ApiError(400, "trekker must be a name")
+    if not isinstance(exclude, list) or not all(isinstance(x, str) for x in exclude):
+        raise ApiError(400, "exclude must be a list of trekker names")
+    try:
+        team_docs(gd, doc, trekker, role, exclude)   # checks the trekker, role and exclude names
+    except (ValueError, KeyError) as e:
+        raise ApiError(400, e.args[0] if e.args else str(e)) from e
+    top = body.get("top", 5)
+    if not isinstance(top, int) or isinstance(top, bool) or top < 1:
+        raise ApiError(400, "top must be a whole number of at least 1")
+    emblems = body.get("emblems", "purple")
+    if emblems != "none" and emblems not in COLOUR_RANK:
+        raise ApiError(400, f"emblems must be none or one of {', '.join(COLOUR_RANK)}")
+    tmpl = {k: v for k, v in doc.items() if k != "members"}
+    return _finder(gd, tmpl, trekker, role, top, emblems, breaks, exclude)
+
+
 class App:
     def __init__(self, gd: GameData):
         self.gd = gd
@@ -129,6 +165,8 @@ class App:
             if member not in (0, 1, 2):
                 raise ApiError(400, "member must be 0, 1 or 2")
             fn = _pinks(gd, rated(_team(gd, body.get("state"), skip_pinks=member)), member)
+        elif kind == "finder":
+            fn = _finder_job(gd, body, breaks)
         else:
             raise ApiError(400, f"unknown job kind {kind!r}")
         try:
