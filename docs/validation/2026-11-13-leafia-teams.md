@@ -83,3 +83,16 @@ New teams: `teams/nazuna_leafia_ridge.yaml` and `teams/nazuna_leafia_springseek_
 - **Springseek Coronis** comes out far ahead (57% of the team's damage), but her support kit is untimed. Her number rests on all 6 Rose Vials hitting the boss for their full 6 s, plus Essence Extraction's six 715% hits as the vials expire. Treat it as unverified until her timings are measured.
 
 Still open: questions 6 (partly answered), 7 and 8 above, and Springseek Coronis's support timings (cast to first vial tick, how many vials hit a boss, on-field time).
+
+## With discs: Claw the Claw C1, The Lost Pilgrim C1, Emergency Evacuation C6 (main slots; support slots filler)
+
+| team (N=60, split 30,15,15) | filler | with the discs |
+| --- | --- | --- |
+| Nazuna / Leafia / Gerie | 317.9M | 489.3M (x1.54) |
+| Nazuna / Leafia / Ridge | 315.7M | 521.7M (x1.65) |
+| Nazuna / Leafia Calibration / Gerie | 405.8M | 622.4M (x1.53) |
+| Nazuna / Leafia Calibration / Ridge | 485.2M | 762.6M (x1.57) |
+
+No assumed uptimes. Each disc swapped back to filler (pinks only): Emergency Evacuation +33–40%, The Lost Pilgrim +19–24%, Claw the Claw +18–21%.
+
+Emergency Evacuation is worth more with Ridge for two reasons. Ridge is Versatile, so her casts stack Anchored too: max stacks come sooner, and harmony 2's ATK is up longer. Its melody's +15% Auto DMG for Terra supports goes to Leafia's turret hits, which are Auto Attack DMG. Its spec comes from the text alone.
