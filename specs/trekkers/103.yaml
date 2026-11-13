@@ -193,22 +193,22 @@ main:
       note: "Kill bonus ignored (single boss)."
 
 support:
-  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hit is user-timed (main role)
-  on_field: {skill: 3.0, ult: 1.5}   # GUESS
+  timing: frames   # animation frame data (python -m ssr.inspect frames 103), not checked in game; the ult's hit is user-timed (main role)
+  on_field: {skill: 4.0, ult: 2.7}   # frames: clip + the usual exit (docs/assumptions.md "Frame data")
   mark: {hit: 103000001}             # text: Bullet Waltz can trigger Ignis Mark
   actions:
     skill:                         # Bullet Waltz
       hits:
-        - {hit: 103320001, offset: 0.8, tags: [waltz], triggers_mark: true}
+        - {hit: 103320001, count: 9, offset: 0.3, interval: 0.167, tags: [waltz], triggers_mark: true}   # frames: a 0.3-1.63 s hitbox, every 0.167 s
     ult:
       hits:
         - {hit: 103400001, offset: 0.5, tags: [ult], triggers_mark: true}
         - {hit: 0, offset: 0.6, tags: [ult_done]}
 
   potentials:
-    510321:   # Hunting Waltz (pink): GUESS: a hit per second for 6 s
+    510321:   # Hunting Waltz (pink): 6 s of following (text); frames: a hit every 0.367 s from +0.78
       add_hits:
-        skill: [{hit: 103521001, count: 6, offset: 1.0, interval: 1.0, tags: [waltz_shot]}]
+        skill: [{hit: 103521001, count: 16, offset: 0.778, interval: 0.367, tags: [waltz_shot]}]
     510322:   # Scattering Waltz (pink): 2 Shadows every 2 s for 6 s, each every 0.25 s for 2.5 s
       add_hits:
         skill: [{hit: 103525001, count: 60, offset: 2.0, interval: 0.1, tags: [shadow]}]
@@ -217,7 +217,7 @@ support:
         - {event: "cast:self:skill", hit: 103320001, chance: 0.2, offset: 1.5, tags: [waltz], triggers_mark: true}
     510324:   # Flame Waltz (pink)
       add_hits:
-        skill: [{hit: 103524001, offset: 1.5, tags: [waltz_end]}]
+        skill: [{hit: 103524001, offset: 1.966, tags: [waltz_end]}]   # frames: the end shot follows the skill clip (1.433 + 0.533)
     510325:   # Nimble Catwalk
       overrides:
         - {index: 0, hit_tags: [waltz]}

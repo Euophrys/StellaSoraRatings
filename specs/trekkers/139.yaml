@@ -24,7 +24,7 @@ talents:
       - {attribute: 13996511, event: always}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 139), not checked in game
   mark: {hit: 139000001, tags: [tide]}
 
   procs:
@@ -32,30 +32,30 @@ main:
 
   actions:
     auto:
-      duration: 5.4                # GUESS: 1 s per strike
+      duration: 3.85               # frames: strikes chained at each combo-window end
       hits:
-        - {hit: 139100001, offset: 0.4, tags: [slash]}
-        - {hit: 139100002, offset: 0.6, tags: [slash]}
-        - {hit: 139100003, offset: 1.4, tags: [slash]}
-        - {hit: 139100004, count: 2, offset: 2.4, interval: 0.2, tags: [slash]}
-        - {hit: 139100005, offset: 3.4, tags: [slash]}
-        - {hit: 139100006, offset: 3.6, tags: [slash]}
-        - {hit: 139100007, offset: 3.8, tags: [slash]}
-        - {hit: 139100008, offset: 4.4, tags: [slash]}
+        - {hit: 139100001, offset: 0.3, tags: [slash]}
+        - {hit: 139100002, offset: 0.633, tags: [slash]}
+        - {hit: 139100003, offset: 1.05, tags: [slash]}
+        - {hit: 139100004, count: 2, offset: 1.416, interval: 0.267, tags: [slash]}
+        - {hit: 139100005, offset: 2.166, tags: [slash]}
+        - {hit: 139100006, offset: 2.417, tags: [slash]}
+        - {hit: 139100007, offset: 2.517, tags: [slash]}
+        - {hit: 139100008, offset: 3.361, tags: [slash]}
 
-    skill:                         # Sweeping Rush x3 and x3 (text)
-      lock: 2.5                    # GUESS
-      cd_start: 2.5               # GUESS: the CD starts when the cast ends
+    skill:                         # Sweeping Rush x3 and x3 (text; the rush clip has 7 hit events of the first row)
+      lock: 1.85                   # frames: start 0.45 + rush 0.933 + end's combo-window end 0.467
+      cd_start: 1.85               # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 139310001, count: 3, offset: 0.5, interval: 0.2, tags: [rush], triggers_mark: true}
-        - {hit: 139310002, count: 3, offset: 1.1, interval: 0.2, tags: [rush], triggers_mark: true}
+        - {hit: 139310001, count: 3, offset: 0.533, interval: 0.35, tags: [rush], triggers_mark: true}   # frames: the rush spans +0.53 .. +1.25
+        - {hit: 139310002, count: 3, offset: 1.383, interval: 0.1, tags: [rush], triggers_mark: true}    # frames
 
     ult:                           # Deep Sweep: both phases, the second as soon as it's unlocked
-      lock: 4.5                    # GUESS
+      lock: 2.367                  # frames: phase 1 (0.767), phase 2's start (0.333) and attack (1.267)
       hits:
-        - {hit: 139400001, offset: 1.0, tags: [phase1], triggers_mark: true}
-        - {hit: 139400002, offset: 3.0, tags: [phase2], triggers_mark: true, excludes: [513905]}
-        - {hit: 139400302, offset: 3.0, tags: [phase2], triggers_mark: true, requires: [513905]}
+        - {hit: 139400001, offset: 0.367, tags: [phase1], triggers_mark: true}   # frames: area +0.267; delay GUESS 0.1
+        - {hit: 139400002, offset: 1.783, tags: [phase2], triggers_mark: true, excludes: [513905]}   # frames: recast +0.767, area +1.016
+        - {hit: 139400302, offset: 1.783, tags: [phase2], triggers_mark: true, requires: [513905]}
 
   buffs:
     - {effect: 13900001, level: skill, name: sweep_mark, event: "cast:self:skill", duration: {ref: "BuffValue,NoLevel,13900001,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,13900001,LaminatedNum,Fixed"}}
@@ -119,21 +119,21 @@ main:
         - {index: 0, hit_tags: [phase2]}
 
 support:
-  untimed: true
-  on_field: {skill: 3.0, ult: 4.5}   # GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 4.95, ult: 3.4}   # frames: clips + the usual exit
   mark: {hit: 139000001, tags: [tide]}   # text: Sweeping Slashes can trigger Aqua Mark
   procs:
     - {event: "mark:self", every: 9, hit: 139000002, tags: [ebb]}
   actions:
     skill:                         # Sweeping Slashes x4, then the Finishing Slash and crystals
       hits:
-        - {hit: 139320001, count: 4, offset: 0.8, interval: 0.3, tags: [cycling], triggers_mark: true}
-        - {hit: 139320002, offset: 2.2, tags: [finish], triggers_mark: true}
-        - {hit: 139320003, offset: 2.5, tags: [crystal], triggers_mark: true}
+        - {hit: 139320001, count: 4, offset: 1.05, interval: 0.25, tags: [cycling], triggers_mark: true}   # frames
+        - {hit: 139320002, offset: 2.645, tags: [finish], triggers_mark: true}   # frames: area at the end clip's script event (+2.495), 0.15 s delay
+        - {hit: 139320003, offset: 2.567, tags: [crystal], triggers_mark: true}  # frames
     ult:
       hits:
-        - {hit: 139400001, offset: 1.0, tags: [phase1], triggers_mark: true}
-        - {hit: 139400002, offset: 3.0, tags: [phase2], triggers_mark: true}
+        - {hit: 139400001, offset: 0.367, tags: [phase1], triggers_mark: true}
+        - {hit: 139400002, offset: 1.783, tags: [phase2], triggers_mark: true}
 
   buffs:
     - {effect: 13994001, level: ult, name: stance, event: "cast:self:ult", duration: {ref: "BuffValue,NoLevel,13994011,Time,10K"}}

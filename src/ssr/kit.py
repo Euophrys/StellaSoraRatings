@@ -282,15 +282,18 @@ def _buff(b: dict) -> BuffSpec:
 
 
 def role_status(path: Path, role: str) -> str:
-    """How far a spec's role kit goes: "ok", "untimed" (`untimed: true`, authored but on guessed timings),
-    "stub" (`stub: true`, placeholder hits only) or "missing" (no section)."""
+    """How far a spec's role kit goes: "ok", "frames" (`timing: frames`, timed from the game's animation data but
+    not checked in game), "untimed" (`untimed: true`, authored but on guessed timings), "stub" (`stub: true`,
+    placeholder hits only) or "missing" (no section)."""
     with open(path, encoding="utf-8") as f:
         sec = yaml.safe_load(f).get(role)
     if sec is None:
         return "missing"
     if sec.get("stub"):
         return "stub"
-    return "untimed" if sec.get("untimed") else "ok"
+    if sec.get("untimed"):
+        return "untimed"
+    return "frames" if sec.get("timing") == "frames" else "ok"
 
 
 def load_kit(gd: GameData, path: Path, role: str) -> Kit:

@@ -20,35 +20,35 @@ talents:
       - {attribute: 13396511, event: always}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 133), not checked in game
   mark: {hit: 133000001}
 
   actions:
     auto:
-      duration: 3.4                # GUESS: 1 s per strike
+      duration: 2.25               # frames: strikes chained at each combo-window end
       hits:
-        - {hit: 133100001, offset: 0.4}
-        - {hit: 133100002, offset: 1.4}
-        - {hit: 133100003, count: 3, offset: 2.4, interval: 0.2}
+        - {hit: 133100001, offset: 0.458}
+        - {hit: 133100002, offset: 0.925}
+        - {hit: 133100003, count: 3, offset: 1.78, interval: 0.167}   # frames: 3 curving shots fired +1.683/+1.85/+2.016
 
     skill:                         # Blooming Draught x7 (text)
-      lock: 4.0                    # GUESS: she channels it
-      cd_start: 4.0               # GUESS: the CD starts when the cast ends
+      lock: 2.933                  # frames: she channels it: start 1.0, 2 loops of 0.933 (a hit every 0.25 s), end 0.067
+      cd_start: 2.933              # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 133310001, count: 7, offset: 0.6, interval: 0.5, tags: [pinwheel], triggers_mark: true}
-        - {hit: 0, offset: 4.0, tags: [pinwheel_stops]}
+        - {hit: 133310001, count: 7, offset: 1.0, interval: 0.25, tags: [pinwheel], triggers_mark: true}
+        - {hit: 0, offset: 2.866, tags: [pinwheel_stops]}
 
     ult:                           # Aromatic Tempest: 3 tornados every 3 s
-      lock: 3.0                    # GUESS
-      hits:
-        - {hit: 133400001, count: 3, offset: 1.5, interval: 0, tags: [tornado]}
-        - {hit: 133400001, count: 3, offset: 4.5, interval: 0, tags: [tornado]}
-        - {hit: 133400001, count: 3, offset: 7.5, interval: 0, tags: [tornado]}
+      lock: 7.433                  # frames: she stays in the cutscene clip while the tornados work (combo-window end)
+      hits:                        # frames: the cutscene clip's 3 hit events
+        - {hit: 133400001, count: 3, offset: 0.0, interval: 0, tags: [tornado]}
+        - {hit: 133400001, count: 3, offset: 2.417, interval: 0, tags: [tornado]}
+        - {hit: 133400001, count: 3, offset: 5.333, interval: 0, tags: [tornado]}
 
   potentials:
     513301:   # Blooming Gale (pink): interval -50%
       add_hits:
-        skill: [{hit: 133310001, count: 7, offset: 0.85, interval: 0.5, tags: [pinwheel], triggers_mark: true}]
+        skill: [{hit: 133310001, count: 7, offset: 1.125, interval: 0.25, tags: [pinwheel], triggers_mark: true}]
     513302:   # Everlasting Elegance (pink): twice as long
       add_hits:
         skill: [{hit: 133310001, count: 7, offset: 4.1, interval: 0.5, tags: [pinwheel], triggers_mark: true}]
@@ -111,20 +111,20 @@ main:
         - {index: 1, event: "hit:self:tornado"}
 
 support:
-  untimed: true
-  on_field: {skill: 3.0, ult: 3.0}   # GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 3.75, ult: 10.0}   # frames: clips (the ult is 8.3 s) + the usual exit
   actions:
     skill:                         # Bouquet Blast: the bouquet, 6 petals, a Flower Formation per second for 6 s (text)
-      hits:
-        - {hit: 133320001, offset: 0.8, tags: [bouquet], applies_mark: true}
-        - {hit: 133320002, count: 6, offset: 1.2, interval: 0.2, tags: [petal], applies_mark: true}
-        - {hit: 133320003, count: 6, offset: 1.8, interval: 1.0, tags: [formation], applies_mark: true}
+      hits:                        # frames: thrown +1.3, bursts +1.42 into petals, the boom (0.1 s) and the field (1 s, then 1/s)
+        - {hit: 133320001, offset: 1.52, tags: [bouquet], applies_mark: true}
+        - {hit: 133320002, count: 6, offset: 1.52, interval: 0.05, tags: [petal], applies_mark: true}
+        - {hit: 133320003, count: 6, offset: 2.42, interval: 1.0, tags: [formation], applies_mark: true}
     ult:
       hits:
-        - {hit: 133400001, count: 3, offset: 1.5, interval: 0, tags: [tornado], excludes: [513331]}
-        - {hit: 133400001, count: 3, offset: 1.5, interval: 0, tags: [tornado], applies_mark: true, requires: [513331]}
-        - {hit: 133400001, count: 3, offset: 4.5, interval: 0, tags: [tornado]}
-        - {hit: 133400001, count: 3, offset: 7.5, interval: 0, tags: [tornado]}
+        - {hit: 133400001, count: 3, offset: 0.0, interval: 0, tags: [tornado], excludes: [513331]}
+        - {hit: 133400001, count: 3, offset: 0.0, interval: 0, tags: [tornado], applies_mark: true, requires: [513331]}
+        - {hit: 133400001, count: 3, offset: 2.417, interval: 0, tags: [tornado]}
+        - {hit: 133400001, count: 3, offset: 5.333, interval: 0, tags: [tornado]}
 
   buffs:
     - {name: formation_up, event: "cast:self:skill", duration: 7.8, excludes: [513323]}

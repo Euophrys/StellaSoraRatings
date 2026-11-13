@@ -23,36 +23,36 @@ talents:
       - {attribute: 14096511, event: always}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 140), not checked in game
   mark: {hit: 140000001}
 
   actions:
     auto:
-      duration: 9.5                # GUESS: a volley every 3 s
+      duration: 2.1                # frames: 3 strikes of 0.7 s
       hits:
-        - {hit: 140100001, offset: 0.5, tags: [volley]}
-        - {hit: 140100002, offset: 3.5, tags: [volley]}
-        - {hit: 140100003, count: 2, offset: 6.5, interval: 0.3, tags: [volley]}
+        - {hit: 140100001, offset: 0.292, tags: [volley]}
+        - {hit: 140100002, offset: 0.992, tags: [volley]}
+        - {hit: 140100003, count: 2, offset: 1.692, interval: 0.0, tags: [volley]}
 
     skill:                         # Rabbit Pie Tempo Switch
       lock: 10.0                   # text: 10 s in the mode
       cd_start: 10.0               # text: the cooldown starts when the transformation ends
       hits:
-        # Rapid Fire: x3 per burst; GUESS: a burst per 1.5 s
-        - {hit: 140310003, count: 20, offset: 0.5, interval: 0.5, tags: [rapid], triggers_mark: true, excludes: [514003, 514004]}
-        # Bunny Jaws: GUESS: a shell every 2 s
-        - {hit: 140310002, count: 5, offset: 1.0, interval: 2.0, tags: [jaws], triggers_mark: true, requires: [514003]}
-        - {hit: 140310002, count: 5, offset: 1.0, interval: 2.0, tags: [jaws], triggers_mark: true, requires: [514004], excludes: [514003]}
+        # Rapid Fire: x3 per burst (text); frames: transform 0.694 + mode 0.583, then a 3-shot burst per 1.006 s
+        - {hit: 140310003, count: 26, offset: 1.588, interval: 0.335, tags: [rapid], triggers_mark: true, excludes: [514003, 514004]}
+        # Bunny Jaws: frames: transform 0.694 + mode 0.7, then a shell per 1.333 s (fired +0.625, 0.1 s boom)
+        - {hit: 140310002, count: 7, offset: 2.119, interval: 1.333, tags: [jaws], triggers_mark: true, requires: [514003]}
+        - {hit: 140310002, count: 7, offset: 2.119, interval: 1.333, tags: [jaws], triggers_mark: true, requires: [514004], excludes: [514003]}
 
     ult:                           # All-Out Bunny Barrage: the doll x10, then the cannon (text)
-      lock: 6.0                    # GUESS
+      lock: 3.928                  # frames: 2 cutscene clips (3.367 + combo-window end 0.561)
       hits:
-        - {hit: 140400001, count: 10, offset: 1.0, interval: 0.35, tags: [doll], triggers_mark: true}
-        - {hit: 140400002, offset: 5.0, tags: [cannon], triggers_mark: true}
-        - {hit: 0, offset: 5.1, tags: [ult_end]}
+        - {hit: 140400001, count: 10, offset: 0.017, interval: 0.25, tags: [doll], triggers_mark: true}   # frames: from the 1st cutscene clip's start
+        - {hit: 140400002, offset: 4.218, tags: [cannon], triggers_mark: true}                         # frames: shot +0.351 into the 2nd clip, 0.5 s boom delay
+        - {hit: 0, offset: 4.3, tags: [ult_end]}
 
   buffs:
-    - {name: napping, event: "cast:self:ult", duration: 5.1}
+    - {name: napping, event: "cast:self:ult", duration: 4.3}
     - {name: crystallized, event: "hit:self:rapid", every: 20, duration: 5, target: enemy, requires: [514002]}
     - {name: solution, event: "marker:self:ult_end", duration: 10, requires: [514041]}
 
@@ -74,7 +74,7 @@ main:
         - {index: 0, hit_tags: [jaws, roar], event: "while:squad:3:3"}
     514004:   # Neo Radiance Burst (pink): a bottle per 2 s, a shell per bottle
       add_hits:
-        skill: [{hit: 140310002, count: 5, offset: 1.2, interval: 2.0, tags: [jaws], triggers_mark: true}]
+        skill: [{hit: 140310002, count: 5, offset: 2.5, interval: 2.0, tags: [jaws], triggers_mark: true}]   # a bottle per 2 s (text), from the mode start (frames)
       overrides:
         - {index: 0, hit_tags: [jaws]}
     514005:   # Leap Barrage: in Rapid Fire builds
@@ -123,22 +123,22 @@ main:
         - {index: 0, hit_tags: [doll, cannon], event: "mark:self&while:status:napping", duration: inf, reset_on: ["marker:self:ult_end"]}
 
 support:
-  untimed: true
-  on_field: {skill: 5.6, ult: 6.0}   # GUESS: she stays for the 13 volleys
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 11.1, ult: 7.2}   # frames: start 0.833 + 13 volley loops of 0.606 + end 1.067; ult clips; + the usual exit
   mark: {hit: 140000001}             # text: Bunny Fireworks can trigger Terra Mark
   actions:
     skill:                         # Homing Bunny Volley: 2 fireworks x 13 volleys (text)
       hits:
-        - {hit: 140320002, count: 26, offset: 0.8, interval: 0.2, tags: [firework], triggers_mark: true}
-        - {hit: 0, offset: 6.0, tags: [volley_end]}
+        - {hit: 140320002, count: 26, offset: 1.06, interval: 0.303, tags: [firework], triggers_mark: true}   # frames: a volley per 0.606 s loop
+        - {hit: 0, offset: 8.4, tags: [volley_end]}
     ult:
       hits:
-        - {hit: 140400001, count: 10, offset: 1.0, interval: 0.35, tags: [doll], triggers_mark: true}
-        - {hit: 140400002, offset: 5.0, tags: [cannon], triggers_mark: true}
-        - {hit: 0, offset: 5.1, tags: [ult_end]}
+        - {hit: 140400001, count: 10, offset: 0.017, interval: 0.25, tags: [doll], triggers_mark: true}   # frames: from the 1st cutscene clip's start
+        - {hit: 140400002, offset: 4.218, tags: [cannon], triggers_mark: true}                         # frames: shot +0.351 into the 2nd clip, 0.5 s boom delay
+        - {hit: 0, offset: 4.3, tags: [ult_end]}
 
   buffs:
-    - {name: napping, event: "cast:self:ult", duration: 5.1}
+    - {name: napping, event: "cast:self:ult", duration: 4.3}
     - {name: solution, event: "marker:self:ult_end", duration: 10, requires: [514041]}
 
   potentials:

@@ -122,24 +122,24 @@ support:
         - {index: 0, event: "cast:self:ult"}
 
 main:
-  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (support role)
+  timing: frames   # animation frame data (python -m ssr.inspect frames 116), not checked in game; the ult's hits are user-timed (support role)
   mark: {hit: 116000001}
 
   actions:
-    auto:                          # the faster, free fire after a skill isn't modelled
-      duration: 8.7                # GUESS: 24 rounds, 0.3 s each, 1.5 s reload
+    auto:                          # the faster fire after a skill (0.333 s a round, frames) isn't modelled
+      duration: 15.3               # frames: 24 rounds, one per 0.593 s clip, + reload (1.067)
       hits:
-        - {hit: 116100001, count: 24, offset: 0.3, interval: 0.3, tags: [round]}
+        - {hit: 116100001, count: 24, offset: 0.162, interval: 0.593, tags: [round]}
 
     skill:                         # Bean Cyclone: the swing and a seed
-      lock: 2.0                    # GUESS
-      cd_start: 2.0               # GUESS: the CD starts when the cast ends
+      lock: 0.867                  # frames: combo-window end
+      cd_start: 0.867              # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 116310001, offset: 0.5, tags: [swing], triggers_mark: true}
-        - {hit: 116310002, offset: 1.0, tags: [seed], triggers_mark: true}
+        - {hit: 116310001, offset: 0.5, tags: [swing], triggers_mark: true}    # frames: the seed bullet (fired +0.5)
+        - {hit: 116310002, offset: 0.417, tags: [seed], triggers_mark: true}   # frames: the clip's hitbox
 
     ult:                           # Harvest Rhapsody x5 and a big hit
-      lock: 5.0                    # user-timed in the support role: she leaves at +5.07
+      lock: 3.7                    # frames: the cutscene clip (the support's 5.07 s on the field includes leaving)
       hits:
         - {hit: 116400001, count: 5, offset: 0.033, interval: 0.44, tags: [ult]}
         - {hit: 116400002, offset: 2.933, tags: [ult, ult_final]}
@@ -157,7 +157,7 @@ main:
         - {event: "hit:self:round", every: 12, hit: 116503001, offset: 0.3, tags: [giant]}
     511604:   # Tangled Mess (pink): 2 more rounds per shot
       add_hits:
-        auto: [{hit: 116100001, count: 48, offset: 0.35, interval: 0.15, tags: [round]}]
+        auto: [{hit: 116100001, count: 48, offset: 0.2, interval: 0.2965, tags: [round]}]   # 2 per shot (frames: a shot per 0.593 s)
     511605: {}   # Overgrowth
     511606:   # Vine Snare: 3 stacks of a 3 s slow on a 10 s cooldown never happens
       overrides:

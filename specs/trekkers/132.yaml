@@ -21,43 +21,43 @@ talents:
       - {attribute: 13296511, event: always}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 132), not checked in game
   mark: {hit: 132000001}
 
   actions:
     auto:
-      duration: 5.4                # GUESS: 1 s per strike
+      duration: 3.176              # frames: strikes chained at each combo-window end
       hits:
-        - {hit: 132100001, offset: 0.4}
-        - {hit: 132100002, offset: 1.4}
-        - {hit: 132100003, offset: 2.4}
-        - {hit: 132100004, offset: 3.4}
-        - {hit: 132100005, count: 6, offset: 3.6, interval: 0.1}
-        - {hit: 132100006, offset: 4.6, tags: [s5]}
+        - {hit: 132100001, offset: 0.226}
+        - {hit: 132100002, offset: 0.523}
+        - {hit: 132100003, offset: 1.041}
+        - {hit: 132100004, offset: 1.61}
+        - {hit: 132100005, count: 6, offset: 1.61, interval: 0.2}   # x6 (text); frames: an area hitting every 0.2 s
+        - {hit: 132100006, offset: 2.491, tags: [s5]}
 
     skill:                         # Syou: Pulsar Streak, then Two Base Hit: every 0.3 s for 3 s and a smash (text)
-      lock: 5.0                    # GUESS
-      cd_start: 5.0               # GUESS: the CD starts when the cast ends
+      lock: 5.2                    # frames: thump 0.983, then quick strike: start 0.267 + 3 s loop + end's combo-window end 0.952
+      cd_start: 5.2                # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 132310001, offset: 0.5, tags: [syou], triggers_mark: true}
-        - {hit: 132310004, count: 10, offset: 1.0, interval: 0.3, tags: [two_base], triggers_mark: true}
-        - {hit: 132310005, offset: 4.2, tags: [two_base], triggers_mark: true}
-        - {hit: 0, offset: 5.5, tags: [skill_done]}
+        - {hit: 132310001, offset: 0.133, tags: [syou], triggers_mark: true}           # frames
+        - {hit: 132310004, count: 10, offset: 1.35, interval: 0.3, tags: [two_base], triggers_mark: true}   # frames: first strike +0.367 into the 2nd part
+        - {hit: 132310005, offset: 4.71, tags: [two_base], triggers_mark: true}        # frames: in the end clip
+        - {hit: 0, offset: 5.2, tags: [skill_done]}
 
-    ult:                           # Ketsu: every 0.3 s for 5 s (text)
-      lock: 3.0                    # GUESS: the clan attacks, she carries on
+    ult:                           # Ketsu: every 0.3 s for 5 s (text; the area's data says every 0.25 s)
+      lock: 1.0                    # frames: the cutscene clip's combo-window end; the clan attacks, she carries on
       hits:
-        - {hit: 132400001, count: 17, offset: 1.0, interval: 0.3, tags: [ketsu]}
+        - {hit: 132400001, count: 17, offset: 1.647, interval: 0.3, tags: [ketsu]}   # frames: area +0.147, first hit +1.5
 
   potentials:
     513201:   # Ultimatum (pink): Three Base Hit x2 and a big hit
       add_hits:
         skill:
-          - {hit: 132310101, count: 2, offset: 4.7, interval: 0.3, tags: [three], triggers_mark: true}
-          - {hit: 132310102, offset: 5.3, tags: [three], triggers_mark: true}
+          - {hit: 132310101, count: 2, offset: 5.2, interval: 0.1, tags: [three], triggers_mark: true}   # GUESS: after the smash (frames: 0.1 apart)
+          - {hit: 132310102, offset: 6.1, tags: [three], triggers_mark: true}
     513202:   # Clan Clash Artistry (pink): the Two Base Hit part isn't modelled (needs a Mark first)
       add_hits:
-        skill: [{hit: 132310204, offset: 5.4, tags: [three], requires: [513201]}]
+        skill: [{hit: 132310204, offset: 6.2, tags: [three], requires: [513201]}]
       overrides:
         - {index: 0, hit_tags: [three]}
     513203:   # Board Tricks (pink)
@@ -115,18 +115,18 @@ main:
           - {hit: 132400003, offset: 3.0, tags: [ketsu]}
 
 support:
-  untimed: true
-  on_field: {skill: 3.0, ult: 3.0}   # GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 4.35, ult: 5.4}   # frames: clip + the usual exit
   actions:
     skill:                         # Gi: Supernova Burst: 2 Astral Hex, one every 3 s (GUESS: each one explodes and goes)
       hits:
-        - {hit: 132320001, offset: 0.8, tags: [gi]}
-        - {hit: 132320002, count: 2, offset: 3.8, interval: 3.0, tags: [hex], applies_mark: true}
+        - {hit: 132320001, offset: 1.0, tags: [gi]}   # frames
+        - {hit: 132320002, count: 2, offset: 4.0, interval: 3.0, tags: [hex], applies_mark: true}
     ult:
       hits:
-        - {hit: 132400001, count: 17, offset: 1.0, interval: 0.3, tags: [ketsu], excludes: [513231]}
-        - {hit: 132400001, count: 17, offset: 1.0, interval: 0.3, tags: [ketsu], applies_mark: true, requires: [513231]}
-        - {hit: 0, offset: 6.2, tags: [ult_done]}
+        - {hit: 132400001, count: 17, offset: 1.647, interval: 0.3, tags: [ketsu], excludes: [513231]}
+        - {hit: 132400001, count: 17, offset: 1.647, interval: 0.3, tags: [ketsu], applies_mark: true, requires: [513231]}
+        - {hit: 0, offset: 6.5, tags: [ult_done]}
 
   buffs:
     - {name: astral_hex, event: "cast:self:skill", duration: 6.8, excludes: [513221]}

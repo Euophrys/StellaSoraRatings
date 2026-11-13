@@ -27,27 +27,27 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
       - {effect: 14296511, event: "while:squad:6:3", target: team}
 
 main:
-  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hit is user-timed (support role)
+  timing: frames   # animation frame data (python -m ssr.inspect frames 142), not checked in game; the ult's hit is user-timed (support role)
 
   actions:
     auto:
-      duration: 5.4                # GUESS: 1 s per strike
+      duration: 2.849              # frames: strikes chained at each combo-window end
       hits:
-        - {hit: 142100001, offset: 0.4}
-        - {hit: 142100002, offset: 1.4}
-        - {hit: 142100003, count: 2, offset: 2.4, interval: 0.2}
-        - {hit: 142100004, count: 2, offset: 3.4, interval: 0.2}
-        - {hit: 142100005, offset: 4.4}
+        - {hit: 142100001, offset: 0.244}
+        - {hit: 142100002, offset: 0.565}
+        - {hit: 142100003, count: 2, offset: 0.866, interval: 0.466}
+        - {hit: 142100004, count: 2, offset: 1.816, interval: 0.116}
+        - {hit: 142100005, offset: 2.449}
 
     skill:                         # Nocturn Hooks: x2 and x4 (text)
-      lock: 2.5                    # GUESS
-      cd_start: 2.5               # GUESS: the CD starts when the cast ends
+      lock: 1.367                  # frames: combo-window end
+      cd_start: 1.367              # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 142300001, count: 2, offset: 0.5, interval: 0.2, tags: [hook], applies_mark: true}
-        - {hit: 142300002, count: 4, offset: 1.0, interval: 0.2, tags: [hook, heavy], applies_mark: true}
+        - {hit: 142300001, count: 2, offset: 0.233, interval: 0.0, tags: [hook], applies_mark: true}             # frames
+        - {hit: 142300002, count: 4, offset: 0.65, interval: 0.033, tags: [hook, heavy], applies_mark: true}     # frames
 
     ult:                           # Dark Apocalypse
-      lock: 4.2                    # user-timed in the support role
+      lock: 2.378                  # frames: the cutscene clip's combo-window end (the support's 4.2 s includes leaving)
       hits:
         - {hit: 142400001, offset: 1.233, tags: [ult], applies_mark: true}
 

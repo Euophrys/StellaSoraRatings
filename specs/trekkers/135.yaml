@@ -176,9 +176,9 @@ main:
         - {index: 0, event: "hit:self:ult_dmg"}
 
 support:
-  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (main role)
+  timing: frames   # animation frame data (python -m ssr.inspect frames 135), not checked in game; the ult's hits are user-timed (main role)
   # Lanterna Phantoms (minions) are skipped, and with them the skill's damage and Marks: expect a very low total.
-  on_field: {skill: 3.0, ult: 1.4}   # GUESS
+  on_field: {skill: 3.9, ult: 4.1}   # frames: clip + the usual exit
   actions:
     skill:                         # Summoning Circle
       hits: []

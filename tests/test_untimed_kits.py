@@ -1,4 +1,5 @@
-"""Authored-but-untimed kits: every one loads, simulates, and leaves nothing to the 100% uptime default."""
+"""Kits not timed in game (`timing: frames` or `untimed: true`): every one loads, simulates, and leaves nothing to
+the 100% uptime default."""
 import re
 from pathlib import Path
 
@@ -20,7 +21,7 @@ def _untimed():
     out = []
     for p in sorted(SPECS.glob("*.yaml")):
         for role in ("main", "support"):
-            if role_status(p, role) == "untimed":
+            if role_status(p, role) in ("untimed", "frames"):
                 out.append((int(p.stem), role))
     return out
 

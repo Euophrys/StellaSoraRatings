@@ -20,24 +20,24 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
       - {effect: 12696511, event: "while:squad:2:3", target: team}
 
 main:
-  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (support role)
+  timing: frames   # animation frame data (python -m ssr.inspect frames 126), not checked in game; the ult's hits are user-timed (support role)
 
   actions:
     auto:
-      duration: 3.4                # GUESS: 1 s per strike
+      duration: 1.933              # frames: strikes chained at each combo-window end
       hits:
-        - {hit: 126100001, offset: 0.4, tags: [bird]}
-        - {hit: 126100002, offset: 1.4, tags: [bird]}
-        - {hit: 126100003, offset: 2.4, tags: [bird]}
+        - {hit: 126100001, offset: 0.433, tags: [bird]}
+        - {hit: 126100002, offset: 0.934, tags: [bird]}
+        - {hit: 126100003, offset: 1.783, tags: [bird]}
 
     skill:                         # Hat Toss: every 0.5 s for 5 s (text)
-      lock: 1.0                    # GUESS
-      cd_start: 1.0               # GUESS: the CD starts when the cast ends
-      hits:
-        - {hit: 126310001, count: 10, offset: 0.8, interval: 0.5, tags: [hat], applies_mark: true}
+      lock: 1.183                  # frames: combo-window end
+      cd_start: 1.183              # GUESS: the CD starts when the cast ends
+      hits:                        # frames: thrown +0.533, a slow (2 u/s) hat; GUESS: hits from +1.0
+        - {hit: 126310001, count: 10, offset: 1.0, interval: 0.5, tags: [hat], applies_mark: true}
 
     ult:                           # Undying Phoenix
-      lock: 4.533                  # user-timed in the support role
+      lock: 1.833                  # frames: the cutscene clip's combo-window end (the support's 4.533 s includes leaving)
       hits:
         - {hit: 126400001, offset: 0.8, tags: [ult]}
         - {hit: 126400002, count: 8, offset: 1.5, interval: 1.0, tags: [ult, egg], applies_mark: true}

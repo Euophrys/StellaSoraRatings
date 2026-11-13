@@ -26,25 +26,27 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
       - {attribute: 12596511, event: always}
 
 main:
-  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult and Berserk string are user-timed (support role)
+  timing: frames   # animation frame data (python -m ssr.inspect frames 125), not checked in game; the ult and Berserk string are user-timed (support role)
   mark: {hit: 125000001}
 
   actions:
     auto:
-      duration: 5.4                # GUESS: 1 s per strike
+      duration: 3.941              # frames: strikes chained at each combo-window end
       hits:
-        - {hit: 125100011, offset: 0.4}
-        - {hit: 125100021, offset: 1.4}
-        - {hit: 125100031, count: 2, offset: 2.4, interval: 0.2}
-        - {hit: 125100041, count: 3, offset: 3.4, interval: 0.2}
-        - {hit: 125100051, offset: 4.4}
+        - {hit: 125100011, offset: 0.35}
+        - {hit: 125100021, offset: 0.839}
+        - {hit: 125100031, count: 2, offset: 1.441, interval: 0.145}
+        - {hit: 125100041, offset: 2.191}
+        - {hit: 125100041, offset: 2.469}
+        - {hit: 125100041, offset: 2.816}
+        - {hit: 125100051, offset: 3.386}
 
     skill:                         # Freezing Swirl, fully charged: every 0.3 s for 3.6 s (text)
-      lock: 4.0                    # GUESS
-      cd_start: 4.0               # GUESS: the CD starts when the cast ends
+      lock: 4.8                    # frames: start 0.2 + 3.6 s of spin loop + end's combo-window end 1.0 (the charge-up isn't counted)
+      cd_start: 4.8                # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 125310001, count: 12, offset: 0.5, interval: 0.3, tags: [swirl], triggers_mark: true}
-        - {hit: 0, offset: 4.0, tags: [swirl_end]}
+        - {hit: 125310001, count: 12, offset: 0.2, interval: 0.3, tags: [swirl], triggers_mark: true}   # frames: from the loop's start
+        - {hit: 0, offset: 3.8, tags: [swirl_end]}
 
     ult:                           # Elegy of Frost, then Berserk: her autos are this string for 17 s of the 20 s
       lock: 17.0                   # user-timed on the field in the support role; skills can still be cast

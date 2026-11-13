@@ -20,28 +20,28 @@ talents:
     buffs: []
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 117), not checked in game
   mark: {hit: 117000001}
 
   actions:
     auto:
-      duration: 3.4                # GUESS: 1 s per strike
-      hits:
-        - {hit: 117100001, offset: 0.4}
-        - {hit: 117100001, offset: 1.4}
-        - {hit: 117100002, offset: 2.4}
+      duration: 2.183              # frames: strikes chained at each combo-window end
+      hits:                        # frames: the strikes' script events (+0.25 / +0.667 / +1.6)
+        - {hit: 117100001, offset: 0.25}
+        - {hit: 117100001, offset: 0.667}
+        - {hit: 117100002, offset: 1.6}
 
     skill:                         # Thunder Strike: 4 stored uses (data)
-      lock: 1.5                    # GUESS
+      lock: 1.033                  # frames: combo-window end
       hits:
-        - {hit: 117502001, offset: 0.6, tags: [bolt], triggers_mark: true}
-        - {hit: 0, offset: 0.7, tags: [skill_done]}
-        - {hit: 0, offset: 0.7, tags: [knot_reset], cycle: [4, 4], requires: [511702]}
+        - {hit: 117502001, offset: 0.633, tags: [bolt], triggers_mark: true}   # frames: the shoot event
+        - {hit: 0, offset: 1.033, tags: [skill_done]}
+        - {hit: 0, offset: 1.033, tags: [knot_reset], cycle: [4, 4], requires: [511702]}
 
     ult:                           # Roar of the Qilin: every 0.5 s for 10 s (text)
-      lock: 3.0                    # GUESS: she summons it and carries on
+      lock: 0.615                  # frames: the cutscene clip's combo-window end; she summons it and carries on
       hits:
-        - {hit: 117400001, count: 20, offset: 1.0, interval: 0.5, tags: [qilin]}
+        - {hit: 117400001, count: 20, offset: 0.693, interval: 0.5, tags: [qilin]}   # frames: summoned +0.193; first attack GUESS +0.5
 
   potentials:
     511701:   # Energy Storage: Bind (pink): CD 2 s shorter
@@ -96,17 +96,17 @@ main:
         - {index: 0, event: "hit:self:qilin&while:mark:5"}
 
 support:
-  untimed: true
-  on_field: {skill: 3.0, ult: 3.0}   # GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 3.6, ult: 2.47}   # frames: clip + the usual exit
   actions:
     skill:                         # Static Discharge: every 0.5 s for 8 s (text)
       hits:
-        - {hit: 117320001, count: 16, offset: 1.0, interval: 0.5, tags: [domain], applies_mark: true}
+        - {hit: 117320001, count: 16, offset: 1.25, interval: 0.5, tags: [domain], applies_mark: true}   # frames: area at +0.75, 0.5 s delay
     ult:
       hits:
-        - {hit: 117400001, count: 20, offset: 1.0, interval: 0.5, tags: [qilin], excludes: [511731]}
-        - {hit: 117400001, offset: 1.0, tags: [qilin], applies_mark: true, requires: [511731]}
-        - {hit: 117400001, count: 19, offset: 1.5, interval: 0.5, tags: [qilin], requires: [511731]}
+        - {hit: 117400001, count: 20, offset: 0.693, interval: 0.5, tags: [qilin], excludes: [511731]}
+        - {hit: 117400001, offset: 0.693, tags: [qilin], applies_mark: true, requires: [511731]}
+        - {hit: 117400001, count: 19, offset: 1.193, interval: 0.5, tags: [qilin], requires: [511731]}
 
   potentials:
     511721:   # Thunderbolt: Dragon (pink)

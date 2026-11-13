@@ -171,13 +171,13 @@ main:
         clone: {duration_add: {param: Param1}}
 
 support:
-  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the clones are user-timed (main role)
-  on_field: {skill: 3.0, ult: 1.0}   # GUESS
+  timing: frames   # animation frame data (python -m ssr.inspect frames 119), not checked in game; the clones are user-timed (main role)
+  on_field: {skill: 3.75, ult: 2.38}   # frames: clip + the usual exit
   mark: {hit: 119000001, tags: [blossom]}   # text: Flowers Bloom and the clones can trigger Ventus Mark
   actions:
     skill:                         # Flowers Bloom: 12 shurikens (text)
       hits:
-        - {hit: 119320001, count: 12, offset: 0.8, interval: 0.15, tags: [shuriken, projectile], triggers_mark: true}
+        - {hit: 119320001, count: 12, offset: 0.75, interval: 0.15, tags: [shuriken, projectile], triggers_mark: true}   # frames: thrown +0.65, 0.1 s flight; spacing GUESS
     ult:                           # Flowers Thrice: the clones below
       hits: []
 

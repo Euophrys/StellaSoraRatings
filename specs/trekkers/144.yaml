@@ -192,14 +192,16 @@ main:
         - {index: 0, hit_tags: [], event: "while:status:chill"}
 
 support:
-  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (main role)
-  on_field: {skill: 3.0, ult: 5.633}   # skill: GUESS; ult: the main role's lock
+  timing: frames   # animation frame data (python -m ssr.inspect frames 144), not checked in game; the ult's hits are user-timed (main role)
+  on_field: {skill: 5.8, ult: 5.633}   # skill: frames: start 0.467 + 3 rounds (attack 0.556 + connect 0.767) + the usual exit; ult: the main role's lock
   mark: {hit: 144000001}             # text: Water Surge can trigger Aqua Mark
   actions:
     skill:                         # Water Surge: 3 rounds x4 and 3 Mirror Images (text)
-      hits:
-        - {hit: 144320001, count: 12, offset: 0.8, interval: 0.15, tags: [slash], triggers_mark: true}
-        - {hit: 144320002, count: 3, offset: 1.0, interval: 0.4, tags: [mirror]}
+      hits:                        # frames: each round's slash event +0.083 into its attack clip; spacing within a round GUESS
+        - {hit: 144320001, count: 4, offset: 0.55, interval: 0.05, tags: [slash], triggers_mark: true}
+        - {hit: 144320001, count: 4, offset: 1.873, interval: 0.05, tags: [slash], triggers_mark: true}
+        - {hit: 144320001, count: 4, offset: 3.196, interval: 0.05, tags: [slash], triggers_mark: true}
+        - {hit: 144320002, count: 3, offset: 0.8, interval: 1.323, tags: [mirror]}   # GUESS: one per round
     ult:
       hits:
         - {hit: 144400001, count: 11, offset: 0.8, interval: 0.25, tags: [chitose_ult], triggers_mark: true}

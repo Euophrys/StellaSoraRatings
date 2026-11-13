@@ -150,16 +150,16 @@ main:
         - {index: 0, event: "hit:self:ult_dmg"}
 
 support:
-  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (main role)
-  on_field: {skill: 3.0, ult: 2.1}   # GUESS
+  timing: frames   # animation frame data (python -m ssr.inspect frames 112), not checked in game; the ult's hits are user-timed (main role)
+  on_field: {skill: 5.0, ult: 4.35}   # frames: clips + the usual exit (docs/assumptions.md "Frame data")
   mark: {hit: 112100000, tags: [cyclone]}   # text: major auras and the ult can trigger Ventus Mark
   procs:
     - {event: "mark:self", hit: 112100000, count: 2, offset: 0.1, interval: 0.1, tags: [cyclone]}   # Cyclone x3 (text)
   actions:
     skill:                         # Gale Storm: 4 minor auras, 1 major
       hits:
-        - {hit: 112320001, count: 4, offset: 0.8, interval: 0.2, tags: [minor]}
-        - {hit: 112320002, offset: 1.8, tags: [major], triggers_mark: true}
+        - {hit: 112320001, count: 4, offset: 0.621, interval: 0.262, tags: [minor]}   # frames: 2 per 0.5 s loop, 2 loops
+        - {hit: 112320002, offset: 1.9, tags: [major], triggers_mark: true}           # GUESS: fired by script in the big slash after the loops (+1.42)
     ult:
       hits:
         - {hit: 112400001, offset: 0.733, tags: [rend], triggers_mark: true}

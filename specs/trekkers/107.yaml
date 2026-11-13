@@ -20,25 +20,25 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
       - {effect: 10796511, event: "while:squad:5:3", target: team}
 
 main:
-  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (support role)
+  timing: frames   # animation frame data (python -m ssr.inspect frames 107), not checked in game; the ult's hits are user-timed (support role)
 
   actions:
     auto:
-      duration: 4.4                # GUESS: 1 s per strike
+      duration: 1.833              # frames: 4 strikes chained at each combo-window end
       hits:
-        - {hit: 107100001, offset: 0.4}
-        - {hit: 107100002, offset: 1.4}
-        - {hit: 107100003, offset: 2.4}
-        - {hit: 107100004, offset: 3.4}
+        - {hit: 107100001, offset: 0.205}
+        - {hit: 107100002, offset: 0.589}
+        - {hit: 107100003, offset: 0.948}
+        - {hit: 107100004, offset: 1.423}
 
     skill:                         # Aegis Protection: a tap: the counter at once, no long hold (see the stance pinks)
-      lock: 1.5                    # GUESS
-      cd_start: 1.5               # GUESS: the CD starts when the cast ends
+      lock: 0.832                  # frames: shield start (0.233) + counter combo-window end (0.599)
+      cd_start: 0.832              # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 107310001, offset: 1.0, tags: [counter], applies_mark: true}
+        - {hit: 107310001, offset: 0.541, tags: [counter], applies_mark: true}   # frames
 
     ult:                           # Glorious Smite: the slam and an 8 s sphere
-      lock: 4.1                    # user-timed in the support role
+      lock: 1.578                  # frames: combo-window end (the support's 4.1 s on the field includes leaving)
       hits:
         - {hit: 107400001, offset: 0.6, tags: [ult]}
         - {hit: 107400002, count: 8, offset: 1.0, interval: 1.0, tags: [sphere], applies_mark: true}

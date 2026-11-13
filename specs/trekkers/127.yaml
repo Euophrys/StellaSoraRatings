@@ -26,26 +26,26 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
       - {effect: 12796511, event: "while:squad:1:3", target: team}
 
 main:
-  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hits are user-timed (support role)
+  timing: frames   # animation frame data (python -m ssr.inspect frames 127), not checked in game; the ult's hits are user-timed (support role)
 
   actions:
     auto:
-      duration: 4.4                # GUESS: 1 s per strike
+      duration: 2.759              # frames: strikes chained at each combo-window end
       hits:
-        - {hit: 127100001, offset: 0.4}
-        - {hit: 127100002, offset: 1.4}
-        - {hit: 127100003, offset: 2.4}
-        - {hit: 127100004, offset: 3.4}
+        - {hit: 127100001, offset: 0.306}
+        - {hit: 127100002, offset: 0.653}
+        - {hit: 127100003, offset: 1.103}
+        - {hit: 127100004, offset: 2.12}
 
     skill:                         # Limpid Stream
-      lock: 2.0                    # GUESS
-      cd_start: 2.0               # GUESS: the CD starts when the cast ends
+      lock: 1.25                   # frames: combo-window end
+      cd_start: 1.25               # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 127310001, offset: 0.5, tags: [limpid], applies_mark: true}
-        - {hit: 127310002, offset: 1.0, tags: [limpid], applies_mark: true}
+        - {hit: 127310001, offset: 0.542, tags: [limpid], applies_mark: true}   # frames: the spin kick (one hit: 3 s immunity)
+        - {hit: 127310002, offset: 1.128, tags: [limpid], applies_mark: true}   # frames: the slam
 
     ult:                           # Slicing Riptide
-      lock: 5.533                  # user-timed in the support role
+      lock: 2.106                  # frames: the cutscene clip's combo-window end (the support's 5.533 s includes leaving)
       hits:
         - {hit: 127400001, offset: 2.467, tags: [teresa_ult], applies_mark: true}
         - {hit: 127400002, offset: 2.567, tags: [teresa_ult], applies_mark: true}

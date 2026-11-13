@@ -6,6 +6,7 @@
     python -m ssr.inspect disc "Fireworks"                 # melody/harmony text, Params, decoded modifiers
     python -m ssr.inspect scripted-discs --element 2       # discs with scripted parts and no spec
     python -m ssr.inspect word "Butterfly Mark"            # keyword (Word table) text and Params
+    python -m ssr.inspect frames Ann                       # animation frame data (python -m ssr.frames extract first)
 """
 from __future__ import annotations
 
@@ -144,6 +145,16 @@ def word(gd, name):
             _params(gd, r, 1, "    ")
 
 
+def frames(gd, name):
+    from . import frames as fr
+    cid = _char(gd, name)
+    d = fr.load(cid)
+    if d is None:
+        raise SystemExit(f"no frame data for {cid}: run python -m ssr.frames extract {cid}")
+    print(gd.char_name(cid), end=": ")
+    print(fr.render(d, gd))
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="ssr.inspect")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -153,6 +164,7 @@ def main(argv=None):
     sub.add_parser("disc").add_argument("name")
     s = sub.add_parser("scripted-discs"); s.add_argument("--element", type=int, default=0)
     sub.add_parser("word").add_argument("name")
+    sub.add_parser("frames").add_argument("name")
     a = ap.parse_args(argv)
     gd = GameData()
     if a.cmd == "trekker":
@@ -165,6 +177,8 @@ def main(argv=None):
         scripted_discs(gd, a.element)
     elif a.cmd == "word":
         word(gd, a.name)
+    elif a.cmd == "frames":
+        frames(gd, a.name)
 
 
 if __name__ == "__main__":

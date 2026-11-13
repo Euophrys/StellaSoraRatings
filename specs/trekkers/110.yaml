@@ -21,33 +21,35 @@ talents:
       - {effect: 11096511, event: "while:squad:6:3"}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 110), not checked in game
   mark: {hit: 110000000}
   procs:
     - {event: "mark:self", hit: 110000001, count: 10, offset: 0.067, interval: 0.5, mult: 0.1, restart: true, tags: [dark_burn_tick]}   # Dark Burn, as Mistique's
 
   actions:
     auto:
-      duration: 4.4                # GUESS: 1 s per strike
+      duration: 2.501              # frames: strikes chained at each combo-window end
       hits:
-        - {hit: 110100001, offset: 0.4}
-        - {hit: 110100002, offset: 1.4}
-        - {hit: 110100003, count: 5, offset: 2.4, interval: 0.15}
-        - {hit: 110100004, offset: 3.4}
-        - {hit: 110100005, offset: 3.7}
+        - {hit: 110100001, offset: 0.317}
+        - {hit: 110100002, offset: 0.667}
+        - {hit: 110100003, count: 5, offset: 1.201, interval: 0.071}
+        - {hit: 110100004, offset: 1.867}
+        - {hit: 110100005, offset: 2.267}
 
     skill:                         # Elegant Parade x3 (text); 2 uses (data)
-      lock: 2.5                    # GUESS
+      lock: 1.4                    # frames: combo-window end
       hits:
-        - {hit: 110300001, count: 3, offset: 0.5, interval: 0.3, tags: [parade], triggers_mark: true}
-        - {hit: 0, offset: 2.2, tags: [parade_done]}
+        - {hit: 110300001, offset: 0.317, tags: [parade], triggers_mark: true}   # frames: 0.317 / 0.767 / 1.0
+        - {hit: 110300001, offset: 0.767, tags: [parade], triggers_mark: true}
+        - {hit: 110300001, offset: 1.0, tags: [parade], triggers_mark: true}
+        - {hit: 0, offset: 1.212, tags: [parade_done]}                            # frames: the dash ends
 
     ult:                           # Personal Tuition x5 and a big hit (text)
-      lock: 6.0                    # GUESS
-      hits:
-        - {hit: 110400001, count: 5, offset: 1.0, interval: 0.5, tags: [tuition], triggers_mark: true}
-        - {hit: 110400002, offset: 4.0, tags: [tuition], triggers_mark: true}
-        - {hit: 0, offset: 4.1, tags: [ult_done]}
+      lock: 3.373                  # frames: the cutscene clip's combo-window end
+      hits:                        # frames: the cutscene clip deals both hit ids at +0.067; x5 from the text
+        - {hit: 110400001, count: 5, offset: 0.067, interval: 0.033, tags: [tuition], triggers_mark: true}
+        - {hit: 110400002, offset: 0.233, tags: [tuition], triggers_mark: true}
+        - {hit: 0, offset: 3.373, tags: [ult_done]}   # the ult's end (it resets "during the ult" stacks)
 
   buffs:
     - {name: dark_burn, event: "mark:self", duration: {ref: "Buff,LevelUp,11090000,Time,10K"}, target: enemy}
@@ -104,20 +106,20 @@ main:
         - {index: 0, event: "mark:self", reset_on: ["marker:self:ult_done"]}
 
 support:
-  untimed: true
-  on_field: {skill: 3.0, ult: 4.0}   # GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 4.45, ult: 6.9}   # frames: clip + the usual exit (docs/assumptions.md "Frame data")
   mark: {hit: 110000000}             # text: Reign of Night can trigger Umbra Mark
   procs:
     - {event: "mark:self", hit: 110000001, count: 10, offset: 0.067, interval: 0.5, mult: 0.1, restart: true, tags: [dark_burn_tick]}
   actions:
     skill:                         # Reign of Night: the cane; clones skipped
       hits:
-        - {hit: 110300004, offset: 1.0, tags: [cane], triggers_mark: true}
-    ult:
+        - {hit: 110300004, offset: 2.25, tags: [cane], triggers_mark: true}   # frames: the slam event, a 0-delay area
+    ult:                           # frames: as the main's
       hits:
-        - {hit: 110400001, count: 5, offset: 1.0, interval: 0.5, tags: [tuition], triggers_mark: true}
-        - {hit: 110400002, offset: 4.0, tags: [tuition], triggers_mark: true}
-        - {hit: 0, offset: 4.1, tags: [ult_done]}
+        - {hit: 110400001, count: 5, offset: 0.067, interval: 0.033, tags: [tuition], triggers_mark: true}
+        - {hit: 110400002, offset: 0.233, tags: [tuition], triggers_mark: true}
+        - {hit: 0, offset: 3.373, tags: [ult_done]}
 
   buffs:
     - {name: dark_burn, event: "mark:self", duration: {ref: "Buff,LevelUp,11090000,Time,10K"}, target: enemy}

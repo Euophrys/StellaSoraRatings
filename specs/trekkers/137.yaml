@@ -24,7 +24,7 @@ talents:
       - {attribute: 13796511, event: always}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 137), not checked in game
   mark: {hit: 137000001}
 
   procs:
@@ -33,25 +33,25 @@ main:
 
   actions:
     auto:
-      duration: 5.4                # GUESS: 1 s per strike
+      duration: 6.116              # frames: strikes chained at each combo-window end
       hits:
-        - {hit: 137100001, offset: 0.4, tags: [slash]}
-        - {hit: 137100002, count: 5, offset: 1.4, interval: 0.15, tags: [slash]}
-        - {hit: 137100003, count: 5, offset: 2.4, interval: 0.15, tags: [slash]}
-        - {hit: 137100004, count: 6, offset: 3.4, interval: 0.12, tags: [slash]}
-        - {hit: 137100005, count: 7, offset: 4.4, interval: 0.1, tags: [slash, s5]}
+        - {hit: 137100001, offset: 0.267, tags: [slash]}
+        - {hit: 137100002, count: 5, offset: 0.617, interval: 0.225, tags: [slash]}
+        - {hit: 137100003, count: 5, offset: 1.85, interval: 0.275, tags: [slash]}
+        - {hit: 137100004, count: 6, offset: 3.649, interval: 0.257, tags: [slash]}
+        - {hit: 137100005, count: 7, offset: 5.349, interval: 0.1, tags: [slash, s5]}
 
     skill:                         # Sentry Deployment x2, then Vigil for 10 s (GUESS: a hit every 2 s)
-      lock: 1.5                    # GUESS
-      cd_start: 1.5               # GUESS: the CD starts when the cast ends
+      lock: 0.7                    # frames: combo-window end
+      cd_start: 0.7                # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 137300001, count: 2, offset: 0.5, interval: 0.4, tags: [spin], triggers_mark: true}
+        - {hit: 137300001, count: 2, offset: 0.167, interval: 0.266, tags: [spin], triggers_mark: true}   # frames
         - {hit: 137300002, count: 5, offset: 2.0, interval: 2.0, tags: [vigil], triggers_mark: true}
 
     ult:                           # Firestorm x14 (text)
-      lock: 5.5                    # GUESS
-      hits:
-        - {hit: 137900001, count: 14, offset: 1.0, interval: 0.3, tags: [rocket]}
+      lock: 2.5                    # frames: the cutscene clip's combo-window end
+      hits:                        # frames: 12 rocket events from +0.083 to +1.367, about 0.117 apart; x14 from the text
+        - {hit: 137900001, count: 14, offset: 0.2, interval: 0.11, tags: [rocket]}
 
   potentials:
     513701:   # Tactical Protocol: Threshold (pink): one more attack; faster Energy under Vigil isn't modelled
@@ -108,17 +108,17 @@ main:
         - {index: 0, event: "cast:element4:skill"}
 
 support:
-  untimed: true
-  on_field: {skill: 5.0, ult: 5.5}   # GUESS: she stays for the 9 slams
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 10.5, ult: 5.1}   # frames: clip (9 jumps take 9.2 s) + the usual exit
   actions:
     skill:                         # Armed Assault x9; a Sentry per 3 slams, firing about once a second (GUESS)
       hits:
-        - {hit: 137300010, count: 9, offset: 0.8, interval: 0.5, tags: [slam], applies_mark: true}
-        - {hit: 137300011, count: 9, offset: 2.0, interval: 1.0, tags: [sentry]}
+        - {hit: 137300010, count: 9, offset: 0.767, interval: 0.92, tags: [slam], applies_mark: true}   # frames: a jump attack every ~0.92 s, 0.1 s boom delay
+        - {hit: 137300011, count: 9, offset: 3.5, interval: 1.0, tags: [sentry]}
     ult:
       hits:
-        - {hit: 137900001, count: 14, offset: 1.0, interval: 0.3, tags: [rocket], excludes: [513732]}
-        - {hit: 137900001, count: 14, offset: 1.0, interval: 0.3, tags: [rocket], applies_mark: true, requires: [513732]}
+        - {hit: 137900001, count: 14, offset: 0.2, interval: 0.11, tags: [rocket], excludes: [513732]}
+        - {hit: 137900001, count: 14, offset: 0.2, interval: 0.11, tags: [rocket], applies_mark: true, requires: [513732]}
 
   potentials:
     513721:   # Chain Detonation (pink): one more explosion per slam

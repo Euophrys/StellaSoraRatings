@@ -22,33 +22,33 @@ talents:
       - {attribute: 14396511, event: always}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 143), not checked in game
   mark: {hit: 143000001, tags: [cyclone]}
   procs:
     - {event: "mark:self", hit: 143000001, count: 2, offset: 0.1, interval: 0.1, tags: [cyclone]}   # Cyclone x3 (text)
 
   actions:
     auto:
-      duration: 6.4                # GUESS: 1 s per strike
+      duration: 4.268              # frames: the 6 sword strikes chained at each combo-window end
       hits:
-        - {hit: 143100003, offset: 0.4}
-        - {hit: 143100004, offset: 1.4}
-        - {hit: 143100005, count: 3, offset: 2.4, interval: 0.2}
-        - {hit: 143100006, count: 4, offset: 3.4, interval: 0.15}
-        - {hit: 143100007, count: 3, offset: 4.4, interval: 0.2}
-        - {hit: 143100008, offset: 5.4}
+        - {hit: 143100003, offset: 0.2}
+        - {hit: 143100004, offset: 0.55}
+        - {hit: 143100005, count: 3, offset: 1.05, interval: 0.166}
+        - {hit: 143100006, count: 4, offset: 1.636, interval: 0.214}
+        - {hit: 143100007, count: 3, offset: 2.745, interval: 0.166}
+        - {hit: 143100008, offset: 3.783}
 
     skill:                         # Whirling Onslaught: slashes x4 and bullets x4; 3 uses (data)
-      lock: 2.0                    # GUESS
+      lock: 0.777                  # frames: start 0.2 + loop 0.4 + end's combo-window end 0.177
       hits:
-        - {hit: 143300001, count: 4, offset: 0.5, interval: 0.2, tags: [spin], triggers_mark: true}
-        - {hit: 143300002, count: 4, offset: 0.6, interval: 0.2, tags: [shot], triggers_mark: true}
+        - {hit: 143300001, count: 4, offset: 0.233, interval: 0.095, tags: [spin], triggers_mark: true}   # frames
+        - {hit: 143300002, count: 4, offset: 0.32, interval: 0.095, tags: [shot], triggers_mark: true}    # frames: shots +0.217 .. +0.5, 0.1 s flight
 
     ult:                           # Thousand Shade Dance x27 and the detonation (text)
-      lock: 6.0                    # GUESS
+      lock: 4.034                  # frames: start 0.767 + loop 2.0 + end's combo-window end 1.267
       hits:
-        - {hit: 143400001, count: 27, offset: 1.0, interval: 0.15, tags: [shade], triggers_mark: true}
-        - {hit: 143400002, offset: 5.2, tags: [shade], triggers_mark: true}
+        - {hit: 143400001, count: 27, offset: 0.767, interval: 0.0545, tags: [shade], triggers_mark: true}   # frames: the domain's quick attacks span +0.767 .. +2.184
+        - {hit: 143400002, offset: 3.167, tags: [shade], triggers_mark: true}                              # frames: the domain closes
 
   buffs:
     - {name: enhanced, event: "cast:self:skill", duration: 3, requires: [514310]}
@@ -102,20 +102,20 @@ main:
     514343: {}   # Tempest Siphon
 
 support:
-  untimed: true
-  on_field: {skill: 3.0, ult: 6.0}   # GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 6.47, ult: 7.1}   # frames: clips + the usual exit
   mark: {hit: 143000001, tags: [cyclone]}   # text: Rolling Bungee can trigger Ventus Mark
   procs:
     - {event: "mark:self", hit: 143000001, count: 2, offset: 0.1, interval: 0.1, tags: [cyclone]}
   actions:
     skill:                         # Rolling Bungee: slashes x3, then the lasers
       hits:
-        - {hit: 143310001, count: 3, offset: 0.8, interval: 0.3, tags: [bungee, slash_s], triggers_mark: true}
-        - {hit: 143310002, offset: 2.0, tags: [bungee, laser], triggers_mark: true}
+        - {hit: 143310001, count: 3, offset: 0.483, interval: 0.15, tags: [bungee, slash_s], triggers_mark: true}   # frames
+        - {hit: 143310002, offset: 2.534, tags: [bungee, laser], triggers_mark: true}                              # frames: the 2nd clip, +1.117
     ult:
       hits:
-        - {hit: 143400001, count: 27, offset: 1.0, interval: 0.15, tags: [shade], triggers_mark: true}
-        - {hit: 143400002, offset: 5.2, tags: [shade], triggers_mark: true}
+        - {hit: 143400001, count: 27, offset: 0.767, interval: 0.0545, tags: [shade], triggers_mark: true}   # frames: the domain's quick attacks span +0.767 .. +2.184
+        - {hit: 143400002, offset: 3.167, tags: [shade], triggers_mark: true}                              # frames: the domain closes
 
   potentials:
     514321:   # Underbarrel Launcher (pink): every 0.5 s for 8 s

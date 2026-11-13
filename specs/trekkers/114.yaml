@@ -22,7 +22,7 @@ talents:
       - {attribute: 11496511, event: always}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 114), not checked in game
   mark: {hit: 114000001}
 
   procs:
@@ -36,24 +36,25 @@ main:
 
   actions:
     auto:
-      duration: 16.5               # GUESS: 30 shots, 0.5 s each, 1.5 s reload
+      duration: 5.45               # frames: raise (0.25), 3 shots, then 5 per 0.667 s clip to 30 (4.45 s), reload 0.969
       hits:
-        - {hit: 114100001, count: 30, offset: 0.3, interval: 0.5, tags: [shot]}
+        - {hit: 114100001, count: 3, offset: 0.33, interval: 0.167, tags: [shot]}
+        - {hit: 114100001, count: 27, offset: 0.977, interval: 0.1333, tags: [shot]}
 
     skill:                         # Sniper Operation
-      lock: 2.0                    # GUESS
-      cd_start: 2.0               # GUESS: the CD starts when the cast ends
+      lock: 0.985                  # frames: tap: start 0.167 + shot's combo-window end 0.818 (a hold for bombs is 1.88)
+      cd_start: 0.985              # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 114310001, offset: 0.6, tags: [ray], triggers_mark: true, excludes: [511401, 511402]}
-        - {hit: 114310003, count: 2, offset: 0.8, interval: 0.2, tags: [bomb], triggers_mark: true, requires: [511401]}
-        - {hit: 114310003, count: 2, offset: 0.8, interval: 0.2, tags: [bomb], triggers_mark: true, requires: [511402], excludes: [511401]}
+        - {hit: 114310001, offset: 0.598, tags: [ray], triggers_mark: true, excludes: [511401, 511402]}   # frames
+        - {hit: 114310003, count: 2, offset: 1.6, interval: 0.2, tags: [bomb], triggers_mark: true, requires: [511401]}   # frames: thrown +1.52 after a hold
+        - {hit: 114310003, count: 2, offset: 1.6, interval: 0.2, tags: [bomb], triggers_mark: true, requires: [511402], excludes: [511401]}
 
-    ult:                           # Dark Evil Eye x8, the detonation, then Dark Burst for the rest of the 15 s
-      lock: 15.0                   # Evil Eye Unleashed (text); skills can still be cast
+    ult:                           # Dark Evil Eye x8, the detonation, then Dark Burst for 15 s (text); skills can still be cast
+      lock: 18.67                  # frames: Evil Eye starts +3.667 (the cutscene clip), then 15 s (text)
       hits:
-        - {hit: 114400001, count: 8, offset: 1.0, interval: 0.25, tags: [sweep], triggers_mark: true}
-        - {hit: 114400002, offset: 3.2, tags: [sweep], triggers_mark: true}
-        - {hit: 114400003, count: 48, offset: 4.5, interval: 0.2, tags: [burst]}   # GUESS: 5 shots/s
+        - {hit: 114400001, count: 8, offset: 0.0, interval: 0.178, tags: [sweep], triggers_mark: true}   # x8 (text); frames: from the cutscene clip's start, 0.178 apart
+        - {hit: 114400002, offset: 3.2, tags: [sweep], triggers_mark: true}                             # frames: the shoot event
+        - {hit: 114400003, count: 160, offset: 3.83, interval: 0.09375, tags: [burst]}                 # frames: Dark Burst, 16 shots per 1.5 s clip
 
   buffs:
     - {effect: 11440013, event: "cast:self:ult", name: evil_eye, duration: {ref: "BuffValue,NoLevel,11440002,Time,10K"}}
@@ -124,16 +125,16 @@ main:
         - {index: 0, hit_tags: [], event: "while:status:cat_eye"}
 
 support:
-  untimed: true
-  on_field: {skill: 3.5, ult: 6.0}   # GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 3.6, ult: 5.5}   # frames: clip + the usual exit
   mark: {hit: 114000001}             # text: Blitz Assault can trigger Ignis Mark
   actions:
     skill:                         # Blitz Assault x3 (text)
       hits:
-        - {hit: 114320001, count: 3, offset: 0.8, interval: 0.8, tags: [bullet], triggers_mark: true}
+        - {hit: 114320001, count: 3, offset: 0.79, interval: 0.8, tags: [bullet], triggers_mark: true}   # frames: first shot +0.73; the other two GUESS
     ult:
       hits:
-        - {hit: 114400001, count: 8, offset: 1.0, interval: 0.25, tags: [sweep], triggers_mark: true}
+        - {hit: 114400001, count: 8, offset: 0.0, interval: 0.178, tags: [sweep], triggers_mark: true}
         - {hit: 114400002, offset: 3.2, tags: [sweep], triggers_mark: true}
 
   buffs:

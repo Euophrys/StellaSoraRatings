@@ -21,31 +21,31 @@ talents:
       - {effect: 10896511, event: "cast:support:ult", reset_on: ["marker:self:ult_done"]}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 108), not checked in game
   mark: {hit: 108000001, tags: [incineration]}
 
   actions:
     auto:
-      duration: 1.5                # GUESS: one volley + reload (magazine 1)
+      duration: 0.944              # frames: one volley (0.5) + reload (0.444), magazine 1
       hits:
-        - {hit: 108100001, count: 10, offset: 0.5, interval: 0, tags: [pellet]}   # GUESS: 10 pellets
+        - {hit: 108100001, count: 13, offset: 0.135, interval: 0, tags: [pellet]}   # frames: 13 pellets, all assumed to hit
 
     skill:                         # Banishing Barrage: loads a shell, fired as the next shot; 3 stored uses (data)
-      lock: 1.5                    # GUESS
+      lock: 1.138                  # frames: start 0.4 + loop 0.556 + end's combo-window end 0.182
       hits:
-        - {hit: 108110001, count: 10, offset: 1.0, interval: 0, tags: [shell], triggers_mark: true}
+        - {hit: 108110001, count: 13, offset: 1.27, interval: 0, tags: [shell], triggers_mark: true}   # frames: the shell volley is 13 pellets
 
     ult:                           # Sweeping Blast: 6 rounds and a final salvo (text)
-      lock: 6.0                    # GUESS
+      lock: 3.958                  # frames: 6 x 0.5 s rounds, then the end clip's combo-window end
       hits:
-        - {hit: 108400001, count: 10, offset: 1.0, interval: 0, tags: [round]}
-        - {hit: 108400001, count: 10, offset: 1.6, interval: 0, tags: [round]}
-        - {hit: 108400001, count: 10, offset: 2.2, interval: 0, tags: [round]}
-        - {hit: 108400001, count: 10, offset: 2.8, interval: 0, tags: [round]}
-        - {hit: 108400001, count: 10, offset: 3.4, interval: 0, tags: [round]}
-        - {hit: 108400001, count: 10, offset: 4.0, interval: 0, tags: [round]}
-        - {hit: 108400002, count: 10, offset: 5.0, interval: 0, tags: [finale]}
-        - {hit: 0, offset: 5.1, tags: [ult_done]}
+        - {hit: 108400001, count: 19, offset: 0.1, interval: 0, tags: [round]}   # frames: 19 pellets a round
+        - {hit: 108400001, count: 19, offset: 0.6, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 19, offset: 1.1, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 19, offset: 1.6, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 19, offset: 2.1, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 19, offset: 2.6, interval: 0, tags: [round]}
+        - {hit: 108400002, count: 22, offset: 3.46, interval: 0, tags: [finale]}   # frames: 22 pellets
+        - {hit: 0, offset: 3.56, tags: [ult_done]}
 
   potentials:
     510801:   # Scatter Trigger (pink): the shot also deals the extra hit
@@ -101,26 +101,26 @@ main:
         - {index: 0, drop: true}
 
 support:
-  untimed: true
-  on_field: {skill: 3.0, ult: 6.0}   # GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 3.75, ult: 5.75}   # frames: clip + the usual exit (docs/assumptions.md "Frame data")
   actions:
-    skill:                         # Precision Strike: 3 bombs (text)
+    skill:                         # Precision Strike: 3 bombs (text); the bombing starts +0.444 (frames), bomb timing GUESS
       hits:
         - {hit: 108320001, count: 3, offset: 1.0, interval: 0.5, tags: [bomb], applies_mark: true}
-    ult:
+    ult:                           # frames: as the main's
       hits:
-        - {hit: 108400001, count: 10, offset: 1.0, interval: 0, tags: [round], excludes: [510831]}
-        - {hit: 108400001, count: 10, offset: 1.0, interval: 0, tags: [round], applies_mark: true, requires: [510831]}
-        - {hit: 108400001, count: 10, offset: 1.6, interval: 0, tags: [round]}
-        - {hit: 108400001, count: 10, offset: 2.2, interval: 0, tags: [round]}
-        - {hit: 108400001, count: 10, offset: 2.8, interval: 0, tags: [round]}
-        - {hit: 108400001, count: 10, offset: 3.4, interval: 0, tags: [round]}
-        - {hit: 108400001, count: 10, offset: 4.0, interval: 0, tags: [round]}
-        - {hit: 108400002, count: 10, offset: 5.0, interval: 0, tags: [finale]}
-        - {hit: 0, offset: 5.1, tags: [ult_done]}
+        - {hit: 108400001, count: 19, offset: 0.1, interval: 0, tags: [round], excludes: [510831]}
+        - {hit: 108400001, count: 19, offset: 0.1, interval: 0, tags: [round], applies_mark: true, requires: [510831]}
+        - {hit: 108400001, count: 19, offset: 0.6, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 19, offset: 1.1, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 19, offset: 1.6, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 19, offset: 2.1, interval: 0, tags: [round]}
+        - {hit: 108400001, count: 19, offset: 2.6, interval: 0, tags: [round]}
+        - {hit: 108400002, count: 22, offset: 3.46, interval: 0, tags: [finale]}
+        - {hit: 0, offset: 3.56, tags: [ult_done]}
 
   potentials:
-    510821:   # Heated Battle (pink): crater, every 0.5 s for 8 s
+    510821:   # Heated Battle (pink): crater, every 0.5 s for 8 s (text; the area's data says every 1.0 s)
       add_hits:
         skill: [{hit: 108521001, count: 16, offset: 2.5, interval: 0.5, tags: [crater], applies_mark: true}]
     510822:   # Area Bombardment (pink): 5 rounds

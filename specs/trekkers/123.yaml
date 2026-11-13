@@ -23,29 +23,29 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
 #   ult (59,04): a buff on Noya +0.87 (shield, Overlord's Warcry), hit +0.97; leaves +3.07.
 
 main:
-  untimed: true   # conservative guesses, see docs/assumptions.md "Untimed kits"; the ult's hit is user-timed (support role)
+  timing: frames   # animation frame data (python -m ssr.inspect frames 123), not checked in game; the ult's hit is user-timed (support role)
   # Bubble (a minion) is skipped, except what it gives: its squad ATK, and a Wind Burst (Skill DMG, inflicts Breeze) about every
   # 4 s: 25% per Bubble hit, once per second at most. Bubble lasts 15 s (Word 4013), the skill's CD.
 
   actions:
     auto:                          # Coco the Firefang: Auto Attack DMG, not Minion DMG
-      duration: 4.4                # GUESS: 1 s per strike
+      duration: 2.796              # frames: strikes chained at each combo-window end
       hits:
-        - {hit: 123100001, offset: 0.4}
-        - {hit: 123100002, offset: 1.4}
-        - {hit: 123100003, count: 2, offset: 2.4, interval: 0.2}
-        - {hit: 123100004, offset: 3.4}
+        - {hit: 123100001, offset: 0.302}
+        - {hit: 123100002, offset: 0.87}
+        - {hit: 123100003, count: 2, offset: 1.429, interval: 0.2}   # x2 (text); frames: a moving area, 1st hit +1.429; spacing GUESS
+        - {hit: 123100004, offset: 2.363}
 
     skill:                         # Puffloon Spits
-      lock: 1.0                    # GUESS
-      cd_start: 1.0               # GUESS: the CD starts when the cast ends
+      lock: 0.917                  # frames: B1 combo-window end
+      cd_start: 0.917              # GUESS: the CD starts when the cast ends
       hits:
         - {hit: 123310004, count: 3, offset: 4.0, interval: 4.0, tags: [burst], applies_mark: true}
 
     ult:                           # Call of the Wild
-      lock: 3.067                  # user-timed in the support role
+      lock: 1.0                    # frames: combo-window end (the support role's 3.067 s on the field includes leaving)
       hits:
-        - {hit: 123300001, offset: 0.967, tags: [howl], applies_mark: true}
+        - {hit: 123300001, offset: 0.967, tags: [howl], applies_mark: true}   # user-timed (frames: 0.98)
 
   buffs:
     - {effect: 12393001, level: skill, event: "cast:self:skill", duration: 15, target: team}

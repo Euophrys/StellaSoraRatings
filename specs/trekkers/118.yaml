@@ -21,30 +21,30 @@ talents:
       - {attribute: 11896511, event: always}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 118), not checked in game
   mark: {hit: 118000001}
 
   actions:
     auto:
-      duration: 4.4                # GUESS: 1 s per strike
+      duration: 3.0                # frames: strikes chained at each combo-window end
       hits:
-        - {hit: 118000003, offset: 0.4}
-        - {hit: 118000004, offset: 1.4}
-        - {hit: 118000005, offset: 2.4}
-        - {hit: 118000006, offset: 3.4, tags: [s4]}
+        - {hit: 118000003, offset: 0.267}
+        - {hit: 118000004, offset: 0.7}
+        - {hit: 118000005, offset: 1.398}
+        - {hit: 118000006, offset: 2.417, tags: [s4]}
 
     skill:                         # Sleight of Scythe x5 and a smash (text)
-      lock: 2.5                    # GUESS
-      cd_start: 2.5               # GUESS: the CD starts when the cast ends
+      lock: 2.741                  # frames: start 0.733, 2 loops of 0.6 (2 slices each), end's combo-window end 0.808
+      cd_start: 2.741              # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 118000015, count: 5, offset: 0.5, interval: 0.25, tags: [slice], triggers_mark: true}
-        - {hit: 118000016, offset: 1.9, tags: [smash], triggers_mark: true}
+        - {hit: 118000015, count: 5, offset: 0.4, interval: 0.308, tags: [slice], triggers_mark: true}   # frames: 0.4 .. 1.633
+        - {hit: 118000016, offset: 2.55, tags: [smash], triggers_mark: true}
 
     ult:                           # Void Reaper x8 and a slash (text)
-      lock: 6.0                    # GUESS
+      lock: 3.288                  # frames: 2 loops of 4 storms (1 s each), end's combo-window end 1.255
       hits:
-        - {hit: 118000013, count: 8, offset: 1.0, interval: 0.4, tags: [storm]}
-        - {hit: 118000014, offset: 4.5, tags: [slash]}
+        - {hit: 118000013, count: 8, offset: 0.05, interval: 0.25, tags: [storm]}
+        - {hit: 118000014, offset: 2.433, tags: [slash]}
 
   buffs:
     - {name: dark_shackles, event: "mark:self", duration: {ref: "Buff,LevelUp,5031,Time,10K"}, target: enemy}
@@ -104,19 +104,19 @@ main:
         - {index: 0, hit_tags: [], event: "while:not:broken"}
 
 support:
-  untimed: true
-  on_field: {skill: 3.0, ult: 6.0}   # GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 3.7, ult: 5.3}   # frames: clips + the usual exit
   actions:
     skill:                         # Bone Chain: a sweep, then the chains break
       hits:
-        - {hit: 118000008, offset: 0.8, tags: [sweep], applies_mark: true}
-        - {hit: 118000009, offset: 1.8, tags: [chain], applies_mark: true}
+        - {hit: 118000008, offset: 0.833, tags: [sweep], applies_mark: true}   # frames
+        - {hit: 118000009, offset: 1.633, tags: [chain], applies_mark: true}   # frames: the second clip's break event
     ult:
       hits:
-        - {hit: 118000013, count: 8, offset: 1.0, interval: 0.4, tags: [storm], excludes: [511831]}
-        - {hit: 118000013, offset: 1.0, tags: [storm], applies_mark: true, requires: [511831]}
-        - {hit: 118000013, count: 7, offset: 1.4, interval: 0.4, tags: [storm], requires: [511831]}
-        - {hit: 118000014, offset: 4.5, tags: [slash]}
+        - {hit: 118000013, count: 8, offset: 0.05, interval: 0.25, tags: [storm], excludes: [511831]}
+        - {hit: 118000013, offset: 0.05, tags: [storm], applies_mark: true, requires: [511831]}
+        - {hit: 118000013, count: 7, offset: 0.3, interval: 0.25, tags: [storm], requires: [511831]}
+        - {hit: 118000014, offset: 2.433, tags: [slash]}
 
   potentials:
     511821:   # Skeleton Sculpture (pink): the Efficiency is for the sweep and Scythes

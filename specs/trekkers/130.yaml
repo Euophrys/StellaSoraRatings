@@ -22,24 +22,24 @@ talents:
       - {attribute: 13096511, event: always}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 130), not checked in game
   mark: {hit: 130000001}
 
   actions:
     auto:
-      duration: 1.0                # GUESS: one arrow per second
+      duration: 1.326              # frames: draw 0.256 + hold 0.741 + release's combo-window end 0.329
       hits:
-        - {hit: 130100001, offset: 0.5}
+        - {hit: 130100001, offset: 0.501}
 
     skill:                         # Rain Call: Volley Chase: 12 s of Agile shots
       lock: 12.0                   # the doll's 12 s (Word 4017); the ult can still be cast
-      hits:
-        - {hit: 130310003, count: 11, offset: 1.0, interval: 1.0, tags: [agile], triggers_mark: true}
+      hits:                        # frames: the cast (0.667), then an Agile shot per 1.197 s string, hitting +0.41
+        - {hit: 130310003, count: 10, offset: 1.077, interval: 1.197, tags: [agile], triggers_mark: true}
 
     ult:                           # Argent Cascade: every 0.5 s for 6 s (text)
-      lock: 3.0                    # GUESS: she fires it and carries on
+      lock: 1.133                  # frames: the cutscene clip's combo-window end; she fires it and carries on
       hits:
-        - {hit: 130400001, count: 12, offset: 1.0, interval: 0.5, tags: [cascade]}
+        - {hit: 130400001, count: 12, offset: 0.633, interval: 0.5, tags: [cascade]}   # frames: the rain area appears +0.133; first hit GUESS +0.5
 
   buffs:
     - {name: chill, event: "mark:self", target: enemy, duration: {ref: "BuffValue,NoLevel,4021,Time,10K"}, max_stacks: {ref: "BuffValue,NoLevel,4021,LaminatedNum,Fixed"}}
@@ -95,21 +95,23 @@ main:
         - {index: 0, hit_tags: [], event: "hit:self:cascade&while:status:chill", duration: 12, max_stacks: 5}
 
 support:
-  untimed: true
-  on_field: {skill: 3.5, ult: 3.0}   # GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 8.65, ult: 3.48}   # frames: clip (the arrows take 7.3 s) + the usual exit
   actions:
-    skill:                         # Tide Threader: 9 arrows and a Frost Wave (text)
+    skill:                         # Tide Threader: 9 arrows and a Frost Wave (text); frames: every hit's time
       hits:
-        - {hit: 130320001, offset: 0.8, tags: [arrow], applies_mark: true}
-        - {hit: 130320002, count: 2, offset: 1.1, interval: 0.3, tags: [arrow], applies_mark: true}
-        - {hit: 130320003, count: 3, offset: 1.7, interval: 0.3, tags: [arrow], applies_mark: true}
-        - {hit: 130320004, count: 2, offset: 2.6, interval: 0.3, tags: [arrow], applies_mark: true}
-        - {hit: 130320005, offset: 3.2, tags: [arrow], applies_mark: true}
-        - {hit: 130320006, offset: 3.4, tags: [wave], applies_mark: true}
+        - {hit: 130320001, offset: 0.33, tags: [arrow], applies_mark: true}
+        - {hit: 130320002, count: 2, offset: 0.963, interval: 0.267, tags: [arrow], applies_mark: true}
+        - {hit: 130320003, offset: 1.863, tags: [arrow], applies_mark: true}
+        - {hit: 130320003, offset: 2.263, tags: [arrow], applies_mark: true}
+        - {hit: 130320003, offset: 2.697, tags: [arrow], applies_mark: true}
+        - {hit: 130320004, count: 2, offset: 3.363, interval: 0.4, tags: [arrow], applies_mark: true}
+        - {hit: 130320005, offset: 4.967, tags: [arrow], applies_mark: true}
+        - {hit: 130320006, offset: 5.0, tags: [wave], applies_mark: true}
     ult:
       hits:
-        - {hit: 130400001, count: 12, offset: 1.0, interval: 0.5, tags: [cascade], excludes: [513032]}
-        - {hit: 130400001, count: 12, offset: 1.0, interval: 0.5, tags: [cascade], applies_mark: true, requires: [513032]}
+        - {hit: 130400001, count: 12, offset: 0.633, interval: 0.5, tags: [cascade], excludes: [513032]}
+        - {hit: 130400001, count: 12, offset: 0.633, interval: 0.5, tags: [cascade], applies_mark: true, requires: [513032]}
 
   buffs:
     - {name: rain, event: "cast:self:ult", duration: 7}
@@ -122,8 +124,8 @@ support:
     513022:   # Arrowfall Reckoning (pink): a tail per arrow; the pull at the end is +10% DMG Multiplier per tail
       add_hits:
         skill:
-          - {hit: 130522001, offset: 3.6, tags: [pull]}
-          - {hit: 0, offset: 3.7, tags: [pull_done]}
+          - {hit: 130522001, offset: 5.2, tags: [pull]}   # after the Frost Wave (frames: +5.0)
+          - {hit: 0, offset: 5.3, tags: [pull_done]}
       procs:
         - {event: "hit:self:arrow", hit: 130522002, offset: 0.05, tags: [tail]}
       overrides:

@@ -21,38 +21,40 @@ talents:
       - {attribute: 13496511, event: always}
 
 main:
-  untimed: true
+  timing: frames   # animation frame data (python -m ssr.inspect frames 134), not checked in game
   mark: {hit: 134000001}
 
   actions:
     auto:                          # Blitz Combo
-      duration: 5.4                # GUESS: 1 s per strike
+      duration: 4.677              # frames: strikes chained at each combo-window end
       hits:
-        - {hit: 134100001, count: 2, offset: 0.4, interval: 0.2}
-        - {hit: 134100002, offset: 1.4}
-        - {hit: 134100003, count: 2, offset: 2.4, interval: 0.2}
-        - {hit: 134100004, count: 5, offset: 3.4, interval: 0.12}
-        - {hit: 134100005, count: 2, offset: 4.4, interval: 0.2}
+        - {hit: 134100001, count: 2, offset: 0.267, interval: 0.2}
+        - {hit: 134100002, offset: 1.0}
+        - {hit: 134100003, count: 2, offset: 1.433, interval: 0.167}
+        - {hit: 134100004, count: 5, offset: 2.266, interval: 0.142}
+        - {hit: 134100005, count: 2, offset: 3.538, interval: 0.361}
 
-    skill:                         # Ignis Infusion, then the 3 Fiery Punches
-      lock: 5.5                    # GUESS
-      cd_start: 5.5               # GUESS: the CD starts when the cast ends
+    skill:                         # Ignis Infusion, then the 3 Fiery Punches (her next 3 strikes)
+      lock: 4.014                  # frames: charge (1.681), then the 3 punch clips chained (0.458 / 0.667 / 1.208)
+      cd_start: 4.014              # GUESS: the CD starts when the cast ends
       hits:
-        - {hit: 134310001, offset: 0.5, tags: [infusion], triggers_mark: true}
-        - {hit: 134310002, offset: 1.4, tags: [infusion], triggers_mark: true}
-        - {hit: 134100006, offset: 3.0, tags: [fiery], excludes: [513404]}
-        - {hit: 134100007, offset: 4.0, tags: [fiery], excludes: [513404]}
-        - {hit: 134100008, offset: 5.0, tags: [fiery, fiery3], excludes: [513404]}
-        - {hit: 134504001, offset: 3.0, tags: [magma], requires: [513404]}
-        - {hit: 134504002, offset: 3.6, tags: [magma], requires: [513404]}
+        - {hit: 134310001, offset: 0.383, tags: [infusion], triggers_mark: true}
+        - {hit: 134310002, offset: 1.133, tags: [infusion], triggers_mark: true}
+        - {hit: 134100006, offset: 2.028, tags: [fiery], excludes: [513404]}
+        - {hit: 134100007, offset: 2.5, tags: [fiery], excludes: [513404]}
+        - {hit: 134100008, offset: 3.348, tags: [fiery, fiery3], excludes: [513404]}
+        - {hit: 134504001, offset: 2.322, tags: [magma], requires: [513404]}
+        - {hit: 134504002, offset: 3.09, tags: [magma], requires: [513404]}
 
     ult:                           # Blaze Unsealed (text)
-      lock: 5.5                    # GUESS
-      hits:
-        - {hit: 134400001, offset: 1.0, tags: [blaze], triggers_mark: true}
-        - {hit: 134400002, count: 5, offset: 1.8, interval: 0.5, tags: [blaze], triggers_mark: true}
-        - {hit: 134400003, offset: 4.5, tags: [blaze], triggers_mark: true}
-        - {hit: 0, offset: 4.6, tags: [ult_done]}
+      lock: 7.2                    # frames: cutscene clip 1.9 + 2 loops (3.134) + end's combo-window end 2.167
+      hits:                        # frames: cutscene clip (hit, 1st blaze), 2 loops of 2 blazes (1.567 s each), end clip
+        - {hit: 134400001, offset: 0.193, tags: [blaze], triggers_mark: true}
+        - {hit: 134400002, offset: 1.267, tags: [blaze], triggers_mark: true}
+        - {hit: 134400002, count: 2, offset: 2.067, interval: 0.833, tags: [blaze], triggers_mark: true}
+        - {hit: 134400002, count: 2, offset: 3.634, interval: 0.833, tags: [blaze], triggers_mark: true}
+        - {hit: 134400003, offset: 6.434, tags: [blaze], triggers_mark: true}
+        - {hit: 0, offset: 6.5, tags: [ult_done]}
 
   buffs:
     - {name: blazing, event: "cast:self:ult", duration: 5.5}
@@ -65,15 +67,15 @@ main:
       add_actions:
         fiery_reload:
           followup: {after: skill}
-          lock: 6.0                # GUESS
+          lock: 4.666              # frames: 2 sets of the 3 punch clips (2.333 s each)
           skill_id: 13410000
           hits:
-            - {hit: 134100006, offset: 0.5, tags: [fiery]}
-            - {hit: 134100007, offset: 1.5, tags: [fiery]}
-            - {hit: 134100008, offset: 2.5, tags: [fiery, fiery3]}
-            - {hit: 134100006, offset: 3.5, tags: [fiery]}
-            - {hit: 134100007, offset: 4.5, tags: [fiery]}
-            - {hit: 134100008, offset: 5.5, tags: [fiery, fiery3]}
+            - {hit: 134100006, offset: 0.347, tags: [fiery]}
+            - {hit: 134100007, offset: 0.819, tags: [fiery]}
+            - {hit: 134100008, offset: 1.667, tags: [fiery, fiery3]}
+            - {hit: 134100006, offset: 2.68, tags: [fiery]}
+            - {hit: 134100007, offset: 3.152, tags: [fiery]}
+            - {hit: 134100008, offset: 4.0, tags: [fiery, fiery3]}
     513402:   # Double Strike (pink)
       add_hits:
         skill:
@@ -129,19 +131,21 @@ main:
         - {index: 0, event: "cast:self:ult", max_stacks: 1, copies: [{duration: 1}, {duration: 2}, {duration: 3}, {duration: 4}, {duration: 5}, {duration: 6}]}
 
 support:
-  untimed: true
-  on_field: {skill: 3.2, ult: 5.5}   # GUESS
+  timing: frames   # animation frame data, not checked in game
+  on_field: {skill: 4.7, ult: 11.0}   # frames: clips (rush + punches; the ult's 3 parts) + the usual exit
   mark: {hit: 134000001}             # text: Eruption Punch can trigger Ignis Mark
   actions:
     skill:                         # Eruption Punch x11 (text)
       hits:
-        - {hit: 134320001, count: 11, offset: 0.8, interval: 0.2, tags: [punch], triggers_mark: true}
+        - {hit: 134320001, count: 11, offset: 1.125, interval: 0.2, tags: [punch], triggers_mark: true}   # frames: rush 0.625, then a punch every 0.2 s from +0.5
     ult:
-      hits:
-        - {hit: 134400001, offset: 1.0, tags: [blaze], triggers_mark: true}
-        - {hit: 134400002, count: 5, offset: 1.8, interval: 0.5, tags: [blaze], triggers_mark: true}
-        - {hit: 134400003, offset: 4.5, tags: [blaze], triggers_mark: true}
-        - {hit: 0, offset: 4.6, tags: [ult_done]}
+      hits:                        # frames: cutscene clip (hit, 1st blaze), 2 loops of 2 blazes (1.567 s each), end clip
+        - {hit: 134400001, offset: 0.193, tags: [blaze], triggers_mark: true}
+        - {hit: 134400002, offset: 1.267, tags: [blaze], triggers_mark: true}
+        - {hit: 134400002, count: 2, offset: 2.067, interval: 0.833, tags: [blaze], triggers_mark: true}
+        - {hit: 134400002, count: 2, offset: 3.634, interval: 0.833, tags: [blaze], triggers_mark: true}
+        - {hit: 134400003, offset: 6.434, tags: [blaze], triggers_mark: true}
+        - {hit: 0, offset: 6.5, tags: [ult_done]}
 
   buffs:
     - {name: blazing, event: "cast:self:ult", duration: 5.5}
