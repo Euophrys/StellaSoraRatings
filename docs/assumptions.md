@@ -265,3 +265,10 @@ Leafia (161) is user-timed in both roles (`specs/trekkers/161.yaml`). Her Observ
 ## Touch of Nature is a separate Mark multiplier (2026-11-13)
 
 - **Touch of Nature** (Nazuna 515612, main only; CN 印记伤害倍率, "Mark DMG Multiplier") is a separate x(1 + value) on Terra Trekkers' Mark hits, not part of the Mark DMG bucket. The data row is EAT 64 (Mark DMG) with second subtype 2, but every other potential whose text says 伤害倍率 uses EAT 85, and the user's test settles it: Nazuna main with Lv6 Touch of Nature, Gerie support's Mark 32864, then 43736 with a +33% Mark DMG emblem on Gerie (x1.331; a shared bucket would give x1.063). Modelled with `as_stat: 85, hit_tags: [mark]`. Mark DMG emblem lines are now worth their full value in Nazuna-main teams.
+
+## Team finder (2026-11-13)
+
+- **Every team at its own build** (`python -m ssr.finder`, the page's Find teams): each candidate team gets new pinks, potentials and emblems; nothing is carried over from the template's members. New members are skill 10/10/10, T0, Lv90, no bonus stats, no emblems. The template's discs (main and support), enemy, fight, assumptions, reference settings and budget apply to every team; its `hold` entries are dropped (they name members by index) and `reference.include` names no new member has are dropped.
+- **Pinks are chosen on the per-team reference build** (the template's `reference:`, with its discs, main discs never re-picked), member by member, main first: the same coordinate search as `--pinks`, not on the screen build or the final one.
+- **The screen is coarse**: each step takes one potential straight to Lv6 (5 picks on the main, 3 per support = 66 levels, not the real 60 or the template's budget). Teams are ranked by it; only the top N (default 5) get the full optimize (template budget split / total / max level) and greedy emblems. A team close to the cut can rank differently under the full build; the screen table shows every team so it can be checked by hand.
+- Ratings run without enemy breaks unless breaks are on, as the page's other jobs.
