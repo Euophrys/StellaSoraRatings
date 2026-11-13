@@ -286,7 +286,8 @@ def test_finder_job(client):
     keep = {"Amber", "Flora", "Chixia"}
     exclude = [t["name"] for t in cat["trekkers"] if t["element"] == "Ignis" and t["name"] not in keep]
     doc = state(fight_length=20, reference={"steps": 0}, budget=[1, 0, 0], budget_total=None)
-    body = {"kind": "finder", "state": doc, "trekker": "Amber", "top": 1, "emblems": "none", "exclude": exclude}
+    body = {"kind": "finder", "state": doc, "trekker": "amber", "role": "Main", "top": 1, "emblems": "None",
+            "exclude": [x.upper() for x in exclude]}   # names, role and tier ignore case
     s = client.wait(client.json("POST", "/api/jobs", body)["id"], timeout=300)
     assert s["state"] == "done", s
     assert len(s["result"]) == 1

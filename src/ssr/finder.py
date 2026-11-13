@@ -25,7 +25,8 @@ from .data import GameData
 from .game import potential_pools
 from .builds import search_pinks
 from .compare import COLOUR_RANK, greedy_emblems
-from .data import DEFAULT_DATA_ROOT
+from .data import DEFAULT_DATA_ROOT, REPO_ROOT
+from .finder_page import render_html
 from .guide import _pool, optimize, without_breaks
 from .kit import SPECS, role_status
 from .parallel import simulate_many
@@ -67,19 +68,26 @@ def _doc(gd: GameData, template: dict, main: int, supports: tuple[int, int]) -> 
     return doc
 
 
+def find_trekker(gd: GameData, name: str) -> int:
+    """Char id by name, ignoring case and surrounding spaces."""
+    want = str(name).strip().casefold()
+    hits = [int(k) for k in gd.table("Character") if gd.char_name(int(k)).casefold() == want]
+    if len(hits) != 1:
+        raise ValueError(f"unknown trekker {name!r}" if not hits else f"trekker {name!r} is ambiguous")
+    return hits[0]
+
+
 def team_docs(gd: GameData, template: dict, trekker: str, role: str = "main", exclude=()) -> list[dict]:
     """One team document per candidate team: `trekker` in `role` ("main", "support" or "any") with every pair of
     same-element Trekkers that have a kit for the slot they'd fill. Main first; supports ordered by char id."""
+    role = str(role).strip().lower()
     if role not in ROLES:
         raise ValueError(f"role must be one of {ROLES}, not {role!r}")
-    try:
-        cid = gd.find_char(trekker)
-    except KeyError as e:
-        raise ValueError(f"unknown trekker {trekker!r}") from e
+    cid = find_trekker(gd, trekker)
     roles = ("main", "support") if role == "any" else (role,)
     if not any(_has_kit(cid, r) for r in roles):
-        raise ValueError(f"{trekker} has no {role} kit")
-    skip = {gd.find_char(n) for n in exclude}
+        raise ValueError(f"{gd.char_name(cid)} has no {role} kit")
+    skip = {find_trekker(gd, n) for n in exclude}
     others = [c for c in _candidates(gd, element_of(gd, cid)) if c != cid and c not in skip]
     teams: list[tuple[int, tuple[int, int]]] = []
     if "main" in roles and _has_kit(cid, "main"):
@@ -154,6 +162,7 @@ def find_teams(gd: GameData, template: dict, trekker: str, role: str = "main", t
     reference build with the template's discs) and a screen build (coarse_build); the top `top` by screen are
     optimized with the template's budget, then get greedy emblems at tier `emblems` ("none" skips them).
     Rows: finalists by total, then the rest by screen total, failed teams last."""
+    emblems = emblems.strip().lower()
     docs = team_docs(gd, template, trekker, role, exclude)
     rows: list[FinderRow] = []
     teams: list[TeamConfig | None] = []
@@ -214,21 +223,13 @@ def _picks(s: str) -> tuple[int, int, int]:
 
 
 def format_rows(rows: list[FinderRow]) -> list[str]:
-    best = max((r.total for r in rows if r.finalist and r.total), default=None)
-    lines = []
-    for n, r in enumerate(rows, 1):
-        team = " / ".join(r.members)
-        pinks = "  ".join("+".join(p) for p in r.pinks if p)
-        screen = f"{r.screen_total:>12,.0f}" if r.screen_total is not None else " " * 12
-        if r.error is not None:
-            tail = f"error: {r.error}"
-        elif r.finalist:
-            tail = f"{r.total:>12,.0f}  {100 * r.total / best:7.2f}%  ({r.method})"
-        else:
-            tail = "cut"
-        lines.append(f"{n:>3}. {team:<44} screen {screen}  {tail}")
-        if pinks:
-            lines.append(f"     pinks: {pinks}")
+    """A short terminal summary: the finalists' ranking; the full tables are in the page."""
+    fin = [r for r in rows if r.finalist and r.error is None]
+    best = max((r.total for r in fin), default=0) or 1
+    lines = ["Finalists (full build):"] + [f"  {n}. {' / '.join(r.members):<44} {100 * r.total / best:7.2f}%"
+                                         for n, r in enumerate(fin, 1)]
+    failed = sum(r.error is not None for r in rows)
+    lines.append(f"Screened {len(rows)} teams" + (f", {failed} failed" if failed else "") + ".")
     return lines
 
 
@@ -236,25 +237,42 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="Rank every same-element team for one Trekker, each at its own best build")
     ap.add_argument("trekker")
     ap.add_argument("--template", required=True, help="team file whose discs, enemy, fight and budget every team uses")
-    ap.add_argument("--role", choices=ROLES, default="main")
+    ap.add_argument("--role", type=str.lower, choices=ROLES, default="main")
     ap.add_argument("--top", type=int, default=5, help="finalists that get the full optimize + emblems")
-    ap.add_argument("--emblems", choices=[*sorted(COLOUR_RANK, key=COLOUR_RANK.get), "none"], default="purple")
+    ap.add_argument("--emblems", type=str.lower, choices=[*sorted(COLOUR_RANK, key=COLOUR_RANK.get), "none"], default="purple")
     ap.add_argument("--picks", type=_picks, default=(5, 3, 3), help="screen picks per member at Lv6 (main first)")
     ap.add_argument("--breaks", action="store_true", help="rate with enemy breaks (off by default, as on the page)")
     ap.add_argument("--exclude", nargs="*", default=[], metavar="TREKKER")
     ap.add_argument("-o", "--out", help="write the finalists' team documents here (a YAML list)")
+    ap.add_argument("--html", help="results page (default out/finder_<trekker>_<role>.html)")
+    ap.add_argument("--no-open", action="store_true", help="don't open the page in a browser")
     a = ap.parse_args(argv)
     gd = GameData(DEFAULT_DATA_ROOT)
     template = yaml.safe_load(Path(a.template).read_text(encoding="utf-8"))
+    try:
+        who = gd.char_name(find_trekker(gd, a.trekker))
+        a.exclude = [gd.char_name(find_trekker(gd, n)) for n in a.exclude]
+    except ValueError as e:
+        ap.error(str(e))
     last = [None]
 
     def progress(phase, _done, _total):
         if phase != last[0]:
             last[0] = phase
             print(phase, file=sys.stderr, flush=True)
-    rows = find_teams(gd, template, a.trekker, a.role, top=a.top, emblems=a.emblems, picks=a.picks,
+    rows = find_teams(gd, template, who, a.role, top=a.top, emblems=a.emblems, picks=a.picks,
                       breaks=a.breaks, exclude=a.exclude, progress=progress)
     print("\n".join(format_rows(rows)))
+    page = Path(a.html or REPO_ROOT / "out" / f"finder_{who.lower().replace(' ', '_')}_{a.role}.html")
+    page.parent.mkdir(parents=True, exist_ok=True)
+    settings = [f"Template {a.template}; finalists {a.top}; emblems {a.emblems}; screen picks "
+                f"{' / '.join(map(str, a.picks))} at Lv6; breaks {'on' if a.breaks else 'off'}"
+                + (f"; excluded {', '.join(a.exclude)}" if a.exclude else "")]
+    page.write_text(render_html(rows, f"Team finder: {who} as {a.role}", settings), encoding="utf-8")
+    print(f"Wrote {page}")
+    if not a.no_open:
+        import webbrowser
+        webbrowser.open(page.resolve().as_uri())
     if a.out:
         Path(a.out).write_text(yaml.safe_dump([r.doc for r in rows if r.finalist and r.error is None],
                                               sort_keys=False, allow_unicode=True), encoding="utf-8")

@@ -128,13 +128,32 @@ def test_cancel_is_not_swallowed(gd):
                    exclude=["Ridge", "Sparkla"], progress=progress)
 
 
-def test_cli(gd, tmp_path, capsys):
+def test_names_ignore_case(gd):
+    docs = team_docs(gd, TEMPLATE, "nazuna", "main", exclude=["ridge", "SPARKLA"])
+    assert len(docs) == 3 and all(d["members"][0]["trekker"] == "Nazuna" for d in docs)
+    assert {m["trekker"] for d in docs for m in d["members"]} == {"Nazuna", "Gerie", "Springseek Coronis", "Leafia"}
+
+
+def test_cli_writes_a_page(gd, tmp_path, capsys):
     tpl = tmp_path / "tpl.yaml"
     tpl.write_text(yaml.safe_dump(FAST))
-    out = tmp_path / "out.yaml"
-    finder.main(["Nazuna", "--template", str(tpl), "--top", "1", "--emblems", "none", "--picks", "1,0,0",
-                 "--exclude", "Ridge", "Sparkla", "Springseek Coronis", "-o", str(out)])
-    text = capsys.readouterr().out
-    assert "Nazuna / Gerie / Leafia" in text and "100.00%" in text
+    out, page = tmp_path / "out.yaml", tmp_path / "finder.html"
+    finder.main(["nazuna", "--template", str(tpl), "--role", "Main", "--top", "1", "--emblems", "None",
+                 "--picks", "1,0,0", "--exclude", "ridge", "sparkla", "springseek coronis", "-o", str(out),
+                 "--html", str(page), "--no-open"])
+    html = page.read_text()
+    assert html.startswith("<!doctype html>") and "<title>" in html
+    assert "excluded Ridge, Sparkla, Springseek Coronis" in html
+    assert "Nazuna" in html and "Gerie" in html and "100.00%" in html and "Optimized" in html and "Screened" in html
+    assert str(page) in capsys.readouterr().out
     docs = yaml.safe_load(out.read_text())
     assert len(docs) == 1 and team_from_doc(gd, docs[0]).members[0].pinks
+
+
+def test_page_escapes_and_lists_errors():
+    rows = [finder.FinderRow(["A", "B", "C"], [["p", "q"], ["r", "s"], ["t", "u"]], 10.0, 20.0, True, "greedy",
+                             {"members": [{"trekker": "A", "targets": {"X": 6}, "emblems": []}] * 3}),
+            finder.FinderRow(["A", "<b>", "C"], [[], [], []], None, error="RuntimeError: <kaput>")]
+    html = finder.render_html(rows, title="T", settings=["s"])
+    assert "&lt;kaput&gt;" in html and "<kaput>" not in html and "&lt;b&gt;" in html
+    assert "X Lv6" in html   # finalist build listed

@@ -118,6 +118,7 @@ def _finder_job(gd: GameData, body: dict, breaks: bool):
     if not isinstance(top, int) or isinstance(top, bool) or top < 1:
         raise ApiError(400, "top must be a whole number of at least 1")
     emblems = body.get("emblems", "purple")
+    emblems = emblems.strip().lower() if isinstance(emblems, str) else emblems
     if emblems != "none" and emblems not in COLOUR_RANK:
         raise ApiError(400, f"emblems must be none or one of {', '.join(COLOUR_RANK)}")
     tmpl = {k: v for k, v in doc.items() if k != "members"}
