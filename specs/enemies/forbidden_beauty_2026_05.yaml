@@ -1,0 +1,14 @@
+# Boss Blitz, ScoreBossControl 7 (2026-05-01..2026-06-01), ScoreBossLevel 17.
+label: "Forbidden Beauty (Boss Blitz 2026-05, Ventus)"
+season: "2026-05"
+monster: 6310150 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100014 "Skillful Refinement"
+  # Every Value1 s a support is on the battlefield: 1 Build-Up on that support and on the main (the main keeps one
+  # count per support). Supports never auto attack, so they only get the Skill DMG half.
+  # Approximation: a support's own stacks come from either support's field time (on_field_1s:support).
+  - { stat: 57, value: { ref: "EffectValue,NoLevel,631014001,EffectTypeParam1,HdPct" }, target: support, event: "on_field_1s:support", every: { ref: "ScoreBossAbility,NoLevel,100014,Value1,Fixed" }, duration: { ref: "BuffValue,NoLevel,631014001,Time,10K" }, max_stacks: { ref: "BuffValue,NoLevel,631014001,LaminatedNum,Fixed" } }
+  - { stat: 57, value: { ref: "EffectValue,NoLevel,631014001,EffectTypeParam1,HdPct" }, target: main, event: "on_field_1s:1", every: { ref: "ScoreBossAbility,NoLevel,100014,Value1,Fixed" }, duration: { ref: "BuffValue,NoLevel,631014001,Time,10K" }, max_stacks: { ref: "BuffValue,NoLevel,631014001,LaminatedNum,Fixed" } }
+  - { stat: 56, value: { ref: "EffectValue,NoLevel,631014011,EffectTypeParam1,HdPct" }, target: main, event: "on_field_1s:1", every: { ref: "ScoreBossAbility,NoLevel,100014,Value1,Fixed" }, duration: { ref: "BuffValue,NoLevel,631014001,Time,10K" }, max_stacks: { ref: "BuffValue,NoLevel,631014001,LaminatedNum,Fixed" } }
+  - { stat: 57, value: { ref: "EffectValue,NoLevel,631014001,EffectTypeParam1,HdPct" }, target: main, event: "on_field_1s:2", every: { ref: "ScoreBossAbility,NoLevel,100014,Value1,Fixed" }, duration: { ref: "BuffValue,NoLevel,631014001,Time,10K" }, max_stacks: { ref: "BuffValue,NoLevel,631014001,LaminatedNum,Fixed" } }
+  - { stat: 56, value: { ref: "EffectValue,NoLevel,631014011,EffectTypeParam1,HdPct" }, target: main, event: "on_field_1s:2", every: { ref: "ScoreBossAbility,NoLevel,100014,Value1,Fixed" }, duration: { ref: "BuffValue,NoLevel,631014001,Time,10K" }, max_stacks: { ref: "BuffValue,NoLevel,631014001,LaminatedNum,Fixed" } }

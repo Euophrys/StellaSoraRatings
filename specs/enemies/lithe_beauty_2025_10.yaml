@@ -1,0 +1,7 @@
+# Boss Blitz, ScoreBossControl 1 (2025-10-20..2025-11-30), ScoreBossLevel 2.
+label: "Lithe Beauty (Boss Blitz 2025-10, Ventus)"
+season: "2025-10"
+monster: 6310030 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+# No boss ability this season. The data has no resilience bar for this boss.
+ability: []

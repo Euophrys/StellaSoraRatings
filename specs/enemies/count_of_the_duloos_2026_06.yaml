@@ -1,0 +1,13 @@
+# Boss Blitz, ScoreBossControl 8 (2026-06-01..2026-07-01), ScoreBossLevel 18.
+label: "Count of the Duloos (Boss Blitz 2026-06, Umbra)"
+season: "2026-06"
+monster: 6310160 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100015 "The Count's Majesty"
+  # Resistance: 1 stack at the start, +1 every 5 s, each DMG Taken -Value1, up to Value2. The main triggering a
+  # Mark removes one stack, and every support on the battlefield gains Amplification: DMG +Value3, up to Value4
+  # stacks, 20 s (both 5 s and 20 s only in the text).
+  # Approximation: a main Mark clears ALL Resistance stacks (the engine can't remove one), so a team whose main
+  # triggers Marks less often than every 5 s is treated too kindly.
+  - { stat: 53, value: { ref: "ScoreBossAbility,NoLevel,100015,Value1,Pct" }, times: -0.01, target: enemy, event: "timer:5", max_stacks: { ref: "ScoreBossAbility,NoLevel,100015,Value2,Fixed" }, duration: inf, reset_on: ["mark:main"] }
+  - { stat: 50, value: { ref: "ScoreBossAbility,NoLevel,100015,Value3,Pct" }, times: 0.01, target: support, event: "mark:main&while:on_field:support", max_stacks: { ref: "ScoreBossAbility,NoLevel,100015,Value4,Fixed" }, duration: 20 }

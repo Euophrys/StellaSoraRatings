@@ -1,0 +1,11 @@
+# Boss Blitz, ScoreBossControl 11 (2026-09-01..2026-10-01), ScoreBossLevel 24.
+label: "Furious Stomper Crab (Boss Blitz 2026-09, Ignis)"
+season: "2026-09"
+monster: 6310220 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100022 "Shell-Breaking Pursuit"
+  # Support Ultimate DMG: Ultimate DMG Taken up; support Auto Attack DMG: Skill DMG Taken up (stacks; data subtype
+  # 53, the text names the types). Supports never auto attack in the sim, so the second half only fires for support
+  # hits whose damage type is Auto.
+  - { stat: 62, value: { ref: "EffectValue,NoLevel,631021032,EffectTypeParam1,HdPct" }, target: enemy, event: "hit:support:ult_dmg", duration: { ref: "BuffValue,NoLevel,631021040,Time,10K" }, max_stacks: { ref: "BuffValue,NoLevel,631021040,LaminatedNum,Fixed" } }
+  - { stat: 61, value: { ref: "EffectValue,NoLevel,631021031,EffectTypeParam1,HdPct" }, target: enemy, event: "hit:support:auto_dmg", duration: { ref: "BuffValue,NoLevel,631021030,Time,10K" }, max_stacks: { ref: "BuffValue,NoLevel,631021030,LaminatedNum,Fixed" } }

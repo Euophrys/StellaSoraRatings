@@ -30,7 +30,44 @@ TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: neve
 
 
 def test_preset_names():
-    assert preset_names() == ["generic", "count_of_the_duloos", "lithe_beauty"]
+    names = preset_names()
+    assert names[:3] == ["generic", "count_of_the_duloos", "lithe_beauty"]   # then older seasons, newest first
+    assert names[3:5] == ["abyssal_sea_sovereign_2026_10", "furious_stomper_crab_2026_10"]
+    assert names[-1] == "lithe_beauty_2025_10" and len(names) == len(set(names))
+
+
+def test_every_boss_blitz_level_has_a_preset(gd):
+    """Each level a ScoreBossControl season uses has a preset on its monster (a new season fails this)."""
+    import yaml
+    from ssr.enemies import ENEMY_SPECS
+    have = {yaml.safe_load(open(ENEMY_SPECS / f"{n}.yaml")).get("monster") for n in preset_names()}
+    levels = gd.table("ScoreBossLevel")
+    want = {levels[str(l)]["MonsterId"] for c in gd.table("ScoreBossControl").values() for l in c["LevelGroup"]}
+    assert want - have == set()
+
+
+@pytest.mark.parametrize("name", preset_names())
+def test_every_preset_loads(gd, name):
+    e = enemy_from_doc(gd, {"preset": name})
+    assert e.defense > 0 and e.res > 0
+    for m in e.ability:
+        assert m.value != 0
+
+
+def test_preset_without_toughness_has_no_bar(gd):
+    assert monster_values(gd, 6310030)["resilience"] == 0   # the first Boss Blitz's Lithe Beauty
+    assert enemy_from_doc(gd, {"preset": "lithe_beauty_2025_10"}).resilience == 0
+
+
+def test_score_boss_pct_values_are_fractions(gd):
+    e = enemy_from_doc(gd, {"preset": "count_of_the_duloos_2026_03"})   # Baron Stance: 30 / 65 (%) in data
+    assert sorted(round(m.value, 4) for m in e.ability) == [-0.3, -0.3, 0.65, 0.65]
+    assert [m.name for m in e.ability if m.name] == ["warrior"]
+
+
+def test_times_list_multiplies(gd):
+    e = enemy_from_doc(gd, {"preset": "lithe_beauty_2026_08"})   # DEF PEN 50, x60% with a support on the field
+    assert sorted(m.value for m in e.ability if m.stat == 2) == [pytest.approx(-50), pytest.approx(-30)]
 
 
 def test_lithe_beauty_preset(gd):

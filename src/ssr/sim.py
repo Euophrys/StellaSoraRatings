@@ -933,6 +933,11 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         last[0], last[1] = sig, s
         return s
 
+    # Enemy-side hit tags: an enemy modifier with `hit_tags: [by_support]` (or by_main, or a damage bucket such as
+    # minion_dmg) only applies to hits by those members / of that bucket ("Skill DMG taken from Support Trekkers").
+    # Added to the enemy lookup only when some enemy modifier asks, so other fights plan exactly as before.
+    enemy_tags = any("enemy" in md.receivers and any(
+        tg in ("by_main", "by_support") or tg.endswith("_dmg") for tg in md.mod.hit_tags) for md in mods)
     energy_used: dict = defaultdict(float)
     dmg_memo: dict = {}   # (hit id, level) -> (attacker sheet, enemy sheet, damage before the hit's own multiplier)
     has_charge_mods = any(md.mod.stat == CHARGE_EFF for md in mods)
@@ -961,7 +966,8 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         slot = slot_of(hd)
         minion = slot == "minion"
         attacker = stat_for(m.minion_static if minion else m.static, mi, tags_key, t, minion)
-        taken = stat_for(enemy_static, "enemy", tags_key, t)
+        taken = stat_for(enemy_static, "enemy", (tags_key + ("by_main" if mi == 0 else "by_support", f"{slot}_dmg"))
+                         if enemy_tags else tags_key, t)
         # stat_for hands back the same sheets while no buff changed, and the hit's damage only depends on them.
         # Tests observe hits by patching `hit_damage`: a patched one is called for every hit.
         memo = dmg_memo.get((h.hit_id, lv)) if hit_damage is _HIT_DAMAGE else None

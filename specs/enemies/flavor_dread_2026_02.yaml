@@ -1,0 +1,8 @@
+# Boss Blitz, ScoreBossControl 4 (2026-02-01..2026-03-01), ScoreBossLevel 8.
+label: "Flavor Dread (Boss Blitz 2026-02, Lux)"
+season: "2026-02"
+monster: 6310080 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: [] # ScoreBossAbility 100007 "Momentum"
+  # Momentum: boss DMG +Value1 (defensive); per player minion on the field (up to 3, lingering Value4 s) the boss
+  # deals less DMG and takes +Value3 VUL. NOT modelled: the engine has no squad-wide minion count.

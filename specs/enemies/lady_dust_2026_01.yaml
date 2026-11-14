@@ -1,0 +1,11 @@
+# Boss Blitz, ScoreBossControl 3 (2026-01-01..2026-02-01), ScoreBossLevel 6.
+label: "Lady Dust (Boss Blitz 2026-01, Aqua)"
+season: "2026-01"
+monster: 6310110 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100005 "Reality Shift"
+  # Alternates Illusion / Reality form every 15 s. GUESS: Illusion first.
+  # Illusion: Skill DMG Taken +Value3. Reality: Minion DMG Taken +Value1.
+  # Not modelled: Marks (Reality) and Minion DMG (Illusion) extending the current form by Value2/Value4 s (1/s).
+  - { stat: 61, value: { ref: "ScoreBossAbility,NoLevel,100005,Value3,Pct" }, times: 0.01, target: enemy, name: illusion, event: "timer:30", duration: 15 }
+  - { stat: 53, value: { ref: "ScoreBossAbility,NoLevel,100005,Value1,Pct" }, times: 0.01, target: enemy, hit_tags: [minion_dmg], event: "while:not:status:illusion" }

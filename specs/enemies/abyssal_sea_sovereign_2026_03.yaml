@@ -1,0 +1,13 @@
+# Boss Blitz, ScoreBossControl 5 (2026-03-01..2026-04-01), ScoreBossLevel 11.
+label: "Abyssal Sea Sovereign (Boss Blitz 2026-03, Umbra)"
+season: "2026-03"
+monster: 6310100 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100010 "Aqua Ring"
+  # Water Ring (boss DMG +Value1, AoE): defensive. Value2 hits within 5 s disable it for Value3 s. While disabled:
+  # Value4 support hits within 5 s: Auto Attack DMG Taken +Param5; Value6 main hits within 5 s: Skill DMG Taken
+  # from Support Trekkers +Param7.
+  # Approximation: the Ring counts as always disabled (Value2 hits in 5 s is easy); every Value4-th / Value6-th hit,
+  # "within 5 s" isn't checked. GUESS: each lasts until the Ring returns (Value3 s).
+  - { stat: 60, value: { ref: "EffectValue,NoLevel,631001002,EffectTypeParam1,HdPct" }, target: enemy, event: "damage:support", every: { ref: "ScoreBossAbility,NoLevel,100010,Value4,Fixed" }, duration: { ref: "ScoreBossAbility,NoLevel,100010,Value3,Fixed" } }
+  - { stat: 61, value: { ref: "EffectValue,NoLevel,631001003,EffectTypeParam1,HdPct" }, target: enemy, hit_tags: [by_support], event: "damage:main", every: { ref: "ScoreBossAbility,NoLevel,100010,Value6,Fixed" }, duration: { ref: "ScoreBossAbility,NoLevel,100010,Value3,Fixed" } }

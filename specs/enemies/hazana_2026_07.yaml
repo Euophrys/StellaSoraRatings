@@ -1,0 +1,16 @@
+# Boss Blitz, ScoreBossControl 9 (2026-07-01..2026-08-01), ScoreBossLevel 21.
+label: "Hazana (Boss Blitz 2026-07, Umbra)"
+season: "2026-07"
+monster: 6310190 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100018 "Fatigue on Hit"
+  # The boss has Value1 DMG RES against Auto / Skill / Mark DMG. Every Value2 main hits of a type: that RES -Value3,
+  # down to 0; after that each trigger is +Value4 DMG Taken of that type, up to +Value5.
+  # Modelled as Value1 off that type's DMG Taken plus +Value3 per trigger, 12 stacks (Value1/Value3 + Value5/Value4).
+  # Assumption: the RES adds into the DMG Taken bucket.
+  - { stat: 60, value: { ref: "ScoreBossAbility,NoLevel,100018,Value1,Pct" }, times: -0.01, target: enemy }
+  - { stat: 61, value: { ref: "ScoreBossAbility,NoLevel,100018,Value1,Pct" }, times: -0.01, target: enemy }
+  - { stat: 65, value: { ref: "ScoreBossAbility,NoLevel,100018,Value1,Pct" }, times: -0.01, target: enemy }
+  - { stat: 60, value: { ref: "ScoreBossAbility,NoLevel,100018,Value3,Pct" }, times: 0.01, target: enemy, event: "hit:main:auto_dmg", every: { ref: "ScoreBossAbility,NoLevel,100018,Value2,Fixed" }, max_stacks: 12, duration: inf }
+  - { stat: 61, value: { ref: "ScoreBossAbility,NoLevel,100018,Value3,Pct" }, times: 0.01, target: enemy, event: "hit:main:skill_dmg", every: { ref: "ScoreBossAbility,NoLevel,100018,Value2,Fixed" }, max_stacks: 12, duration: inf }
+  - { stat: 65, value: { ref: "ScoreBossAbility,NoLevel,100018,Value3,Pct" }, times: 0.01, target: enemy, event: "hit:main:mark_dmg", every: { ref: "ScoreBossAbility,NoLevel,100018,Value2,Fixed" }, max_stacks: 12, duration: inf }

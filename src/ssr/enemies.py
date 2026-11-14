@@ -19,13 +19,12 @@ def monster_values(gd: GameData, monster_id: int) -> dict:
     Chain: Monster.Templete -> MonsterValueTempleteAdjust -> MonsterValueTemplete (same TemplateId)."""
     m = gd.table("Monster")[str(monster_id)]
     adj = gd.table("MonsterValueTempleteAdjust")[str(m["Templete"])]
-    rows = [r for r in gd.table("MonsterValueTemplete").values()
-            if r.get("TemplateId") == adj["TemplateId"] and r.get("Toughness")]
+    rows = [r for r in gd.table("MonsterValueTemplete").values() if r.get("TemplateId") == adj["TemplateId"]]
     if not rows:
-        raise KeyError(f"monster {monster_id}: no MonsterValueTemplete row with Toughness")
-    v = rows[0]
+        raise KeyError(f"monster {monster_id}: no MonsterValueTemplete row")
+    v = next((r for r in rows if r.get("Toughness")), rows[0])   # no Toughness: no bar (the first Boss Blitz)
     return dict(
-        resilience=v["Toughness"] * (1 + adj.get("ToughnessRatio", 0) / 10000),
+        resilience=v.get("Toughness", 0) * (1 + adj.get("ToughnessRatio", 0) / 10000),
         break_time=m.get("ToughnessBrokenTime", 0) / 10000,
         refill=bool(m.get("IsToughnessRecorver", False)),
         defense=float(v.get("Def", 0)),
@@ -52,9 +51,20 @@ def _res_by_element(e: dict) -> dict[int, float]:
     return {el: neutral for el in range(1, 7) if el not in ids}
 
 
+@lru_cache(maxsize=None)
+def _preset_list() -> tuple[str, ...]:
+    """generic first, then the Boss Blitz presets newest season first (a file's `season:`), by name within one."""
+    seasons = {}
+    for p in ENEMY_SPECS.glob("*.yaml"):
+        with open(p, encoding="utf-8") as f:
+            seasons[p.stem] = str((yaml.safe_load(f) or {}).get("season", ""))
+    rest = sorted((n for n in seasons if n != "generic"), key=lambda n: n)
+    rest.sort(key=lambda n: seasons[n], reverse=True)
+    return ("generic", *rest)
+
+
 def preset_names() -> list[str]:
-    names = sorted(p.stem for p in ENEMY_SPECS.glob("*.yaml"))
-    return ["generic"] + [n for n in names if n != "generic"]
+    return list(_preset_list())
 
 
 @lru_cache(maxsize=None)
@@ -67,7 +77,16 @@ def _preset_doc(name: str) -> dict:
 
 
 def _resolve_refs(gd: GameData, entry: dict) -> dict:
-    return {k: (value(gd, v, 1) if isinstance(v, dict) and "ref" in v else v) for k, v in entry.items()}
+    """{ref} values resolved; `times` may be a list of factors (numbers or {ref}), multiplied together."""
+    def one(v):
+        return value(gd, v, 1) if isinstance(v, dict) and "ref" in v else v
+    out = {k: one(v) for k, v in entry.items()}
+    if isinstance(out.get("times"), list):
+        prod = 1.0
+        for f in out["times"]:
+            prod *= float(one(f))
+        out["times"] = prod
+    return out
 
 
 def _preset(gd: GameData, name: str) -> dict:

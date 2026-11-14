@@ -1,0 +1,10 @@
+# Boss Blitz, ScoreBossControl 6 (2026-04-01..2026-05-01), ScoreBossLevel 14.
+label: "Hazana (Boss Blitz 2026-04, Terra)"
+season: "2026-04"
+monster: 6310130 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100011 "Resonance of Power"
+  # Every Value1 main skill cast(s): support Skill DMG +Value2 for Value3 s. Every Value4 support hits: main Skill
+  # DMG +Value5 for Value6 s. Re-triggering refreshes; no stacking.
+  - { stat: 57, value: { ref: "ScoreBossAbility,NoLevel,100011,Value2,Pct" }, times: 0.01, target: support, event: "cast:main:skill", every: { ref: "ScoreBossAbility,NoLevel,100011,Value1,Fixed" }, duration: { ref: "ScoreBossAbility,NoLevel,100011,Value3,Fixed" } }
+  - { stat: 57, value: { ref: "ScoreBossAbility,NoLevel,100011,Value5,Pct" }, times: 0.01, target: main, event: "damage:support", every: { ref: "ScoreBossAbility,NoLevel,100011,Value4,Fixed" }, duration: { ref: "ScoreBossAbility,NoLevel,100011,Value6,Fixed" } }

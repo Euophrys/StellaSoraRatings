@@ -1,0 +1,10 @@
+# Boss Blitz, ScoreBossControl 4 (2026-02-01..2026-03-01), ScoreBossLevel 9.
+label: "Blade of Jade (Boss Blitz 2026-02, Ventus)"
+season: "2026-02"
+monster: 6310070 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100008 "Focus"
+  # Focus stacks (boss DMG) are defensive. Triggering a Mark Value4 times within Value3 s: for Value5 s the boss
+  # takes +Value6 DMG from Support Skills, at most once every Value7 s.
+  # Approximation: every Value4-th Mark, "within Value3 s" isn't checked.
+  - { stat: 61, value: { ref: "ScoreBossAbility,NoLevel,100008,Value6,Pct" }, times: 0.01, target: enemy, hit_tags: [by_support], event: "mark:any", every: { ref: "ScoreBossAbility,NoLevel,100008,Value4,Fixed" }, duration: { ref: "ScoreBossAbility,NoLevel,100008,Value5,Fixed" }, icd: { ref: "ScoreBossAbility,NoLevel,100008,Value7,Fixed" } }

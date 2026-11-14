@@ -272,7 +272,7 @@ def test_rejects_foreign_host_and_non_json_posts(client):
 def test_catalog_lists_enemies(gd):
     from ssr.web.catalog import catalog
     ids = [e["id"] for e in catalog(gd)["enemies"]]
-    assert ids == ["generic", "count_of_the_duloos", "lithe_beauty"]
+    assert ids[:3] == ["generic", "count_of_the_duloos", "lithe_beauty"] and "lithe_beauty_2026_08" in ids
 
 
 def test_team_doc_with_preset(gd):

@@ -1,0 +1,9 @@
+# Boss Blitz, ScoreBossControl 9 (2026-07-01..2026-08-01), ScoreBossLevel 20.
+label: "Flavor Dread (Boss Blitz 2026-07, Ventus)"
+season: "2026-07"
+monster: 6310180 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100017 "Fight Fire with Fire"
+  # Fire Ring (DoT on the main): defensive. Every Value1 Marks the main triggers: squad Skill DMG +Value2 for
+  # Value3 s, and it can't trigger again meanwhile (icd).
+  - { stat: 57, value: { ref: "ScoreBossAbility,NoLevel,100017,Value2,Pct" }, times: 0.01, target: team, event: "mark:main", every: { ref: "ScoreBossAbility,NoLevel,100017,Value1,Fixed" }, duration: { ref: "ScoreBossAbility,NoLevel,100017,Value3,Fixed" }, icd: { ref: "ScoreBossAbility,NoLevel,100017,Value3,Fixed" } }

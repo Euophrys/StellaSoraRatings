@@ -1,0 +1,10 @@
+# Boss Blitz, ScoreBossControl 7 (2026-05-01..2026-06-01), ScoreBossLevel 16.
+label: "Evernight Emberflies (Boss Blitz 2026-05, Terra)"
+season: "2026-05"
+monster: 6310140 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100013 "Call Down the Thunder"
+  # Thunderbolt (boss DMG +Param4, AoE): defensive. Mark DMG Value2 times within Value1 s disables it for 15 s,
+  # and meanwhile Skill DMG Taken is up (data subtype 53; the text says Skill DMG Taken).
+  # Approximation: every Value2-th Mark DMG hit, "within Value1 s" isn't checked.
+  - { stat: 61, value: { ref: "EffectValue,NoLevel,631013002,EffectTypeParam1,HdPct" }, target: enemy, event: "hit:any:mark_dmg", every: { ref: "ScoreBossAbility,NoLevel,100013,Value2,Fixed" }, duration: { ref: "BuffValue,NoLevel,631013002,Time,10K" } }

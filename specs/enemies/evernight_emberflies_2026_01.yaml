@@ -1,0 +1,10 @@
+# Boss Blitz, ScoreBossControl 3 (2026-01-01..2026-02-01), ScoreBossLevel 7.
+label: "Evernight Emberflies (Boss Blitz 2026-01, Terra)"
+season: "2026-01"
+monster: 6310060 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100006 "Call Down the Thunder"
+  # Thunderbolt (boss DMG +Param4, AoE): defensive. Support Skill DMG Value2 times within Value1 s disables it for
+  # 15 s, and meanwhile the boss takes more Skill DMG from Support Trekkers.
+  # Approximation: every Value2-th support Skill DMG hit, "within Value1 s" isn't checked.
+  - { stat: 61, value: { ref: "EffectValue,NoLevel,631007002,EffectTypeParam1,HdPct" }, target: enemy, hit_tags: [by_support], event: "hit:support:skill_dmg", every: { ref: "ScoreBossAbility,NoLevel,100006,Value2,Fixed" }, duration: { ref: "BuffValue,NoLevel,631007002,Time,10K" } }

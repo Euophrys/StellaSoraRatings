@@ -1,0 +1,13 @@
+# Boss Blitz, ScoreBossControl 5 (2026-03-01..2026-04-01), ScoreBossLevel 10.
+label: "Count of the Duloos (Boss Blitz 2026-03, Lux)"
+season: "2026-03"
+monster: 6310090 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100009 "Baron Stance"
+  # Alternates Warrior / Honeypot form every Value1 s (timer:60 = 2 x Value1). GUESS: Warrior first.
+  # Warrior: Ultimate DMG Taken -Value2, Auto Attack DMG Taken +Value3. Honeypot: Mark DMG Taken -Value4, Skill DMG
+  # Taken +Value5. Not modelled: a switch clears the boss's debuffs; breaks pause the form timer.
+  - { stat: 62, value: { ref: "ScoreBossAbility,NoLevel,100009,Value2,Pct" }, times: -0.01, target: enemy, name: warrior, event: "timer:60", duration: { ref: "ScoreBossAbility,NoLevel,100009,Value1,Fixed" } }
+  - { stat: 60, value: { ref: "ScoreBossAbility,NoLevel,100009,Value3,Pct" }, times: 0.01, target: enemy, event: "timer:60", duration: { ref: "ScoreBossAbility,NoLevel,100009,Value1,Fixed" } }
+  - { stat: 65, value: { ref: "ScoreBossAbility,NoLevel,100009,Value4,Pct" }, times: -0.01, target: enemy, event: "while:not:status:warrior" }
+  - { stat: 61, value: { ref: "ScoreBossAbility,NoLevel,100009,Value5,Pct" }, times: 0.01, target: enemy, event: "while:not:status:warrior" }

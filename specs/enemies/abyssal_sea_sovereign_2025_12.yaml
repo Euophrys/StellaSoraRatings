@@ -1,0 +1,9 @@
+# Boss Blitz, ScoreBossControl 2 (2025-12-02..2026-01-01), ScoreBossLevel 5.
+label: "Abyssal Sea Sovereign (Boss Blitz 2025-12, Umbra)"
+season: "2025-12"
+monster: 6310040 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100004 "Devouring Dark Ring"
+  # Dark Ring (boss DMG +Value1, AoE): defensive. 20 hits within 3 s disable it for 15 s, and meanwhile the boss
+  # takes +Value2 Skill DMG from Support Trekkers. Approximation: every 20th hit, "within 3 s" isn't checked.
+  - { stat: 61, value: { ref: "ScoreBossAbility,NoLevel,100004,Value2,Pct" }, times: 0.01, target: enemy, hit_tags: [by_support], event: "damage:any", every: 20, duration: 15 }

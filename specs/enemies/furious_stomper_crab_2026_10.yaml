@@ -1,0 +1,9 @@
+# Boss Blitz, ScoreBossControl 12 (2026-10-01..2026-11-01), ScoreBossLevel 26.
+label: "Furious Stomper Crab (Boss Blitz 2026-10, Terra)"
+season: "2026-10"
+monster: 6310260 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100023 "Shattered Aftershock"
+  # The main casts an Ultimate: Skill DMG Taken and Mark DMG Taken up (data subtype 53; the text names the types).
+  - { stat: 61, value: { ref: "EffectValue,NoLevel,631025040,EffectTypeParam1,HdPct" }, target: enemy, event: "cast:main:ult", duration: { ref: "BuffValue,NoLevel,631025040,Time,10K" } }
+  - { stat: 65, value: { ref: "EffectValue,NoLevel,631025050,EffectTypeParam1,HdPct" }, target: enemy, event: "cast:main:ult", duration: { ref: "BuffValue,NoLevel,631025050,Time,10K" } }

@@ -134,6 +134,21 @@ Spec: `docs/superpowers/specs/2026-11-03-resilience-break-design.md`. Validation
 - **EAT 42 ("Resilience")** lines are the Trekker's own superarmor: not modelled.
 - **The web page rates without breaks by default** (user, 2026-11-07; potential grid, emblem tables, pink search and optimizer, not the team total): any damage gain moves the break windows, which can make a plain ATK buff look negative. A no-break fight has `while:broken` off, so break-only lines (Decisive Strike's second line, the "while broken" potentials) and Resilience Break Efficiency are worth nothing in those numbers, while `while:not:broken` lines are always on. "Include breaks" on the page turns breaks back on.
 
+## Every Boss Blitz boss as a preset (2026-11-14)
+
+All 26 levels the 13 `ScoreBossControl` seasons use have a preset (`specs/enemies/<boss>_<yyyy>_<mm>.yaml`; the current season keeps `lithe_beauty` / `count_of_the_duloos`). Names come from `Monster.FAId` → `MonsterSkin.MonsterManual` → `MonsterManual.Name`. `tests/test_enemies.py::test_every_boss_blitz_level_has_a_preset` fails when a patch adds a season.
+
+- **Data:** resilience, DEF, RES per element and break time from the monster, as for the first two. The first season's Lithe Beauty (6310030) has no `Toughness` row: no bar. Fight length 180 s for all (not in the tables).
+- **Ability values** come from `ScoreBossAbility` / `EffectValue` / `BuffValue` refs. `ScoreBossAbility` "Pct" values are whole percents (30 = 30%), so those entries carry `times: 0.01`. Where the effect's data subtype is 53 (DMG Taken) but the text names a type, the text wins (as before).
+- **"N times within X s"** triggers are approximated as every Nth event (`every`), without the time window. That overrates teams that can't hit that rate in a burst: Devouring Dark Ring (20 hits / 3 s), Call Down the Thunder (20 support Skill hits / 5 s, 3 Mark DMG / 5 s), Focus (2 Marks / 6 s), Aqua Ring, Pyro Blight (3 Marks / 5 s), Blood Pact (3 Mark DMG / 5 s).
+- **Alternating forms** (Reality Shift 15 s, Baron Stance 30 s) start with the form the text names first (GUESS: Illusion, Warrior). Not modelled: Reality Shift's form extensions, Baron Stance clearing debuffs at a switch and pausing during breaks.
+- **Fervent Combat:** at most one Frenzy removal per 5 s (icd); the +20 Energy per removal is not modelled (undervalues it).
+- **The Count's Majesty:** a main Mark clears all Resistance stacks instead of one, so mains that trigger Marks less than once per 5 s are treated too kindly.
+- **Fatigue on Hit:** the 80% DMG RES is a −80% in that type's DMG Taken; each 6 main hits of the type give +10%, 12 steps (to +40%).
+- **Armor-Piercing Wedge:** DEF PEN 50 is an enemy DEF reduction (effective DEF = DEF − DEF PEN, `2.def.c`). GUESS: the "+60% with a support on the battlefield" scales the 50 (to 80), rather than being 60% Ignore DEF.
+- **Build-Up** (Skillful Refinement, Tailor-Made): a support's own stacks count either support's field time; the main keeps one count per support, as the text says.
+- **Not modelled:** Momentum (VUL per player minion on the field: no squad-wide minion count) and Stormy Zeal's trigger (Wind Puffs are the boss's adds), which uses the assumed `unknown_trigger_uptime`. Boss DMG boosts and the squad's DMG Taken are defensive.
+
 ## Disc pass: every disc specced (2026-11-04)
 
 - **Dodges** (user): the main dodges once every `dodge_interval` s on average (team assumption, default 10; event `dodge:main`). A dodge needs control: one due during a skill/ult lock (no control, but immune) waits for the lock to end. The schedule keeps its average rate, because the 10 s came from a real fight with locks included. Two dodges are at least 1 s apart (`DODGE_CD`, the dodge cooldown; user corrected 3 s -> 1 s). Each dodge costs 10 frames of attacking (`dodge_time` 0.333 s, pauses the auto string). Fewer auto hits also mean less energy, so ults come later, the supports' too. Zesty Curiosity and every kit dodge potential use it (Decisive Moment, Starlit Dash, Waltz of Ripples, Hunt is On, Swiftstep; Tremble and Fall's instant last strike after a dodge).

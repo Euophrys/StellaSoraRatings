@@ -1,0 +1,10 @@
+# Boss Blitz, ScoreBossControl 8 (2026-06-01..2026-07-01), ScoreBossLevel 19.
+label: "Lady Dust (Boss Blitz 2026-06, Aqua)"
+season: "2026-06"
+monster: 6310170 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100016 "Stormy Zeal"
+  # Every Value1 Wind Puffs (the boss's adds) destroyed: squad Skill DMG +Param2 for Param3 s, extended by Value4 s
+  # per main skill cast (max Value5 s). How often Puffs are destroyed isn't modelled: assumed uptime
+  # (unknown_trigger_uptime, listed as assumed).
+  - { stat: 57, value: { ref: "EffectValue,NoLevel,631016011,EffectTypeParam1,HdPct" }, target: team, event: unknown }

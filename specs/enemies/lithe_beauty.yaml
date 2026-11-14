@@ -1,5 +1,6 @@
 # Boss Blitz, ScoreBossControl 13 (2026-11-01..12-01), ScoreBossLevel 29.
-label: "Lithe Beauty (Boss Blitz)"
+label: "Lithe Beauty (Boss Blitz 2026-11, Ignis)"
+season: "2026-11"
 monster: 6310280 # data: resilience, break time, DEF, RES per element
 fight_length: 180
 ability: # ScoreBossAbility 100026 "Withered Blossom Unveiled"; disc-spec entry syntax, values may be {ref}

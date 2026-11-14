@@ -235,7 +235,8 @@ Minion hits (HitDamage DamageType 7) take the summoner's stat sheet (base stats,
 A team file picks one with `enemy: {preset: <id>}` (default `generic`); the build page has a dropdown. All keys are optional; a key the preset file sets wins over the `monster` data.
 
 ```yaml
-label: "Lithe Beauty (Boss Blitz)"
+label: "Lithe Beauty (Boss Blitz 2026-11, Ignis)"
+season: "2026-11" # sorts the dropdown: generic, then newest season first
 monster: 6310280 # data: resilience (Toughness), break time, refill, DEF, RES per element
 fight_length: 180 # used when the team file has no fight_length
 res: 250 # instead of monster data (generic)
@@ -255,6 +256,8 @@ ability: # the boss's ability: disc-spec entry syntax; values may be {ref: ...}
       max_stacks: 4,
     }
 ```
+
+**Ability entries** are disc-spec entries (above), resolved with `{ref}`; `times` may also be a list of factors (`times: [{ref: ...}, -1]`). An enemy entry's `hit_tags` can name who dealt the hit or its damage bucket: `by_main`, `by_support`, or `<bucket>_dmg` (`skill_dmg`, `minion_dmg`, ...), e.g. "the boss takes +40% Skill DMG from Support Trekkers" is `{stat: 61, target: enemy, hit_tags: [by_support], ...}`. These tags exist only for enemy-side lookups.
 
 **Enemy DEF reductions:** a modifier with `stat: 2` (DEF) and `target: enemy` lowers the enemy's DEF: effective DEF = max(0, (DEF + flat) × (1 + %)), then defAmend = 1 − 40·DEF / (32·DEF + 24000) (`docs/reference/damage-formula/2.def.c`). Ridge's Corrosive Vines (−30 per stack, ×5) and Root Grasp (−151) are written this way; data often decodes such lines onto the owner, so set `target: enemy` in an override.
 

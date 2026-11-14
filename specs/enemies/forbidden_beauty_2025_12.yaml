@@ -1,0 +1,10 @@
+# Boss Blitz, ScoreBossControl 2 (2025-12-02..2026-01-01), ScoreBossLevel 4.
+label: "Forbidden Beauty (Boss Blitz 2025-12, Terra)"
+season: "2025-12"
+monster: 6310050 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100003 "Fervent Combat"
+  # The boss gains Battle Frenzy every 5 s (boss DMG, defensive). The main triggering a Mark removes a stack:
+  # boss Ultimate DMG Taken +Value2 for 10 s (refreshes, no stacking) and the squad restores 20 Energy.
+  # Approximation: one removal per 5 s at most (icd 5; banked stacks ignored). The 20 Energy is NOT modelled.
+  - { stat: 62, value: { ref: "ScoreBossAbility,NoLevel,100003,Value2,Pct" }, times: 0.01, target: enemy, event: "mark:main", icd: 5, duration: 10 }

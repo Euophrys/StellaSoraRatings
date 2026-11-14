@@ -1,0 +1,10 @@
+# Boss Blitz, ScoreBossControl 11 (2026-09-01..2026-10-01), ScoreBossLevel 25.
+label: "Forbidden Beauty (Boss Blitz 2026-09, Lux)"
+season: "2026-09"
+monster: 6310230 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100021 "Thinning Layers"
+  # Every Value3 Marks triggered (any Trekker): 1 Armor Break, Auto Attack DMG Taken +Param4 and Skill DMG Taken
+  # +Param5 per stack, up to Param6, permanent (data subtype 53; the text names the types).
+  - { stat: 60, value: { ref: "EffectValue,NoLevel,631021021,EffectTypeParam1,HdPct" }, target: enemy, event: "mark:any", every: { ref: "ScoreBossAbility,NoLevel,100021,Value3,Fixed" }, max_stacks: { ref: "BuffValue,NoLevel,631021020,LaminatedNum,Fixed" }, duration: inf }
+  - { stat: 61, value: { ref: "EffectValue,NoLevel,631021022,EffectTypeParam1,HdPct" }, target: enemy, event: "mark:any", every: { ref: "ScoreBossAbility,NoLevel,100021,Value3,Fixed" }, max_stacks: { ref: "BuffValue,NoLevel,631021020,LaminatedNum,Fixed" }, duration: inf }

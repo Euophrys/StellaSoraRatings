@@ -1,0 +1,12 @@
+# Boss Blitz, ScoreBossControl 12 (2026-10-01..2026-11-01), ScoreBossLevel 27.
+label: "Abyssal Sea Sovereign (Boss Blitz 2026-10, Umbra)"
+season: "2026-10"
+monster: 6310250 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100024 "Blood Pact"
+  # The main's Max HP +Param1 (matters for HP-scaling kits); the main's DMG Taken +Param2 is defensive.
+  # Mark DMG Value4 times within Value3 s: Skill and Auto ATK DMG Taken up for Param7 s.
+  # Approximation: every Value4-th Mark DMG hit, "within Value3 s" isn't checked.
+  - { stat: 3, pct: true, value: { ref: "EffectValue,NoLevel,631025010,EffectTypeParam1,HdPct" }, target: main, event: always }
+  - { stat: 61, value: { ref: "EffectValue,NoLevel,631025030,EffectTypeParam1,HdPct" }, target: enemy, event: "hit:any:mark_dmg", every: { ref: "ScoreBossAbility,NoLevel,100024,Value4,Fixed" }, duration: { ref: "BuffValue,NoLevel,631025030,Time,10K" } }
+  - { stat: 60, value: { ref: "EffectValue,NoLevel,631025031,EffectTypeParam1,HdPct" }, target: enemy, event: "hit:any:mark_dmg", every: { ref: "ScoreBossAbility,NoLevel,100024,Value4,Fixed" }, duration: { ref: "BuffValue,NoLevel,631025030,Time,10K" } }

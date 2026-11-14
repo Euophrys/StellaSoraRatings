@@ -1,0 +1,9 @@
+# Boss Blitz, ScoreBossControl 6 (2026-04-01..2026-05-01), ScoreBossLevel 15.
+label: "Lithe Beauty (Boss Blitz 2026-04, Ignis)"
+season: "2026-04"
+monster: 6310120 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100012 "Combo Break"
+  # Every Value7 Skill DMG hits: Ultimate DMG Taken up (stacks). Every Value8 Mark DMG hit(s): Skill DMG Taken up (stacks).
+  - { stat: 62, value: { ref: "EffectValue,NoLevel,631012010,EffectTypeParam1,HdPct" }, target: enemy, event: "hit:any:skill_dmg", every: { ref: "ScoreBossAbility,NoLevel,100012,Value7,Fixed" }, duration: { ref: "BuffValue,NoLevel,631012010,Time,10K" }, max_stacks: { ref: "BuffValue,NoLevel,631012010,LaminatedNum,Fixed" } }
+  - { stat: 61, value: { ref: "EffectValue,NoLevel,631012020,EffectTypeParam1,HdPct" }, target: enemy, event: "hit:any:mark_dmg", every: { ref: "ScoreBossAbility,NoLevel,100012,Value8,Fixed" }, duration: { ref: "BuffValue,NoLevel,631012020,Time,10K" }, max_stacks: { ref: "BuffValue,NoLevel,631012020,LaminatedNum,Fixed" } }

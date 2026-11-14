@@ -1,5 +1,6 @@
 # Boss Blitz, ScoreBossControl 13 (2026-11-01..12-01), ScoreBossLevel 28.
-label: "Count of the Duloos (Boss Blitz)"
+label: "Count of the Duloos (Boss Blitz 2026-11, Ventus)"
+season: "2026-11"
 monster: 6310270 # data: resilience, break time, DEF, RES per element
 fight_length: 180
 ability: # ScoreBossAbility 100025 "Gurgling Fracture"

@@ -1,0 +1,10 @@
+# Boss Blitz, ScoreBossControl 1 (2025-10-20..2025-11-30), ScoreBossLevel 3.
+label: "Flavor Dread (Boss Blitz 2025-10, Ignis)"
+season: "2025-10"
+monster: 6310020 # data: resilience, break time, DEF, RES per element
+fight_length: 180
+ability: # ScoreBossAbility 100002 "Pyro Blight"
+  # Fire Ring (boss DMG +Value1, DoT on the squad): defensive, not modelled.
+  # 3 Elemental Marks triggered within 5 s: squad Auto Attack DMG +Value2 for 10 s (both numbers only in the text).
+  # Approximation: every 3rd Mark triggered, the "within 5 s" isn't checked.
+  - { stat: 56, value: { ref: "ScoreBossAbility,NoLevel,100002,Value2,Pct" }, times: 0.01, target: team, event: "mark:any", every: 3, duration: 10 }

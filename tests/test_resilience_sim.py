@@ -93,6 +93,27 @@ def test_enemy_ability_applies(gd):
     assert simulate(gd, lithe, Build()).total > simulate(gd, plain, Build()).total
 
 
+def test_enemy_hit_tags_by_member_and_bucket(gd):
+    """Enemy modifiers with hit_tags by_support / by_main / <bucket>_dmg only reach those hits."""
+    from ssr.effects import Modifier
+    t = _with_enemy(load_team(gd, TEAMS / "bb_noya_shia_tilia_ingame.yaml"), resilience=0)
+    t = replace(t, enemy=replace(t.enemy, ability=()))   # only the test's line
+    base = simulate(gd, t, Build())
+
+    def with_ability(tags):
+        m = Modifier(stat=53, value=1.0, target="enemy", hit_tags=tags)   # DMG Taken +100% on those hits
+        return simulate(gd, replace(t, enemy=replace(t.enemy, ability=(m,))), Build())
+    sup = with_ability(("by_support",))
+    assert sup.by_member[0] == pytest.approx(base.by_member[0])
+    assert sup.by_member[1] == pytest.approx(2 * base.by_member[1]) and sup.by_member[2] == pytest.approx(2 * base.by_member[2])
+    main = with_ability(("by_main",))
+    assert main.by_member[0] == pytest.approx(2 * base.by_member[0]) and main.by_member[1] == pytest.approx(base.by_member[1])
+    skill = with_ability(("skill_dmg",))
+    assert base.by_slot[(0, "skill")] > 0 and base.by_slot[(0, "auto")] > 0
+    assert skill.by_slot[(0, "skill")] == pytest.approx(2 * base.by_slot[(0, "skill")])
+    assert skill.by_slot[(0, "auto")] == pytest.approx(base.by_slot[(0, "auto")])
+
+
 def test_form_breaker_removes_expected_resilience(gd):
     t = load_team(gd, TEAMS / "mistique_chixia_cosette.yaml")   # Cosette idx 2 with Phantom Mark (13 claws)
     base = simulate(gd, t, Build())
