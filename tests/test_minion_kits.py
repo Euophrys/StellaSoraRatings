@@ -1,6 +1,7 @@
 """Caramel's Boombox and Ann's Bubble: minion pools timed from their own clips and AI rows; timer reactions,
 reactions from several potentials, a proc chance from a potential param."""
 from collections import Counter
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -43,8 +44,13 @@ def test_boombox_falls_then_pulses_once_a_second(gd, cac):
     n, r = _hits(gd, cac)
     up = r.status_time["boombox"]
     assert n[FALL] == r.casts[(0, "skill")]          # one fall per summon
-    # a pulse a second, minus the 1.433 s windup after each summon (one Boombox: a new one replaces the old)
-    assert up - 1.433 * n[FALL] - n[FALL] <= n[PULSE] <= up - 1.433 * n[FALL] + n[FALL]
+    # a pulse every 1.097 s after a 1.455 s windup (user-timed): 13 in a full 15 s life
+    per = (up - 1.455 * n[FALL]) / 1.097
+    assert per - n[FALL] <= n[PULSE] <= per + n[FALL]
+    # user: skill at 1.0 s -> lands +0.833, 1st pulse +1.733, 2nd +2.83
+    for end, fall, pulses in [(1.8, 0, 0), (1.87, 1, 0), (2.70, 1, 0), (2.77, 1, 1), (3.80, 1, 1), (3.87, 1, 2)]:
+        n2, _ = _hits(gd, replace(cac, fight_length=end))
+        assert (n2[FALL], n2[PULSE]) == (fall, pulses), end
     assert r.by_slot[(0, "minion")] > 0
 
 

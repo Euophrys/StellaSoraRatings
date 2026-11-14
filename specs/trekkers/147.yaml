@@ -1,7 +1,8 @@
 # Caramel (147) — Umbra Vanguard. Hits scale with ATK (data).
 # Timings from frame data. Her Demonic Boombox (a minion, 15 s, one at a time) is a minion pool timed from its own
 # clips (char_14701_combos_devilspeaker) and its AI rows (MonsterAI 14700011: think 0.5 s; MonsterActionBranch
-# 14700012: pulse CD 1.0 s). Not checked in game.
+# 14700012: pulse CD 1.0 s). User-timed 2026-11-14 at 30 fps: cast 2,28; lands 3,23; pulses 4,20 / 5,23 / 6,26 ...
+# last (13th) 17,25, then it vanishes. Pulse damage grows each hit to a plateau (Earcatch Riff stacks refreshing).
 char_id: 147
 
 talents:
@@ -26,7 +27,7 @@ main:
   procs:
     - {event: "mark:self", hit: 147000001, count: 10, offset: 0.067, interval: 0.5, mult: 0.1, restart: true, tags: [dark_burn_tick]}   # Dark Burn, as Mistique's
     # the Boombox falling: frames: Birth clip's hit at +0.517
-    - {event: "summon:self:boombox", hit: 147300001, offset: 0.517, tags: [boombox, minion], triggers_mark: true}
+    - {event: "summon:self:boombox", hit: 147300001, offset: 0.555, tags: [boombox, minion], triggers_mark: true}   # user: +0.833 after the cast (frames: 0.517)
 
   actions:
     auto:
@@ -54,10 +55,8 @@ main:
       max: 1
       duration: 15.0
       at_max: replace
-      # frames: Birth clip 0.967 s, then a pulse (hit +0.4 into a 0.667 s clip); +0.067 to start it, as Mistique's
-      # Phantoms (user-timed: their 1.2 s birth + 0.167 hit measured 1.433)
-      windup: 1.433
-      interval: 1.0                # data: the pulse's action-branch CD (1.0 s) is longer than its 0.667 s clip
+      windup: 1.455                # user: 1st pulse +1.733 after the cast (frames predicted 1.433)
+      interval: 1.097              # user: 12 intervals from 4,20 to 17,25 (data: branch CD 1.0 s)
       attacks:
         - {hit: 147300002, tags: [boombox, pulse, minion], triggers_mark: true}
 
