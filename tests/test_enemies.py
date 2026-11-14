@@ -65,9 +65,10 @@ def test_score_boss_pct_values_are_fractions(gd):
     assert [m.name for m in e.ability if m.name] == ["warrior"]
 
 
-def test_times_list_multiplies(gd):
-    e = enemy_from_doc(gd, {"preset": "lithe_beauty_2026_08"})   # DEF PEN 50, x60% with a support on the field
-    assert sorted(m.value for m in e.ability if m.stat == 2) == [pytest.approx(-50), pytest.approx(-30)]
+def test_armor_piercing_wedge_def_pen(gd):
+    e = enemy_from_doc(gd, {"preset": "lithe_beauty_2026_08"})   # DEF PEN 50, x60% more with a support on the field
+    pen = sorted((m.value, m.target, m.trigger.event if m.trigger else None) for m in e.ability if m.stat == 9)
+    assert pen == [(pytest.approx(30), "team", "while:on_field:support"), (pytest.approx(50), "team", None)]
 
 
 def test_lithe_beauty_preset(gd):

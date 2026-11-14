@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 from .game import Hit, hit_pct
 from .stats import (StatBlock, CRIT_RATE, CRIT_DMG, ELEM_DMG_BASE, ELEM_PEN_BASE, ELEM_IGNORE_RES_BASE,
                     ELEM_TAKEN_BASE, SLOT_OF_DAMAGE_TYPE, SLOT_DMG, SLOT_CRIT_RATE, SLOT_CRIT_DMG, SLOT_TAKEN,
-                    DMG, DMG_DEALT, DMG_MULT, FINAL_DMG, FINAL_DMG2, DMG_TAKEN, DMG_TAKEN2, VUL, elem_stat)
+                    DMG, DMG_DEALT, DMG_MULT, FINAL_DMG, FINAL_DMG2, DMG_TAKEN, DMG_TAKEN2, VUL, DEF_PEN, IGNORE_DEF,
+                    elem_stat)
 
 # From 4.config.json: (value_lower, value_upper, amend_lower, amend_upper) per band.
 RES_CURVE = {
@@ -76,5 +77,7 @@ def hit_damage(h: Hit, skill_level: int, attacker: StatBlock, enemy: Enemy, inte
     slot_taken = 1 + (enemy.taken.get(SLOT_TAKEN[slot]) if slot in SLOT_TAKEN else 0.0)
     general_taken = 1 + enemy.taken.get(DMG_TAKEN) + enemy.taken.get(DMG_TAKEN2)
     final = 1 + attacker.get(FINAL_DMG) + attacker.get(FINAL_DMG2)
+    # 2.def.c: Effective_DEF = DEF x (1 - DEF_Ignore) - DEF_Penetrate (the attacker's), floored at 0 by def_amend
+    eff_def = enemy.defense * (1 - attacker.get(IGNORE_DEF)) - attacker.get(DEF_PEN)
     return (base * slot_dmg * elem_dmg * general * crit
-            * er * def_amend(enemy.defense) * slot_taken * elem_taken * general_taken * enemy.broken * final)
+            * er * def_amend(eff_def) * slot_taken * elem_taken * general_taken * enemy.broken * final)

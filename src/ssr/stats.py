@@ -7,6 +7,7 @@ from .data import GameData, DEFAULT_DATA_ROOT
 
 ATK, DEF, HP = 1, 2, 3
 CRIT_RATE, CRIT_DMG = 6, 8
+DEF_PEN, IGNORE_DEF = 9, 10   # attacker side: effective DEF = DEF x (1 - Ignore DEF) - DEF PEN (2.def.c)
 ELEM_RES_BASE = 11
 ELEM_DMG_BASE = 17
 ELEM_PEN_BASE = 23

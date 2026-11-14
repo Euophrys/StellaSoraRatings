@@ -59,7 +59,7 @@ The emblem sheet from `python -m ssr` is rated against the reference build (user
 
 Check against the in-game Boss Blitz run (1,620M, 4–5 breaks; `bb_noya_shia_tilia_ingame`, whose build has no Astral Brilliance): raw RES gives 1,663M and 5 breaks (+2.7%); the old offset gave 1,779M and 6 breaks (+9.8%).
 
-Enemy DEF 500 (user, 2026-11-01: base enemy DEF; ×0.5 damage). DEF only scales everything equally unless a DEF PEN source is rated. Enemy DEF reductions (Ridge's Corrosive Vines / Root Grasp) are flat and subtract from the 500 before defAmend (user confirmed the 500, 2026-11-03), so they're worth more as DEF drops: −150 = +20.5%, −301 = +47.6%.
+Enemy DEF 500 (user, 2026-11-01: base enemy DEF; ×0.5 damage). DEF only scales everything equally unless a DEF PEN source is rated. **DEF PEN / Ignore DEF** (EAT 9 / 10, 2026-11-14, user: track it per `2.def.c`): effective DEF = DEF × (1 − Ignore DEF) − DEF PEN, after the enemy's DEF reductions, floored at 0. Before this they were read but ignored, so Resolve: Sunder (FL Noya), Balmy Surf (Suntide Willow), Devouring Shadow (Otoha) and Suntide Willow's DEF PEN talent nodes rated 0. In `fl_noya_skill` only Resolve: Sunder moves (0 → 0.35–1.47%, Lv1–9). Enemy DEF reductions (Ridge's Corrosive Vines / Root Grasp) are flat and subtract from the 500 before defAmend (user confirmed the 500, 2026-11-03), so they're worth more as DEF drops: −150 = +20.5%, −301 = +47.6%.
 
 **Element weakness** (user, 2026-11-02): the reference formula's RES bands are 250 weak, 570 raid, 750 neutral, 2000 resisted. Maygi's PEN numbers fit "weak" (above), so a boss is weak to the team's main element, and off-element Trekkers hit a neutral RES. A team file's `enemy.weak: [Umbra]` keeps `res` (250) for the weak elements and gives every other element `res_neutral` (default 750). Off-element hits then deal ~0.53× with no PEN (0.40 vs 0.75 RES multiplier). Without `weak`, every element uses `res` (all earlier teams are single-element, so nothing changes for them).
 
@@ -145,7 +145,7 @@ All 26 levels the 13 `ScoreBossControl` seasons use have a preset (`specs/enemie
 - **Fervent Combat:** at most one Frenzy removal per 5 s (icd); the +20 Energy per removal is not modelled (undervalues it).
 - **The Count's Majesty:** a main Mark clears all Resistance stacks instead of one, so mains that trigger Marks less than once per 5 s are treated too kindly.
 - **Fatigue on Hit:** the 80% DMG RES is a −80% in that type's DMG Taken; each 6 main hits of the type give +10%, 12 steps (to +40%).
-- **Armor-Piercing Wedge:** DEF PEN 50 is an enemy DEF reduction (effective DEF = DEF − DEF PEN, `2.def.c`). GUESS: the "+60% with a support on the battlefield" scales the 50 (to 80), rather than being 60% Ignore DEF.
+- **Armor-Piercing Wedge:** squad DEF PEN +50. GUESS: the "+60% with a support on the battlefield" scales the 50 (to 80), rather than being 60% Ignore DEF.
 - **Build-Up** (Skillful Refinement, Tailor-Made): a support's own stacks count either support's field time; the main keeps one count per support, as the text says.
 - **Not modelled:** Momentum (VUL per player minion on the field: no squad-wide minion count) and Stormy Zeal's trigger (Wind Puffs are the boss's adds), which uses the assumed `unknown_trigger_uptime`. Boss DMG boosts and the squad's DMG Taken are defensive.
 

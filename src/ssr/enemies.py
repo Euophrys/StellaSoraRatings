@@ -77,16 +77,7 @@ def _preset_doc(name: str) -> dict:
 
 
 def _resolve_refs(gd: GameData, entry: dict) -> dict:
-    """{ref} values resolved; `times` may be a list of factors (numbers or {ref}), multiplied together."""
-    def one(v):
-        return value(gd, v, 1) if isinstance(v, dict) and "ref" in v else v
-    out = {k: one(v) for k, v in entry.items()}
-    if isinstance(out.get("times"), list):
-        prod = 1.0
-        for f in out["times"]:
-            prod *= float(one(f))
-        out["times"] = prod
-    return out
+    return {k: (value(gd, v, 1) if isinstance(v, dict) and "ref" in v else v) for k, v in entry.items()}
 
 
 def _preset(gd: GameData, name: str) -> dict:

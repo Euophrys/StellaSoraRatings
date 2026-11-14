@@ -5,9 +5,8 @@ monster: 6310200 # data: resilience, break time, DEF, RES per element
 fight_length: 180
 ability: # ScoreBossAbility 100019 "Armor-Piercing Wedge"
   # Main Auto ATK DMG: Ultimate DMG Taken up (stacks, once per 0.5 s; data subtype 53, the text says Ultimate DMG).
-  # Squad DEF PEN +Param4 (flat), and +Param5 more with a support on the battlefield. The formula doesn't read DEF PEN,
-  # and effective DEF = DEF - DEF PEN, so it's written as an enemy DEF reduction.
+  # Squad DEF PEN +Param4 (flat), and +Param5 more with a support on the battlefield.
   # GUESS: Param5 (60%) scales the flat DEF PEN (50 -> 80), not Ignore DEF.
   - { stat: 62, value: { ref: "EffectValue,NoLevel,631019010,EffectTypeParam1,HdPct" }, target: enemy, event: "hit:main:auto_dmg", icd: 0.5, duration: { ref: "BuffValue,NoLevel,631019010,Time,10K" }, max_stacks: { ref: "BuffValue,NoLevel,631019010,LaminatedNum,Fixed" } }
-  - { stat: 2, value: { ref: "EffectValue,NoLevel,631019020,EffectTypeParam1,Fixed" }, times: -1, target: enemy }
-  - { stat: 2, value: { ref: "EffectValue,NoLevel,631019020,EffectTypeParam1,Fixed" }, times: [{ ref: "EffectValue,NoLevel,631019030,EffectTypeParam1,HdPct" }, -1], target: enemy, event: "while:on_field:support" }
+  - { stat: 9, value: { ref: "EffectValue,NoLevel,631019020,EffectTypeParam1,Fixed" }, target: team }
+  - { stat: 9, value: { ref: "EffectValue,NoLevel,631019020,EffectTypeParam1,Fixed" }, times: { ref: "EffectValue,NoLevel,631019030,EffectTypeParam1,HdPct" }, target: team, event: "while:on_field:support" }

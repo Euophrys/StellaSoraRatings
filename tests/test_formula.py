@@ -66,3 +66,16 @@ def test_dmg_multiplier_is_separate_from_the_buckets():
     a = StatBlock(); a.set_base(1, 1000); a.add_stat(DMG, 0.5)
     b = a.copy(); b.add_stat(DMG_MULT, 0.36)
     assert hit_damage(h, 1, b, Enemy()) == pytest.approx(hit_damage(h, 1, a, Enemy()) * 1.36)
+
+
+def test_def_pen_and_ignore_def(gd):
+    """2.def.c: Effective_DEF = DEF x (1 - DEF_Ignore) - DEF_Penetrate."""
+    from ssr.stats import DEF_PEN, IGNORE_DEF
+    me = char_base_stats(gd, 162)
+    sk = hit(gd, SKILL_HIT)
+    pen = me.copy(); pen.add_stat(DEF_PEN, 150)
+    assert hit_damage(sk, 10, pen, Enemy(defense=500)) == pytest.approx(hit_damage(sk, 10, me, Enemy(defense=350)))
+    ign = me.copy(); ign.add_stat(IGNORE_DEF, 0.4); ign.add_stat(DEF_PEN, 100)
+    assert hit_damage(sk, 10, ign, Enemy(defense=500)) == pytest.approx(hit_damage(sk, 10, me, Enemy(defense=200)))
+    big = me.copy(); big.add_stat(DEF_PEN, 900)   # floored at DEF 0
+    assert hit_damage(sk, 10, big, Enemy(defense=500)) == pytest.approx(hit_damage(sk, 10, me, Enemy(defense=0)))
