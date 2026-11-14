@@ -253,6 +253,7 @@ Leafia (161) is user-timed in both roles (`specs/trekkers/161.yaml`). Her Observ
 - **Obsidian Field / Observer Array** stack once per turret out.
 - **Draw Zone Support:** its +50% Auto DMG ("while the ult is on cooldown or its energy isn't full") is always on; the +10% "in the ult's range" lasts 20 s from the cast. Both go to Terra Vanguard and Versatile Trekkers (so not Nazuna).
 - **Support Calibration Marks:** each stack inflicted deals one Calibration hit 1 s later on average: with a Vanguard Strike every second they detonate at 3 stacks, on every 3rd strike (user: the 3rd strike's number is 2.06x the first, the model's strike + 3-stack detonation 1.9x). Calibration Expansion's extra stacks from a Vanguard main aren't modelled. Vanguard Calibration's "expire after 10 s" isn't forced on Co-Draw's longer turrets.
+- **Terra DMG Etching does nothing with Calibration Detonation** (user, 2026-11-14): Etching only reaches targets within Tactical Mapping, which Detonation removes. The game let both work until that day's hotfix; the spec's potential-level `excludes` keeps them apart.
 - **"In an all-Terra squad"** lines (Co-Draw's debuff, Terra DMG Etching, Mark Etching, Leyline Amp) use `while:squad:3:3`; "only 1 Terra Trekker" uses `while:not:squad:3:2`.
 - **Greedy builds look ahead** (`compare.py`, web optimizer): each step also tries jumping a potential straight to its cap, and takes the jump when it gains more per level. Totals inside a jump are interpolated.
 

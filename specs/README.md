@@ -186,6 +186,7 @@ potentials:
 | `cd_reduce` | `{action: skill, seconds: <value>, times: <value>}`: each cast refunds `seconds × times` of its own cooldown |
 | `minion_rules` | `{pool: {key: value}}`: changes a minion pool (see Minion pools) |
 | `procs` | `[{event: "hit:main:skill_dmg", hit: <id>, icd: <value>, every: <value>, tags: [...]}]` extra hits fired by events; `every: N` fires on every Nth matching event. Proc hits take all `HitSpec` fields (`count`, `offset`, `triggers_mark`, `requires`, ...) and emit their own tag events |
+| `excludes` | `[<potential id>, ...]`: the whole potential does nothing if any of these is in the build (e.g. a line that only works on something another potential removes). It still counts as owned for hits' `requires` / `excludes` |
 | `note` | shown in the sheet's Notes column |
 
 **Values** that the data has are written as `{ref: "<Param string>"}` (resolved at the potential's level) or `{param: Param3}` (the potential's own Param). Plain numbers are only for timings, counts and uptimes.

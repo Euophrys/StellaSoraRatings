@@ -12,6 +12,7 @@ TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: neve
 LEAFIA = 161
 OVERCLOCK, PENETRATION, ECHO, ASSAULT = 516101, 516102, 516103, 516104
 CO_DRAW, ITERATION = 516121, 516122
+CALIBRATION, DETONATION, ETCHING = 516123, 516124, 516125
 MARKER_OVERLOAD, OBSERVER_ARRAY = 516107, 516110
 STRIKE, CRYSTAL, VECTOR = 161100001, 161100004, 161100007
 FA_BULLET, MAPPING, VANGUARD = 161310004, 161320002, 161320001
@@ -86,6 +87,17 @@ def test_support_turrets_co_draw(gd):
     no_co_draw = with_pinks(team, 1, [ITERATION])
     seen1, _ = _hits(gd, replace(no_co_draw, fight_length=30.0))
     assert seen1.count(MAPPING) < seen.count(MAPPING) / 2
+
+
+def test_terra_dmg_etching_does_nothing_with_calibration_detonation(gd):
+    # Etching only reaches targets within Tactical Mapping, and Detonation removes Tactical Mapping (hotfix
+    # 2026-11-14): the potential-level `excludes` drops all of Etching.
+    team = load_team(gd, TEAMS / "nazuna_leafia_gerie.yaml")
+    etching = Build().with_potential(LEAFIA, ETCHING, 6)
+    mapping = replace(team, fight_length=30.0)
+    assert simulate(gd, mapping, etching).total > simulate(gd, mapping, Build()).total
+    detonation = with_pinks(mapping, 1, [CALIBRATION, DETONATION])
+    assert simulate(gd, detonation, etching).total == pytest.approx(simulate(gd, detonation, Build()).total)
 
 
 def test_greedy_lookahead_finds_observer_array(gd, lng):

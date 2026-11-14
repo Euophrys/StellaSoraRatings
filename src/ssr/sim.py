@@ -264,6 +264,9 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         resolved = [_potential(gd, kit, p, lv) for p, lv in pot_levels.items()]
         resolved += [x for (j, x) in extra if j == i and isinstance(x, ResolvedPotential)]
         owned = set(pot_levels)
+        # A potential that `excludes` another in the build does nothing (it still counts as owned for hits'
+        # requires/excludes, and for its level).
+        resolved = [rp for rp in resolved if not owned & set(rp.excludes)]
 
         def keep(h: HitSpec) -> bool:
             return ((not h.requires or any(r in owned for r in h.requires)) and not any(e in owned for e in h.excludes)

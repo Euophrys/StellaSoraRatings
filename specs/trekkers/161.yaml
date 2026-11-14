@@ -269,6 +269,9 @@ support:
       overrides:
         - {index: 0, hit_tags: [vanguard, calib]}
     516125:   # Terra DMG Etching: all-Terra: a turret appearing -> enemy Mark DMG Taken
+      # Only targets within Tactical Mapping, which Calibration Detonation removes (the game let both work until
+      # the 2026-11-14 hotfix).
+      excludes: [516124]
       overrides:
         - {index: 0, event: "summon:self:point&while:squad:3:3"}
     516126:   # Tier 2 Etching: mapping Auto DMG at 2+ tiers

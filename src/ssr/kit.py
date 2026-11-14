@@ -120,6 +120,7 @@ class PotentialSpec:
     cd_when: list[dict] = field(default_factory=list)   # [{action, scale, when}]: a cooldown starting while `when` holds is scaled
     minion_rules: dict[str, dict] = field(default_factory=dict)  # {pool: {MinionSpec field: value}}
     ult_cost_scale: float = 1.0   # the ult's Energy cost is multiplied by this
+    excludes: tuple[int, ...] = ()   # the whole potential does nothing if any of these is in the build
     note: str = ""
 
 
@@ -194,6 +195,7 @@ class ResolvedPotential:
     minion_rules: dict[str, dict] = field(default_factory=dict)
     cd_when: list[dict] = field(default_factory=list)
     ult_cost_scale: float = 1.0
+    excludes: tuple[int, ...] = ()   # does nothing if any of these potentials is in the build
 
 
 def _hitspec(d: dict) -> HitSpec:
@@ -250,6 +252,7 @@ def _potential(d: dict) -> PotentialSpec:
         cd_when=[dict(c) for c in d.get("cd_when", [])],
         minion_rules={k: dict(v) for k, v in (d.get("minion_rules") or {}).items()},
         ult_cost_scale=float(d.get("ult_cost_scale", 1.0)),
+        excludes=tuple(int(x) for x in d.get("excludes", ())),
         note=d.get("note", ""),
     )
 
@@ -448,6 +451,7 @@ def resolve_potential(gd: GameData, kit: Kit, potential_id: int, level: int) -> 
         mark_tags=spec.mark_tags, extra_casts=spec.extra_casts, reset_cd=spec.reset_cd,
         cd_reduce=cd_reduce, procs=procs, add_charges=spec.add_charges, cd_scale=spec.cd_scale,
         minion_rules=minion_rules, cd_when=spec.cd_when, ult_cost_scale=spec.ult_cost_scale,
+        excludes=spec.excludes,
     )
 
 

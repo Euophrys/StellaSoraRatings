@@ -180,7 +180,10 @@ def rate_potentials(gd: GameData, team: TeamConfig, ref: Build, levels=range(1, 
         notes = list(dict.fromkeys(rp.notes + sorted(unknown)))
         if all(abs(g) < 1e-12 for g in gains):
             why = "no simulated damage value"
-            if not rp.modifiers and not rp.add_hits:
+            blockers = [x for x in rp.excludes if (m.char_id, x) in ref.potentials or x in m.pinks]
+            if blockers:
+                why += f" (does nothing with {', '.join(gd.item_name(x) for x in blockers)})"
+            elif not rp.modifiers and not rp.add_hits:
                 why += " (utility/behaviour only, or not modelled)"
             elif rp.modifiers and all(mm.stat in (2,) for mm in rp.modifiers):
                 why += " (DEF only)"
