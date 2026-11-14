@@ -335,14 +335,16 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                 if name in rp.cd_scale and name in m.cd:
                     m.cd[name] *= rp.cd_scale[name]
         for pool, ms in kit.minions.items():
-            rules, adds = {}, defaultdict(float)
+            rules, adds, reacts = {}, defaultdict(float), list(ms.reactions)
             for rp in resolved:
                 for k, v in rp.minion_rules.get(pool, {}).items():
                     if k.endswith("_add"):   # additive, e.g. duration_add: +3 s of lifetime
                         adds[k[:-4]] += float(v)
+                    elif k == "reactions":   # several potentials can each add reactions
+                        reacts += v
                     else:
                         rules[k] = v
-            ms = replace(ms, **rules)
+            ms = replace(ms, **rules, reactions=reacts)
             ms = replace(ms, **{k: getattr(ms, k) + v for k, v in adds.items()})
             m.minions[pool] = replace(ms, summon=_norm_event(ms.summon, i),
                                       sacrifice_on=_norm_event(ms.sacrifice_on, i) if ms.sacrifice_on else "",
@@ -1054,7 +1056,8 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     # Clock events: `timer:<s>` fires at 0, s, 2s, ... ("after the battle begins ... once every 20 s");
     # `dodge:0` is the main's dodge, one every `dodge_interval` s on average (assumption, default 10; see below);
     # `hit_taken:0` the main being hit, one every `hit_taken_interval` s.
-    used = " ".join([md.event for md in by_event] + [pev for m in members for pev, _ in m.procs])
+    used = " ".join([md.event for md in by_event] + [pev for m in members for pev, _ in m.procs]
+                     + [h.event for m in members for ms in m.minions.values() for h in ms.reactions])
     timers = sorted({float(x) for x in re.findall(r"\btimer:(\d+(?:\.\d+)?)", used)})
     dodge_every = float(team.assumptions.get("dodge_interval", 10.0))
     spam = team.assumptions.get("dodge_spam")   # {interval: 3, potentials: [ids]}: dodge faster when the main has one

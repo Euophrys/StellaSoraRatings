@@ -24,8 +24,8 @@ talents:   # key talents, unlocked by dupes (specs/README.md)
 
 main:
   timing: frames   # animation frame data (python -m ssr.inspect frames 123), not checked in game; the ult's hit is user-timed (support role)
-  # Bubble (a minion) is skipped, except what it gives: its squad ATK, and a Wind Burst (Skill DMG, inflicts Breeze) about every
-  # 4 s: 25% per Bubble hit, once per second at most. Bubble lasts 15 s (Word 4013), the skill's CD.
+  # Bubble (Word 4013, 15 s = the skill's CD) is a minion pool timed from its own clips (char_12301_combos_monster)
+  # and AI rows (MonsterAI 12301111: think 0.5 s; MonsterActionBranch 12301211: spit CD 0.05 s). Not checked in game.
 
   actions:
     auto:                          # Coco the Firefang: Auto Attack DMG, not Minion DMG
@@ -36,44 +36,67 @@ main:
         - {hit: 123100003, count: 2, offset: 1.429, interval: 0.2}   # x2 (text); frames: a moving area, 1st hit +1.429; spacing GUESS
         - {hit: 123100004, offset: 2.363}
 
-    skill:                         # Puffloon Spits
+    skill:                         # Puffloon Spits: summons Bubble (minions: below)
       lock: 0.917                  # frames: B1 combo-window end
       cd_start: 0.917              # GUESS: the CD starts when the cast ends
-      hits:
-        - {hit: 123310004, count: 3, offset: 4.0, interval: 4.0, tags: [burst], applies_mark: true}
+      hits: []
 
     ult:                           # Call of the Wild
       lock: 1.0                    # frames: combo-window end (the support role's 3.067 s on the field includes leaving)
       hits:
         - {hit: 123300001, offset: 0.967, tags: [howl], applies_mark: true}   # user-timed (frames: 0.98)
 
+  minions:
+    bubble:
+      summon: {event: "cast:self:skill", offset: 0.017}   # frames: the cast's summon script
+      max: 1
+      duration: 15.0
+      at_max: replace
+      # frames: Birth clip 1.5 s, then the spit (bullet +0.067, ~0.15 s flight at 20 u/s); +0.067 to start it, as
+      # Mistique's Phantoms (user-timed)
+      windup: 1.783
+      interval: 0.433              # frames: the 0.4 s spit clip + 1 frame (its 0.05 s CD is shorter), as Mistique's 0.667 -> 0.7
+      attacks:
+        - {hit: 123310001, tags: [bubble, minion]}
+
+  procs:
+    # Wind Burst: 25% per Bubble hit, once per second at most (text); Skill DMG in data, inflicts Breeze
+    - {event: "hit:self:bubble", hit: 123310004, chance: 0.25, icd: 1, offset: 0.15, tags: [burst], applies_mark: true, excludes: [512307]}   # frames: FengBoom area hit +0.15
+
   buffs:
-    - {effect: 12393001, level: skill, event: "cast:self:skill", duration: 15, target: team}
+    - {effect: 12393001, level: skill, event: "while:status:bubble", target: team}
 
   potentials:
     512301:   # Wind's Breath (pink)
       procs:
-        - {event: "hit:self:auto_dmg", hit: 123310004, chance: 0.25, icd: 1, offset: 0.1, tags: [burst], applies_mark: true}
+        - {event: "hit:self:auto_dmg", hit: 123310004, chance: 0.25, icd: 1, offset: 0.1, when: "while:status:bubble", tags: [burst], applies_mark: true}
       overrides:
         - {index: 0, event: "hit:self:burst", target: team}
     512302:   # Stone Dust Tempest (pink)
       overrides:
         - {index: 0, event: "hit:self:burst"}
-    512303:   # Dazzling Vortex (pink): Bubble
-      note: "Bubble's hits aren't modelled."
-    512304:   # Grand Debut (pink): the laser is Bubble's
+    512303:   # Dazzling Vortex (pink): a laser within 5 s of the summon
+      procs:   # frames: Atk2 clip (1.5 s), area +0.833, hit +0.1
+        - {event: "summon:self:bubble", hit: 123310002, offset: 2.433, tags: [bubble, laser, minion], applies_mark: true}
+      note: "GUESS: the laser comes first, right after Bubble's birth clip. Its 1.5 s clip would replace about 3 spits; not modelled."
+    512304:   # Grand Debut (pink): squad Mark DMG on the summon; a laser when a squadmate triggers a Ventus Mark
       overrides:
-        - {index: 0, event: "cast:self:skill", target: team}
+        - {index: 0, event: "summon:self:bubble", target: team}
+      minion_rules:
+        bubble:
+          reactions:
+            - {event: "mark:element4", hit: 123310002, offset: 0.933, tags: [bubble, laser, minion]}   # frames: Atk2's hit
+      note: "GUESS: no cooldown on the extra laser, and it doesn't hold up the spits."
     512305:   # Victorious Pursuit
       overrides:
         - {index: 0, event: "hit:self:burst", target: team}
     512306:   # Permeating Courage
       overrides:
         - {index: 0, drop: true}
-        - {index: 1, event: "cast:self:skill", duration: 15}
-    512307:   # Wind Chime: 46%, not 25%: about 2 more per cast
-      add_hits:
-        skill: [{hit: 123310004, count: 2, offset: 6.0, interval: 4.0, tags: [burst], applies_mark: true}]
+        - {index: 1, event: "while:status:bubble"}
+    512307:   # Wind Chime: 25% + Param1 chance of a Wind Burst
+      procs:
+        - {event: "hit:self:bubble", hit: 123310004, chance: {param: Param1, times: 0.01, plus: 0.25}, icd: 1, offset: 0.15, tags: [burst], applies_mark: true}
     512308:   # Wind Surge: GUESS: the main is the ally
       overrides:
         - {index: 0, event: "cast:support:skill", target: main}

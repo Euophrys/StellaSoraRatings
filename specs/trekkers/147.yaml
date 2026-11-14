@@ -1,6 +1,7 @@
 # Caramel (147) — Umbra Vanguard. Hits scale with ATK (data).
-# Timings from frame data. Her Demonic Boombox (a minion, 15 s) is most of her
-# main-role damage and is skipped, with its Mark triggers: expect a very low total as a main until it's modelled.
+# Timings from frame data. Her Demonic Boombox (a minion, 15 s, one at a time) is a minion pool timed from its own
+# clips (char_14701_combos_devilspeaker) and its AI rows (MonsterAI 14700011: think 0.5 s; MonsterActionBranch
+# 14700012: pulse CD 1.0 s). Not checked in game.
 char_id: 147
 
 talents:
@@ -24,6 +25,8 @@ main:
   mark: {hit: 147100000}
   procs:
     - {event: "mark:self", hit: 147000001, count: 10, offset: 0.067, interval: 0.5, mult: 0.1, restart: true, tags: [dark_burn_tick]}   # Dark Burn, as Mistique's
+    # the Boombox falling: frames: Birth clip's hit at +0.517
+    - {event: "summon:self:boombox", hit: 147300001, offset: 0.517, tags: [boombox, minion], triggers_mark: true}
 
   actions:
     auto:
@@ -33,7 +36,7 @@ main:
         - {hit: 147100002, count: 2, offset: 0.91, interval: 0.167}
         - {hit: 147100003, count: 5, offset: 1.977, interval: 0.167, tags: [s3]}
 
-    skill:                         # Co-Performance: the Boombox; only her connection ATK is kept
+    skill:                         # Co-Performance: summons the Boombox (minions: below)
       lock: 0.444                  # frames: combo-window end
       cd_start: 0.444              # GUESS: the CD starts when the cast ends
       hits: []
@@ -45,8 +48,21 @@ main:
         - {hit: 147400001, offset: 3.42, tags: [seraphim], triggers_mark: true}
         - {hit: 0, offset: 4.133, tags: [ult_done]}
 
+  minions:
+    boombox:                       # Demonic Boombox (Word 4016): 15 s, only 1 at a time
+      summon: {event: "cast:self:skill", offset: 0.278}   # frames: the cast's summon script
+      max: 1
+      duration: 15.0
+      at_max: replace
+      # frames: Birth clip 0.967 s, then a pulse (hit +0.4 into a 0.667 s clip); +0.067 to start it, as Mistique's
+      # Phantoms (user-timed: their 1.2 s birth + 0.167 hit measured 1.433)
+      windup: 1.433
+      interval: 1.0                # data: the pulse's action-branch CD (1.0 s) is longer than its 0.667 s clip
+      attacks:
+        - {hit: 147300002, tags: [boombox, pulse, minion], triggers_mark: true}
+
   buffs:
-    - {effect: 14790001, level: skill, event: "cast:self:skill", duration: 15}   # near the Boombox, which lasts 15 s (Word 4016)
+    - {effect: 14790001, level: skill, event: "while:status:boombox"}   # near the Boombox: assumed always near it
     - {name: dark_burn, event: "mark:self", duration: {ref: "Buff,LevelUp,13590000,Time,10K"}, target: enemy}
 
   potentials:
@@ -56,10 +72,11 @@ main:
     514702:   # Cheer Sparkle (pink): a Mark trigger means an extra last strike
       procs:
         - {event: "mark:self", hit: 147100003, count: 5, offset: 0.867, interval: 0.167, tags: [s3]}   # frames: as the last strike
-    514703:   # Rhythm Pulse (pink): the Boombox
-      note: "The Boombox isn't modelled."
-    514704:   # Sonic Boom (pink): the Boombox
-      note: "The Boombox isn't modelled."
+    514703:   # Rhythm Pulse (pink): a ring with each pulse
+      procs:   # frames: the attack clip's P3RingAtk at 0.0, area hit +0.2: 0.2 s before the pulse (here with it)
+        - {event: "hit:self:pulse", hit: 147300003, tags: [boombox, ring, minion], triggers_mark: true}
+    514704:   # Sonic Boom (pink): pulse range (no value vs one boss) and Minion DMG (data)
+      note: "The bigger pulse range does nothing against one boss."
     514705:   # Tempo Shift: every 5th hit of the last strike
       overrides:
         - {index: 0, event: "hit:self:s3", every: 5}
@@ -67,22 +84,32 @@ main:
     514706:   # Hype Trigger
       overrides:
         - {index: 0, event: "cast:self:skill"}
-    514707:   # Rising Tone: the Boombox outlasts its cooldown; she stays near it
+    514707:   # Rising Tone: near the Boombox (assumed always near it)
       overrides:
-        - {index: 0, event: always}
-    514708:   # Fallen Duet: the Boombox
-      note: "The Boombox isn't modelled."
-    514709:   # Echo Stack: the Boombox
+        - {index: 0, event: "while:status:boombox"}
+    514708:   # Fallen Duet: the Boombox plays with the ult, 13 hits (text)
+      minion_rules:
+        boombox:
+          reactions:   # frames: AreaEffect_147_Ultra_AOE_1_P8 (every 0.2 s from the ult's start) and AOE_2_P8 (+3.42)
+            - {event: "cast:self:ult", hit: 147300004, count: 12, offset: 0.017, interval: 0.2, tags: [boombox, duet, minion]}
+            - {event: "cast:self:ult", hit: 147300004, offset: 3.42, tags: [boombox, duet, minion]}
+      note: "GUESS: 12 hits from the first area + 1 from the second (text: x13). Assumes these can't trigger Marks (the text doesn't say)."
+    514709:   # Echo Stack: the Boombox's Minion DMG while she's near it
       overrides:
-        - {index: 0, drop: true}
-    514710:   # Earcatch Riff: the Boombox's ATK
+        - {index: 0, event: "while:status:boombox", hit_tags: [boombox], minions: true}
+    514710:   # Earcatch Riff: each pulse raises the Boombox's ATK, 3 s, up to 9 stacks
       overrides:
-        - {index: 0, drop: true}
+        - {index: 0, event: "hit:self:pulse", hit_tags: [boombox], minions: true}
+      note: "A pulse every 1 s with a 3 s duration holds about 3 of the 9 stacks."
     514711:   # Flicker Moves: needs a barrier to dodge through
       overrides:
         - {index: 0, drop: true}
-    514712:   # Maximum Boost: the Boombox
-      note: "The Boombox isn't modelled."
+    514712:   # Maximum Boost: the Boombox's cables hit every 0.5 s
+      minion_rules:
+        boombox:
+          reactions:
+            - {event: "timer:0.5", hit: 147300005, tags: [boombox, cable, minion]}
+      note: "Assumes the cables can't trigger Marks (the text doesn't say)."
     514713:   # Shadow Soundstrike
       overrides:
         - {index: 0, event: "mark:self"}

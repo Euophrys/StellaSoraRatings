@@ -208,7 +208,7 @@ def _hitspec(d: dict) -> HitSpec:
         cycle=tuple(int(x) for x in d.get("cycle", ())), from_cast=int(d.get("from_cast", 0)),
         upto_cast=int(d.get("upto_cast", 0)),
         event=str(d.get("event", "")), icd=d.get("icd", 0.0), every=d.get("every", 1), when=str(d.get("when", "")),
-        restart=bool(d.get("restart", False)), chance=float(d.get("chance", 1.0)), resilience=d.get("resilience", 0.0),
+        restart=bool(d.get("restart", False)), chance=d["chance"] if isinstance(d.get("chance"), dict) else float(d.get("chance", 1.0)), resilience=d.get("resilience", 0.0),
         energy=d.get("energy", 0.0),
         gain=tuple((str(k), v) for k, v in (d.get("gain") or {}).items()),
         cost=tuple((str(k), v) for k, v in (d.get("cost") or {}).items()),
@@ -347,7 +347,8 @@ def pink_ids(gd: GameData, char_id: int, names: list[str], role: str = "main") -
 
 
 def value(gd: GameData, v, level: int, potential: dict | None = None) -> float:
-    """Resolve a YAML value: number, {ref: "..."} or {param: ParamN}, optionally multiplied: {ref:..., times: x}."""
+    """Resolve a YAML value: number, {ref: "..."} or {param: ParamN}, optionally scaled and shifted:
+    {ref:..., times: x, plus: y} = value * x + y."""
     if isinstance(v, (int, float)):
         return float(v)
     if isinstance(v, dict):
@@ -359,7 +360,7 @@ def value(gd: GameData, v, level: int, potential: dict | None = None) -> float:
             raise ValueError(f"bad value {v!r}")
         if isinstance(out, list):
             raise ValueError(f"value {v!r} resolved to a list")
-        return float(out) * float(v.get("times", 1))
+        return float(out) * float(v.get("times", 1)) + float(v.get("plus", 0))
     raise ValueError(f"bad value {v!r}")
 
 
@@ -430,7 +431,7 @@ def resolve_potential(gd: GameData, kit: Kit, potential_id: int, level: int) -> 
         cd_reduce = {"action": spec.cd_reduce.get("action", "skill"),
                      "seconds": value(gd, spec.cd_reduce["seconds"], level, pot),
                      "times": value(gd, spec.cd_reduce.get("times", 1), level, pot)}
-    procs = [HitSpec(**{**p.__dict__, "icd": value(gd, p.icd, level, pot),
+    procs = [HitSpec(**{**p.__dict__, "icd": value(gd, p.icd, level, pot), "chance": value(gd, p.chance, level, pot),
                         "resilience": value(gd, p.resilience, level, pot),
                         "energy": value(gd, p.energy, level, pot),
                         "gain": tuple((r, value(gd, v, level, pot)) for r, v in p.gain),

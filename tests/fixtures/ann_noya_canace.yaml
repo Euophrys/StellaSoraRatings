@@ -1,0 +1,35 @@
+# Ann main with Noya / Canace: Bubble minion-pool tests (frozen fixture)
+name: ann_noya_canace
+fight_length: 180
+tick: 0.05
+mark_icd: 1.0
+enemy:
+  preset: generic
+
+members:
+  - trekker: Ann
+    role: main
+    pinks: [Dazzling Vortex, Wind's Breath]
+    skill_levels: {auto: 10, skill: 10, ult: 10}
+    emblems: []
+  - trekker: Noya
+    role: support
+    pinks: []
+    skill_levels: {skill: 10, ult: 10}
+    emblems: []
+  - trekker: Canace
+    role: support
+    pinks: [Grants Efficient Delving, Grants Speedup Notion]   # pinks-only search 2026-11-03 (tutorial: Transformative Insight)
+    skill_levels: {skill: 10, ult: 10}
+    emblems: []
+
+discs:
+  main: [filler, filler, filler]
+  support: [filler, filler, filler]
+
+budget: [30, 15, 15]
+reference: {steps: 2, main_picks: 2, support_picks: 1, level: 6}
+
+assumptions:
+  unknown_trigger_uptime: 1.0
+  disc_stats_target: team

@@ -2,7 +2,7 @@
 
 One file per Trekker. It says what the game tables can't: how many times each hit lands, timing, which hits trigger or apply Marks, and what potentials _do_ beyond adding a stat. **Every number the game data has is read from the data**; these files only carry semantics (counts, timings, tags, triggers, uptimes). Anything guessed is marked `# GUESS` so you can correct it with in-game timings.
 
-A file has a `main:` section (used when the Trekker is the main) and a `support:` section (used when they're a support). Supports never auto attack. `stub: true` in a section means it only holds placeholder hits: not timed in game, potentials not modelled. The build page warns about stubs, and about a role with no section, which can't be simulated. Remove the flag when the kit is authored. `timing: frames` means the kit's timings come from the game's animation frame data (`python -m ssr.inspect frames <char>`, `docs/assumptions.md` "Frame data") but haven't been checked in game. Minion pools may still be skipped. The build page warns about those too. Replace it with the user's timings (and drop the flag) once they're measured. `untimed: true` is the older status for a kit on pure guesses; no kit uses it now.
+A file has a `main:` section (used when the Trekker is the main) and a `support:` section (used when they're a support). Supports never auto attack. `stub: true` in a section means it only holds placeholder hits: not timed in game, potentials not modelled. The build page warns about stubs, and about a role with no section, which can't be simulated. Remove the flag when the kit is authored. `timing: frames` means the kit's timings come from the game's animation frame data (`python -m ssr.inspect frames <char>`, `docs/assumptions.md` "Frame data") but haven't been checked in game. Some minion pools are still skipped (Firenze, Donna, Snowish Laru, Mistique's Lanterna Phantoms). The build page warns about those too. Replace it with the user's timings (and drop the flag) once they're measured. `untimed: true` is the older status for a kit on pure guesses; no kit uses it now.
 
 ## Actions
 
@@ -47,7 +47,7 @@ main:
 | `mult` | damage multiplier on the hit (default 1), e.g. `0.5` for a Mirror Image with 50% of the DMG Multiplier |
 | `when` | procs only: fires only while a condition holds, e.g. `"while:status:butterfly"` |
 | `restart` | procs only: a new firing drops this proc's hits still pending (a DoT that refreshes instead of stacking, e.g. Dark Burn) |
-| `chance` | procs only: probability per matching event (default 1); not allowed with `restart`; `every` counts events before the chance. The sim uses the expected value: the proc lands with `mult` x its expected share, and `icd` becomes an expected-value ICD (procs in one ICD window are mutually exclusive) |
+| `chance` | procs only: probability per matching event (default 1; in a potential's procs also a value, e.g. Wind Chime's `{param: Param1, times: 0.01, plus: 0.25}`); not allowed with `restart`; `every` counts events before the chance. The sim uses the expected value: the proc lands with `mult` x its expected share, and `icd` becomes an expected-value ICD (procs in one ICD window are mutually exclusive) |
 | `resilience` | procs only: fraction of the enemy's max resilience bar removed per proc (number or `{param: ParamN}`); with `hit: 0` the proc deals no damage, e.g. Cosette's Form Breaker `{hit: 0, event: "hit:self:claw", chance: 0.3, icd: 0.5, resilience: {param: Param1}}` |
 | `energy` | procs only: Energy granted to the proc's owner per proc (number or `{param: ParamN}`), scaled by `chance` as an expected value. It's flat: Charge Efficiency doesn't apply, and supports don't get a share. E.g. Knight's Seal `{hit: 0, event: "mark:any", energy: {param: Param3}}` |
 | `gain` | procs only: `{<resource>: N}` added to the owner's resource (number or `{param: ParamN}`), scaled by `chance` as an expected value, capped at the resource's `max`. Emits `gain:<who>:<resource>` once per whole unit gained |
@@ -120,7 +120,7 @@ Stat 47 (ATK SPD) runs the main's auto string faster: its clock advances at `1 +
 
 ## Minion pools
 
-For minions with their own lifetimes and attack loops (Mistique's Pumpka Phantoms), a kit section can have `minions:`:
+For minions with their own lifetimes and attack loops (Mistique's Pumpka Phantoms), a kit section can have `minions:`. To time one from data, `python -m ssr.inspect frames <char>` prints the minion's clips (its own combo group), and its `MonsterAI` row (think interval) and `MonsterActionBranch` rows (each attack's CD) give the attack rate (`docs/assumptions.md` "Minion timings"):
 
 ```yaml
 minions:
@@ -136,7 +136,7 @@ minions:
       - { hit: 135900002, tags: [phantom, minion], triggers_mark: true }
 ```
 
-Optional: `sacrifice_on` (event: all vanish and count as sacrificed), `resummon_on` (event: all vanish and as many are summoned again), `speed` (ATK SPD: interval / (1 + speed)), `reactions` (hits with `event` / `icd`: every minion out attacks on the event, each with its own ICD that starts on cooldown at its summon, e.g. Thread the Needle). Events: `summon:<who>:<pool>`, `vanish:<who>:<pool>` (lifetime over, replaced, sacrificed or re-summoned), `sacrifice:<who>:<pool>`, `minion_tick:<who>:<pool>` (every summon tick, also at max). The pool's name is a status counting the minions out (`while:status:phantom>=2`). A potential changes a pool with `minion_rules: {phantom: {at_max: refresh}}` (any of the keys above; values may be `{param: ...}` / `{ref: ...}`). A key ending in `_add` adds to a numeric key instead of replacing it, e.g. Nanoha's Wind Whispers `{clone: {duration_add: {param: Param1}}}` (+N s of clone lifetime). Minion-pool attacks with a non-minion DamageType (Nanoha's clones deal Ultimate DMG) use the owner's stat sheet like her own hits.
+Optional: `sacrifice_on` (event: all vanish and count as sacrificed), `resummon_on` (event: all vanish and as many are summoned again), `speed` (ATK SPD: interval / (1 + speed)), `reactions` (hits with `event` / `icd`: every minion out attacks on the event, each with its own ICD that starts on cooldown at its summon, e.g. Thread the Needle). Events: `summon:<who>:<pool>`, `vanish:<who>:<pool>` (lifetime over, replaced, sacrificed or re-summoned), `sacrifice:<who>:<pool>`, `minion_tick:<who>:<pool>` (every summon tick, also at max). The pool's name is a status counting the minions out (`while:status:phantom>=2`). A potential changes a pool with `minion_rules: {phantom: {at_max: refresh}}` (any of the keys above; values may be `{param: ...}` / `{ref: ...}`). A key ending in `_add` adds to a numeric key instead of replacing it, e.g. Nanoha's Wind Whispers `{clone: {duration_add: {param: Param1}}}` (+N s of clone lifetime). `reactions` from several potentials add up (Caramel's Fallen Duet and Maximum Boost each add one); a reaction on `timer:<s>` hits every s seconds while a minion is out (Maximum Boost's cables). Minion-pool attacks with a non-minion DamageType (Nanoha's clones deal Ultimate DMG) use the owner's stat sheet like her own hits.
 
 ## Talents (dupes)
 
