@@ -120,19 +120,19 @@ def emblem_table(gd: GameData, team: TeamConfig, build: Build, member: int,
 # ---------------------------------------------------------------- discs
 
 def disc_table(gd: GameData, team: TeamConfig, build: Build, progress: Progress = None) -> list[dict]:
-    """Every available disc of the team's element(s), each alone at C1 and C6 in one main or support slot (the
-    other five slots filler), as the team-damage gain over six fillers, on the current build and owned emblems.
-    Starts with the filler itself (0 by definition), then by best main-slot C6 gain."""
+    """Every available disc, each alone at C1 and C6 in one main or support slot (the other five slots filler), as
+    the team-damage gain over six fillers, on the current build and owned emblems. `on_element` marks discs of a
+    team member's element. Starts with the filler itself (0 by definition), then by best main-slot C6 gain."""
     elements = {gd.table("Character")[str(m.char_id)].get("EET", 0) for m in team.members}
-    ids = sorted(int(k) for k, v in gd.table("Disc").items()
-                 if v.get("Available") and v.get("Visible") and v.get("EET", 0) in elements)
+    ids = sorted(int(k) for k, v in gd.table("Disc").items() if v.get("Available") and v.get("Visible"))
     step = _tick(progress, "discs", 1 + 4 * len(ids))
     rows = rate_discs(gd, team, ids, build=build, emblems=True, on_result=step)
     rows.sort(key=lambda r: (-r.main_c6, -r.main_c1))
     disc = gd.table("Disc")
-    out = [dict(id=0, name="filler", element="", main_c1=0.0, main_c6=0.0, support_c1=0.0, support_c6=0.0,
+    out = [dict(id=0, name="filler", element="", on_element=True, main_c1=0.0, main_c6=0.0, support_c1=0.0, support_c6=0.0,
                 notes=["stats only, no effects: the baseline"])]
-    out += [dict(id=r.disc_id, name=r.name, element=ELEMENTS.get(disc[str(r.disc_id)].get("EET", 0), "?"),
+    out += [dict(id=r.disc_id, name=r.name, element=ELEMENTS.get(disc[str(r.disc_id)].get("EET", 0), "Neutral"),
+                 on_element=disc[str(r.disc_id)].get("EET", 0) in elements,
                  main_c1=r.main_c1, main_c6=r.main_c6, support_c1=r.support_c1, support_c6=r.support_c6,
                  notes=r.notes) for r in rows]
     return out

@@ -121,8 +121,9 @@ def test_disc_table_on_element_with_filler_row(gd, short_team):
     assert rows[0]["name"] == "filler" and all(rows[0][k] == 0.0 for k in ("main_c1", "main_c6", "support_c1", "support_c6"))
     discs = rows[1:]
     elements = {gd.table("Character")[str(m.char_id)]["EET"] for m in short_team.members}
-    want = {int(k) for k, v in gd.table("Disc").items() if v.get("Available") and v.get("Visible") and v.get("EET", 0) in elements}
-    assert {r["id"] for r in discs} == want
+    avail = {k: v for k, v in gd.table("Disc").items() if v.get("Available") and v.get("Visible")}
+    assert {r["id"] for r in discs} == {int(k) for k in avail}
+    assert {r["id"] for r in discs if r["on_element"]} == {int(k) for k, v in avail.items() if v.get("EET", 0) in elements}
     assert [r["main_c6"] for r in discs] == sorted((r["main_c6"] for r in discs), reverse=True)
     d = discs[0]
     ref = rate_discs(gd, short_team, [d["id"]], build=team_build(short_team), emblems=True)[0]

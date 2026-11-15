@@ -356,14 +356,19 @@ function discTable() {
   if (!d) return null;
   const stale = calcKey(state) !== d.forState;
   const cols = [["main_c1", "Main C1"], ["main_c6", "Main C6"], ["support_c1", "Support C1"], ["support_c6", "Support C6"]];
+  const table = (rows) => h("div", { class: "scroll" }, h("table", { class: "em numbers discs-opt" },
+    h("tr", {}, h("th", {}, "Disc"), cols.map(([, label]) => h("th", {}, label)), h("th", {}, "Notes")),
+    rows.map((r) => h("tr", { class: r.id === 0 ? "irrelevant" : null },
+      h("td", {}, r.name, r.element ? h("span", { class: "small muted" }, ` · ${r.element}`) : null),
+      cols.map(([k]) => h("td", { style: "text-align:right" }, cell(r[k]))),
+      h("td", { class: "small muted" }, (r.notes || []).join("; "))))));
+  const others = d.rows.filter((r) => !r.on_element);
+  const more = others.length ? h("details", { ontoggle: (e) => { ui.open.otherDiscs = e.target.open; } },
+    h("summary", {}, `Other discs (${others.length}: off-element and neutral)`), table(others)) : null;
+  if (more && ui.open.otherDiscs) more.open = true;
   return h("div", { class: "panel", style: "margin-top:8px" },
     stale ? h("div", { class: "msg warn small" }, "Team changed since these were calculated.") : null,
-    h("div", { class: "scroll" }, h("table", { class: "em numbers discs-opt" },
-      h("tr", {}, h("th", {}, "Disc"), cols.map(([, label]) => h("th", {}, label)), h("th", {}, "Notes")),
-      d.rows.map((r) => h("tr", { class: r.id === 0 ? "irrelevant" : null },
-        h("td", {}, r.name, r.element ? h("span", { class: "small muted" }, ` · ${r.element}`) : null),
-        cols.map(([k]) => h("td", { style: "text-align:right" }, cell(r[k]))),
-        h("td", { class: "small muted" }, (r.notes || []).join("; ")))))),
+    table(d.rows.filter((r) => r.on_element)), more,
     h("div", { class: "small muted" }, `Breaks ${d.breaks ? "on" : "off"}.`));
 }
 
@@ -373,7 +378,7 @@ function teamSection() {
     h("h3", {}, "Discs"), h("div", { class: "discs" }, discPanel("main"), discPanel("support")),
     h("div", { class: "field" },
       h("button", { onclick: runDiscs, disabled: !!ui.job || !state.members.every((m) => trekker(m.trekker)) }, "Optimize discs"),
-      h("span", { class: "small muted" }, "Every disc of the team's element, alone in one slot with the other five filler: team-damage gain over all filler at C1 and C6, as a main or a support disc. On the current potentials, pinks and emblems. ~1 min.")),
+      h("span", { class: "small muted" }, "Every disc (the team's element first; the rest under Other discs), alone in one slot with the other five filler: team-damage gain over all filler at C1 and C6, as a main or a support disc. On the current potentials, pinks and emblems. ~1 min.")),
     discTable(),
     h("div", { class: "field" },
       h("label", {}, "Include breaks", h("input", { type: "checkbox", checked: ui.breaks,

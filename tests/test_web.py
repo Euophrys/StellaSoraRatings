@@ -210,8 +210,9 @@ def test_discs_job(client):
     assert s["state"] == "done", s
     rows = s["result"]
     assert rows[0]["name"] == "filler" and len(rows) > 1
-    assert set(rows[1]) == {"id", "name", "element", "main_c1", "main_c6", "support_c1", "support_c6", "notes"}
-    assert {r["element"] for r in rows[1:]} == {"Ignis"}
+    assert set(rows[1]) == {"id", "name", "element", "on_element", "main_c1", "main_c6", "support_c1", "support_c6", "notes"}
+    assert {r["element"] for r in rows[1:] if r["on_element"]} == {"Ignis"}
+    assert "Neutral" in {r["element"] for r in rows if not r["on_element"]}
 
 
 def test_job_runner_busy_and_cancel():
