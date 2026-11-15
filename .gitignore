@@ -1,7 +1,31 @@
+# Game data (sparse clone of mined tables) and generated output
 data_src/
 out/
+
+# Python
 .venv/
 __pycache__/
+*.py[cod]
 *.egg-info/
+build/
+dist/
 .pytest_cache/
+.coverage
+htmlcov/
+
+# Development material: plans/design notes from agent sessions, third-party
+# references (decompiled damage formula), screenshots
+docs/superpowers/
+docs/reference/
 .superpowers/
+*.jpeg
+*.jpg
+*.png
+*.webp
+
+# Local tooling
+.claude/
+.vscode/
+.idea/
+.env
+.DS_Store
