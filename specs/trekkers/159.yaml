@@ -47,7 +47,7 @@ main:
         - {hit: 159400002, count: 8, offset: 1.817, interval: 0.09, tags: [burst]}   # frames: every 0.09 s; x8 (text)
 
   buffs:
-    - {name: crystallized, event: "cast:self:skill", duration: 8}
+    - {name: coronis_crystallized, event: "cast:self:skill", duration: 8}
 
   potentials:
     515901:   # Radiance of Auspice (pink): interval -25%
@@ -60,7 +60,7 @@ main:
           - {hit: 159310201, count: 13, offset: 1.567, interval: 0.6, tags: [beam], triggers_mark: true}
     515903:   # Needle Shower (pink): the extra hit while Crystallized; the fire rate and bigger magazine aren't modelled
       procs:
-        - {event: "hit:self:needle", when: "while:status:crystallized", hit: 159310301, tags: [crystal_bullet], triggers_mark: true}
+        - {event: "hit:self:needle", when: "while:status:coronis_crystallized", hit: 159310301, tags: [crystal_bullet], triggers_mark: true}
     515904:   # Echo of Earth (pink): a pulse per 1.5 s, landing 2.5 s later
       procs:
         - {event: "cast:self:skill", hit: 159310402, count: 5, offset: 2.5, interval: 1.5, tags: [pulse], triggers_mark: true}
@@ -90,7 +90,7 @@ main:
         - {index: 0, event: "dodge:main"}
     515913:   # Shifting Brilliance: while the beam is up
       overrides:
-        - {index: 1, hit_tags: [needle], event: "while:status:crystallized"}
+        - {index: 1, hit_tags: [needle], event: "while:status:coronis_crystallized"}
     515941:   # Dream Shock
       overrides:
         - {index: 0, hit_tags: []}

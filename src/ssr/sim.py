@@ -1,6 +1,7 @@
 """Tick-based 120 s fight simulation producing total team damage."""
 from __future__ import annotations
 
+import bisect
 import heapq
 import math
 import re
@@ -85,11 +86,13 @@ DODGE_CD = 1.0   # user: seconds between dodges (the dodge cooldown)
 
 @lru_cache(maxsize=None)
 def _norm_event(ev: str, owner: int) -> str:
+    """`self` / `main` -> member indices, in the event and in each `&while:` / `&recent:` suffix."""
     if "|" in ev:
         return "|".join(_norm_event(e, owner) for e in ev.split("|"))
-    base, amp, rest = ev.partition("&")   # "&recent:..." / "&while:..." suffixes keep their own tokens
-    parts = base.split(":")
-    return ":".join([parts[0]] + [{"self": str(owner), "main": "0"}.get(p, p) for p in parts[1:]]) + amp + rest
+    if "&" in ev:
+        return "&".join(_norm_event(e, owner) for e in ev.split("&"))
+    parts = ev.split(":")
+    return ":".join([parts[0]] + [{"self": str(owner), "main": "0"}.get(p, p) for p in parts[1:]])
 
 
 @lru_cache(maxsize=None)
@@ -160,7 +163,6 @@ class _Mod:
     last_trigger: float = -1e9
     count: int = 0
     constant: float = 1.0      # multiplier for always-on / uptime-based mods
-    once_used: set = field(default_factory=set)   # "&once" event alternatives already used
 
 
 @dataclass
@@ -330,8 +332,9 @@ def _setup_member(gd: GameData, team: TeamConfig, build: Build, i: int, emblems:
         if isinstance(x, EmblemPotentialLevel) and line_relevant(x, 0, mc.role):
             pot_levels[x.potential_id] = min(9, pot_levels.get(x.potential_id, 0) + x.plus)
     resolved = [_potential(gd, kit, p, lv) for p, lv in pot_levels.items()]
-    resolved += [x for x in lines if isinstance(x, ResolvedPotential)]
-    owned = set(pot_levels)
+    rated = [x for x in lines if isinstance(x, ResolvedPotential)]
+    resolved += rated
+    owned = set(pot_levels) | {rp.potential_id for rp in rated}
     # A potential that `excludes` another in the build does nothing (it still counts as owned for hits'
     # requires/excludes, and for its level).
     resolved = [rp for rp in resolved if not owned & set(rp.excludes)]
@@ -439,9 +442,9 @@ def _minion_pool(ms: MinionSpec, resolved: list[ResolvedPotential], keep, i: int
                 rules[k] = v
     ms = replace(ms, **rules, reactions=reacts)
     ms = replace(ms, **{k: getattr(ms, k) + v for k, v in adds.items()})
-    return replace(ms, summon=_norm_event(ms.summon, i),
-                   sacrifice_on=_norm_event(ms.sacrifice_on, i) if ms.sacrifice_on else "",
-                   resummon_on=_norm_event(ms.resummon_on, i) if ms.resummon_on else "",
+    return replace(ms, summon=sink.event(ms.summon, i) if ms.summon else "",
+                   sacrifice_on=sink.event(ms.sacrifice_on, i) if ms.sacrifice_on else "",
+                   resummon_on=sink.event(ms.resummon_on, i) if ms.resummon_on else "",
                    attacks=[h for h in ms.attacks if keep(h)],
                    reactions=[replace(h, event=sink.event(h.event, i)) for h in ms.reactions if keep(h)])
 
@@ -513,17 +516,29 @@ class _Fight:
         self.by_event: list[_Mod] = [md for md in dynamic if md.event and not md.event.startswith("while:")]
         self.while_mods: list[_Mod] = [md for md in dynamic if md.event.startswith("while:")]
         self.scoped_const: list[_Mod] = [md for md in dynamic if not md.event]
-        self.named = {md.mod.name: md for md in self.by_event if md.mod.name}
+        # Status name -> every event-driven mod carrying it. Names are fight-wide: one status can come from several
+        # buffs (Teresa's Surging Shield from her own skill and, with Restarting, from squadmates' casts) or from
+        # several members (Chill on the enemy), and it holds the most stacks any of its sources gives.
+        self.named: dict[str, list[_Mod]] = defaultdict(list)
+        for md in self.by_event:
+            if md.mod.name:
+                self.named[md.mod.name].append(md)
+        self.named = dict(self.named)
+        self.norm = sink.event
         self.pools = {name for m in members for name in m.minions}
-        self.status_parsed: dict = {}   # status expression -> ([(named mod or None, pool name or None)], least stacks)
+        self.status_parsed: dict = {}   # status expression -> ([(named mods, pool name or None)], least stacks)
+        self.alt_parsed: dict = {}      # event pattern -> its parsed alternatives (event_alts)
         self.status_time: dict = defaultdict(float)
         # Enemy-side hit tags: an enemy modifier with `hit_tags: [by_support]` (or by_main, or a damage bucket such as
         # minion_dmg) only applies to hits by those members / of that bucket ("Skill DMG taken from Support Trekkers").
         # Added to the enemy lookup only when some enemy modifier asks, so other fights plan exactly as before.
         self.enemy_tags = any("enemy" in md.receivers and any(
             tg in ("by_main", "by_support") or tg.endswith("_dmg") for tg in md.mod.hit_tags) for md in mods)
-        self.has_charge_mods = any(md.mod.stat == CHARGE_EFF for md in mods)
-        self.has_atk_spd = any(md.mod.stat == ATK_SPD and 0 in md.receivers for md in mods)
+        # Sheets can carry these too (team-file bonus_stats, emblem stat lines), not only modifiers.
+        self.has_charge_mods = any(md.mod.stat == CHARGE_EFF for md in mods) or any(
+            m.static.get(CHARGE_EFF) for m in members)
+        self.has_atk_spd = any(md.mod.stat == ATK_SPD and 0 in md.receivers for md in mods) or bool(
+            members[0].static.get(ATK_SPD))
         self.emit_plans: dict = {}   # event -> what it can touch: emit is the hot path, and most events match very little
         self.stat_plans: dict = {}   # (receiver, minion, tags) -> (sheet with the constant mods folded in, by_event,
         #                              while, [last key, last sheet])
@@ -535,8 +550,10 @@ class _Fight:
         self.first_cast: dict = {}
         self.alive: dict = defaultdict(list)   # (member, pool) -> [{"uid", "expire", "k", "ready"}] out, oldest first
         self.minion_uid = 0
-        self.holds = {(int(h["member"]), h["action"]): (h["until"], float(h.get("max_wait", math.inf)),
-                                                         h.get("only_if", "")) for h in team.hold}
+        self.holds = {(int(h["member"]), h["action"]): (_norm_event(h["until"], int(h["member"])),
+                                                         float(h.get("max_wait", math.inf)),
+                                                         _norm_event(h["only_if"], int(h["member"]))
+                                                         if h.get("only_if") else "") for h in team.hold}
         self.hold_since: dict = {}
 
         # resilience bar
@@ -565,14 +582,15 @@ class _Fight:
         self.proc_expected: dict = {}   # (member, proc) -> ExpectedICD for chance procs
         self.proc_count: dict = defaultdict(int)
         self.followup_count: dict = defaultdict(int)
-        self.main_event_followups = [(name, _norm_event(a.followup.event, 0), a.followup.every)
+        self.main_event_followups = [(name, sink.event(a.followup.event, 0), a.followup.every)
                                      for name, a in self.main.actions.items() if a.followup and a.followup.event]
 
         # the main's own timeline
         self.busy_until = 1.0      # main can't start a cast before this
         self.lock_until = 1.0      # main can't auto before this
-        self.pending: list = []    # (ready_time, action_name, extra) for main followups / extra casts
-        self.cancel_dodges: list = []   # times of the dodges that cancel an action into its followup
+        self.pending: list = []    # (ready_time, action_name) for main followups / extra casts
+        self.cancel_dodges: list = []   # times of the dodges that cancel an action into its followup, sorted
+        self.once_used: dict = defaultdict(set)   # (kind, owner, id) -> its "&once" event alternatives already used
         self.auto_clock = 0.0
         self.auto_loop = 0
         for m in members:
@@ -590,14 +608,23 @@ class _Fight:
         if parsed is None:
             names, _, least = name.partition(">=")
             parsed = self.status_parsed[name] = (
-                [(self.named.get(nm), nm if nm in self.pools else None) for nm in names.split("+")], int(least or 1))
+                [(self.named.get(nm, ()), nm if nm in self.pools else None) for nm in names.split("+")],
+                int(least or 1))
         k = 0
-        for md, pool in parsed[0]:
-            if md is not None and md.stacks:
-                k += sum(1 for x in md.stacks if x > t)
+        for mds, pool in parsed[0]:
+            if mds:
+                k += max(sum(1 for x in md.stacks if x > t) if md.stacks else 0 for md in mds)
             if pool is not None:
                 k += sum(len(v) for (mi, p), v in self.alive.items() if p == pool)
         return k if k >= parsed[1] else 0
+
+    def who(self, tok: str) -> range | tuple:
+        """Members a condition's <who> names: an index, `any` or `support` (any of them counts)."""
+        if tok == "any":
+            return range(self.n)
+        if tok == "support":
+            return range(1, self.n)
+        return (int(tok),)
 
     def condition(self, ev: str, t: float) -> int:
         """Multiplier for a "while:" modifier at time t (0 = inactive)."""
@@ -610,19 +637,28 @@ class _Fight:
             return self.status_stacks(parts[2], t)
         if kind == "resource":   # while:resource:<member>:<name>>=N (or >N): that member holds that much
             name, op, want = re.split("(>=?)", parts[3])
-            have = members[int(parts[2])].resources.get(name, 0.0)
-            return int(have >= float(want) - 1e-9 if op == ">=" else have > float(want) + 1e-9)
+            for mi in self.who(parts[2]):
+                have = members[mi].resources.get(name, 0.0)
+                if have >= float(want) - 1e-9 if op == ">=" else have > float(want) + 1e-9:
+                    return 1
+            return 0
         if kind == "cd_within":   # while:cd_within:<member>:<action>:<seconds>: cooldown left <= N s
-            left = members[int(parts[2])].cd_ready.get(parts[3], 0.0) - t
-            return int(left <= float(parts[4]) + 1e-9)
+            return int(any(members[mi].cd_ready.get(parts[3], 0.0) - t <= float(parts[4]) + 1e-9
+                           for mi in self.who(parts[2])))
         if kind == "in_action":   # while:in_action:<member>:<action>: within that action's lock after its last cast
-            mi, act = int(parts[2]), parts[3]
-            last = self.last_cast.get((mi, act))
-            a = members[mi].actions.get(act)
-            return int(last is not None and a is not None and t - last <= a.lock + 1e-9)
+            act = parts[3]
+            for mi in self.who(parts[2]):
+                last = self.last_cast.get((mi, act))
+                a = members[mi].actions.get(act)
+                if last is not None and a is not None and t - last <= a.lock + 1e-9:
+                    return 1
+            return 0
         if kind == "cast_within":   # while:cast_within:<who>:<action>:<seconds>: cast that recently
-            last = self.last_cast.get((int(parts[2]), parts[3]))
-            return int(last is not None and t - last <= float(parts[4]) + 1e-9)
+            for mi in self.who(parts[2]):
+                last = self.last_cast.get((mi, parts[3]))
+                if last is not None and t - last <= float(parts[4]) + 1e-9:
+                    return 1
+            return 0
         if kind == "broken":   # while:broken: the enemy's resilience bar is broken
             if self.bar is None:   # no bar: today's behaviour, the unknown_trigger_uptime assumption (on if > 0)
                 return int(self.team.enemy.breaks and self.uptime_default > 0)
@@ -645,53 +681,63 @@ class _Fight:
             return any(self.on_field_until[i] > t for i in idx)
         return False
 
-    def recent_ok(self, pattern: str, ev: str, t: float) -> bool:
-        """`<event>&recent:<tag>:<seconds>`: the member that emitted the event also landed a <tag> hit
-        within the last <seconds> (e.g. a minion hit counts only if its summoner dealt Skill DMG recently)."""
-        if "&recent:" not in pattern:
-            return True
+    def event_alts(self, pattern: str) -> list:
+        """A pattern's `|` alternatives, each as (alt, base event, &once, [(recent tag, seconds)], [while conditions])."""
+        parsed = self.alt_parsed.get(pattern)
+        if parsed is None:
+            parsed = []
+            for alt in pattern.split("|"):
+                base, *suffixes = alt.split("&")
+                once, recents, whiles = False, [], []
+                for s in suffixes:
+                    if s == "once":
+                        once = True
+                    elif s.startswith("recent:"):
+                        tag, _, secs = s[len("recent:"):].rpartition(":")
+                        recents.append((tag, float(secs)))
+                    elif s.startswith("while:"):
+                        whiles.append(s)
+                    else:
+                        raise ValueError(f"event {pattern!r}: unknown suffix &{s} (have &once, &recent:, &while:)")
+                parsed.append((alt, base, once, recents, whiles))
+            self.alt_parsed[pattern] = parsed
+        return parsed
+
+    def passing_alt(self, pattern: str, ev: str, t: float, once_key) -> tuple | None:
+        """The alternative of `pattern` that event `ev` counts for at t, as (alt, uses &once), or None. Per alternative:
+        - `&recent:<tag>:<seconds>`: the member that emitted the event also landed a <tag> hit within the last
+          <seconds> (e.g. a minion hit counts only if its summoner dealt Skill DMG recently);
+        - `&while:<condition>`: only while the condition holds (`cast:self:skill&while:status:berserk`);
+        - `&once`: only the first time it fires in the fight ("Triggers once every 5 minutes"). The caller marks it
+          used once the trigger really fired (`use_once`); alternatives without it are tried first."""
+        if "&" not in pattern:
+            return (pattern, False) if _event_matches(pattern, ev) else None
         parts = ev.split(":")
         who = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else None
-        for alt in pattern.split("|"):
-            base, _, cond = alt.partition("&recent:")
-            if not _event_matches(base, ev):
+        found = None
+        for alt, base, once, recents, whiles in self.event_alts(pattern):
+            if not _event_matches(base, ev) or (once and alt in self.once_used[once_key]):
                 continue
-            if not cond:
-                return True
-            tag, _, secs = cond.rpartition(":")
-            last = self.last_hit.get((who, tag))
-            if last is not None and t - last <= float(secs) + 1e-9:
-                return True
-        return False
+            if not all((last := self.last_hit.get((who, tag))) is not None and t - last <= secs + 1e-9
+                       for tag, secs in recents):
+                continue
+            if not all(self.condition(w, t) for w in whiles):
+                continue
+            if not once:
+                return alt, False
+            found = found or (alt, True)
+        return found
 
-    @staticmethod
-    def once_ok(md: _Mod, ev: str) -> bool:
-        """`<event>&once`: that alternative activates the modifier only the first time it matches in the fight
-        (e.g. "Dealing any DMG grants her Starender. Triggers once every 5 minutes"); other alternatives are free."""
-        if "&once" not in md.event:
-            return True
-        for alt in md.event.split("|"):
-            if not _event_matches(alt, ev):
-                continue
-            if "&once" not in alt:
-                return True
-            if alt not in md.once_used:
-                md.once_used.add(alt)
-                return True
-        return False
+    def use_once(self, once_key, alt: tuple):
+        if alt[1]:
+            self.once_used[once_key].add(alt[0])
 
-    def while_ok(self, pattern: str, ev: str, t: float) -> bool:
-        """`<event>&while:<condition>`: the alternative only counts while the condition holds
-        (e.g. `cast:self:skill&while:status:berserk`: casting the skill while in Berserk)."""
-        if "&while:" not in pattern:
-            return True
-        for alt in pattern.split("|"):
-            if not _event_matches(alt, ev):
-                continue
-            conds = [c[len("while:"):] for c in alt.split("&")[1:] if c.startswith("while:")]
-            if all(self.condition("while:" + c, t) for c in conds):
-                return True
-        return False
+    def event_ok(self, pattern: str, ev: str, t: float, once_key) -> bool:
+        """Whether `ev` counts for `pattern` now, for triggers that always fire when it does (an `&once` is used)."""
+        alt = self.passing_alt(pattern, ev, t, once_key)
+        if alt:
+            self.use_once(once_key, alt)
+        return alt is not None
 
     # ---------------------------------------------------------------- events
 
@@ -703,7 +749,7 @@ class _Fight:
 
         plan_mods = []   # (mod, the event resets it, the event triggers it, it has &recent/&once/&while checks)
         for md in self.by_event:
-            resets = any(_event_matches(_norm_event(r, md.owner), ev) for r in md.mod.trigger.reset_on or ())
+            resets = any(_event_matches(self.norm(r, md.owner), ev) for r in md.mod.trigger.reset_on or ())
             matches = _event_matches(md.event, ev)
             if resets or matches:
                 plan_mods.append((md, resets, matches, "&" in md.event))
@@ -728,33 +774,48 @@ class _Fight:
         for md, resets, matches, checked in plan_mods:
             if resets and md.stacks:
                 md.stacks = []
-            if matches and (not checked or (self.recent_ok(md.event, ev, t) and self.once_ok(md, ev)
-                                            and self.while_ok(md.event, ev, t))):
+            if not matches:
+                continue
+            if not checked:
                 self.activate(md, t)
-        for fname, _, every in plan_followups:
+                continue
+            key = ("mod", id(md))
+            alt = self.passing_alt(md.event, ev, t, key)
+            if alt and self.activate(md, t):
+                self.use_once(key, alt)
+        for fname, fev, every in plan_followups:
+            if "&" in fev and not self.event_ok(fev, ev, t, ("followup", fname)):
+                continue
             self.followup_count[fname] += 1
             if self.followup_count[fname] % every == 0:
-                self.pending.append((max(t, self.lock_until), fname, False))
+                self.pending.append((max(t, self.lock_until), fname))
         for m, procs, pools in plan_members:
-            for _, p in procs:
-                self.fire_proc(m, p, t)
+            for pev, p in procs:
+                if "&" not in pev:
+                    self.fire_proc(m, p, t)
+                    continue
+                key = ("proc", m.idx, p)
+                alt = self.passing_alt(pev, ev, t, key)
+                if alt and self.fire_proc(m, p, t):
+                    self.use_once(key, alt)
             for pool, ms in pools:
                 self.pool_event(m, pool, ms, ev, t)
 
-    def activate(self, md: _Mod, t: float):
-        """An event-driven modifier's trigger matched: add its stacks (every-Nth, ICD and stacks_from permitting)."""
+    def activate(self, md: _Mod, t: float) -> bool:
+        """An event-driven modifier's trigger matched: add its stacks (every-Nth, ICD and stacks_from permitting).
+        Returns whether it activated."""
         trig = md.mod.trigger
         if trig.every > 1:
             md.count += 1
             if md.count % trig.every:
-                return
-        if t - md.last_trigger < trig.icd:
-            return
+                return False
+        if t - md.last_trigger < trig.icd - 1e-9:
+            return False
         add = trig.add
         if trig.stacks_from:
             add = self.status_stacks(trig.stacks_from, t)
             if not add:
-                return
+                return False
         md.last_trigger = t
         dur = math.inf if (trig.duration == 0 or trig.duration == math.inf) else trig.duration
         md.stacks = [x for x in md.stacks if x > t]
@@ -764,23 +825,25 @@ class _Fight:
         if len(md.stacks) > trig.max_stacks:
             md.stacks.sort()
             md.stacks = md.stacks[-trig.max_stacks:]
+        return True
 
-    def fire_proc(self, m: _Member, p: HitSpec, t: float):
-        """A proc's event matched: fire it unless its ICD, condition, cost, pools or every-Nth say no."""
+    def fire_proc(self, m: _Member, p: HitSpec, t: float) -> bool:
+        """A proc's event matched: fire it unless its ICD, condition, cost, pools or every-Nth say no.
+        Returns whether it fired."""
         chancy = p.chance < 1
         key = (m.idx, p)
-        if not (chancy or t >= self.proc_ready[key]):
-            return
+        if not (chancy or t >= self.proc_ready[key] - 1e-9):
+            return False
         if p.when and not self.condition(p.when, t):
-            return
+            return False
         if p.cost and any(m.resources[r] < c - 1e-9 for r, c in p.cost):
-            return   # not enough of the resource: the proc doesn't fire (nothing is spent)
+            return False   # not enough of the resource: the proc doesn't fire (nothing is spent)
         if p.summon and all(self.pool_blocked(m, pool) for pool in p.summon):
-            return   # every pool it summons into is full and refuses new ones (at_max: block)
+            return False   # every pool it summons into is full and refuses new ones (at_max: block)
         if p.every > 1:
             self.proc_count[key] += 1
             if self.proc_count[key] % p.every:
-                return
+                return False
         mass = 1.0
         if chancy:   # expected value: the proc's share of this event, with its ICD in expectation
             eicd = self.proc_expected.get(key)
@@ -788,7 +851,7 @@ class _Fight:
                 eicd = self.proc_expected[key] = ExpectedICD(p.chance, p.icd or 0.0)
             mass = eicd.fire(t)
             if mass <= 0:
-                return
+                return False
         else:
             self.proc_ready[key] = t + (p.icd or 0.0)
         if p.resilience:
@@ -804,7 +867,7 @@ class _Fight:
             self.gain_resource(m, r, g * mass, t)
         if chancy:
             if not p.hit_id:
-                return
+                return True
             p = replace(p, mult=p.mult * mass)
         if p.restart:   # e.g. a refreshed DoT: the previous firing's pending ticks are dropped
             rkey = f"rproc#{m.idx}#{id(p)}"
@@ -812,27 +875,29 @@ class _Fight:
             self.schedule(m, p, "proc", t, f"{rkey}#{self.restart_gen[rkey]}")
         else:
             self.schedule(m, p, "proc", t, f"proc#{self.seq}")
+        return True
 
     def pool_event(self, m: _Member, pool: str, ms: MinionSpec, ev: str, t: float):
         """An event a minion pool listens to: reactions, sacrifice, resummon or a summon schedule."""
         out = self.alive[(m.idx, pool)]
+        key = ("pool", m.idx, pool)
         for ri, h in enumerate(ms.reactions):   # each minion out reacts, with its own ICD
-            if not _event_matches(h.event, ev):
+            if not out or not self.event_ok(h.event, ev, t, key + ("react", ri)):
                 continue
             for mn in list(out):
                 if t >= mn["ready"].get(ri, -1e9) - 1e-9:
                     mn["ready"][ri] = t + (h.icd or 0.0)
                     self.schedule(m, h, "minion_react", t, f"react#{mn['uid']}")
-        if ms.sacrifice_on and _event_matches(ms.sacrifice_on, ev):
+        if ms.sacrifice_on and self.event_ok(ms.sacrifice_on, ev, t, key + ("sacrifice",)):
             for mn in list(out):
                 self.vanish(m, pool, mn, t, sacrifice=True)
-        if ms.resummon_on and _event_matches(ms.resummon_on, ev):
+        if ms.resummon_on and self.event_ok(ms.resummon_on, ev, t, key + ("resummon",)):
             k = len(out)
             for mn in list(out):
                 self.vanish(m, pool, mn, t)
             for _ in range(k):
                 self.summon(m, pool, t)
-        if ms.summon and _event_matches(ms.summon, ev):
+        if ms.summon and self.event_ok(ms.summon, ev, t, key + ("summon",)):
             key = f"summon#{m.idx}#{pool}"
             if ms.restart:
                 self.restart_gen[key] += 1
@@ -860,7 +925,7 @@ class _Fight:
               "ready": {ri: t + (h.icd or 0.0) for ri, h in enumerate(ms.reactions)}}   # ICD starts at the summon
         self.alive[(m.idx, pool)].append(mn)
         if ms.attacks:
-            self.push(t + ms.windup, m.idx, None, "minion", f"{pool}#{mn['uid']}")
+            self.push(t + ms.windup, m.idx, None, "minion_attack", f"{pool}#{mn['uid']}")
         self.emit(f"summon:{m.idx}:{pool}", t)
 
     def vanish(self, m: _Member, pool: str, mn: dict, t: float, sacrifice: bool = False):
@@ -888,7 +953,7 @@ class _Fight:
         self.summon(m, pool, t)
 
     def minion_attack(self, ht: float, mi: int, cid: str):
-        """A minion's attack comes up: it lands its next attack in the cycle and queues the one after."""
+        """A minion's attack comes up: it queues the hits of its next attack in the cycle, and the attack after."""
         pool, _, uid = cid.partition("#")
         m = self.members[mi]
         mn = next((x for x in self.alive[(mi, pool)] if x["uid"] == int(uid)), None)
@@ -897,9 +962,9 @@ class _Fight:
         ms = m.minions[pool]
         h = ms.attacks[mn["k"] % len(ms.attacks)]
         mn["k"] += 1
-        self.push(ht + ms.interval / (1.0 + ms.speed), mi, None, "minion", cid)
-        for k in range(h.count):
-            self.land(ht + k * h.interval, mi, h, "minion", cid)
+        self.push(ht + ms.interval / (1.0 + ms.speed), mi, None, "minion_attack", cid)
+        for k in range(h.count):   # queued, so later hits see the buffs of their own moment and stop at the fight's end
+            self.push(ht + k * h.interval, mi, h, "minion", cid)
 
     # ---------------------------------------------------------------- casts and cooldowns
 
@@ -1002,16 +1067,16 @@ class _Fight:
         self.lock_until = max(self.lock_until, t + lock)
         self.busy_until = t + min(DEFAULT_BUSY, lock) if lock else t
         if dodge_at is not None:
-            self.cancel_dodges.append(t + dodge_at)
+            bisect.insort(self.cancel_dodges, t + dodge_at)
         if self.auto_clock > 0:
             self.auto_loop += 1
         self.auto_clock = 0.0
         for _ in range(m.extra_casts.get(name, 0) if from_cd else 0):
-            self.pending.append((t + DEFAULT_BUSY, name, True))
+            self.pending.append((t + DEFAULT_BUSY, name))
         for fname, fa in m.actions.items():
             if fa.followup and not fa.followup.event and fa.followup.after == name \
                     and m.cast_count[name] % fa.followup.every == 0:
-                self.pending.append((t + lock + fa.followup.delay, fname, False))
+                self.pending.append((t + lock + fa.followup.delay, fname))
                 if not fa.followup.autos:   # no autos before the followup
                     self.lock_until = max(self.lock_until, t + lock + fa.followup.delay)
 
@@ -1145,7 +1210,7 @@ class _Fight:
             self.apply_mark(mi, t)
         triggers = h.triggers_mark or bool(tags & m.mark_tags)
         # Any member whose kit has a mark hit can trigger (consume) the Mark: supports like Shia compete with the main.
-        if triggers and self.mark_up[el] and t >= self.next_mark[el] and m.kit.mark_hit:
+        if triggers and self.mark_up[el] and t >= self.next_mark[el] - 1e-9 and m.kit.mark_hit:
             self.mark_up[el] = False
             self.next_mark[el] = t + self.team.mark_icd
             self.push(t, mi, HitSpec(hit_id=m.kit.mark_hit, tags=("mark",) + m.kit.mark_hit_tags), "mark", "mark")
@@ -1204,8 +1269,11 @@ class _Fight:
         `dodge:0` is the main's dodge, one every `dodge_interval` s on average (assumption, default 10);
         `hit_taken:0` the main being hit, one every `hit_taken_interval` s."""
         assumptions = self.team.assumptions
-        used = " ".join([md.event for md in self.by_event] + [pev for m in self.members for pev, _ in m.procs]
-                         + [h.event for m in self.members for ms in m.minions.values() for h in ms.reactions])
+        used = " ".join([md.event for md in self.by_event] + [r for md in self.by_event for r in md.mod.trigger.reset_on or ()]
+                         + [pev for m in self.members for pev, _ in m.procs]
+                         + [ev for m in self.members for ms in m.minions.values()
+                            for ev in (ms.summon, ms.sacrifice_on, ms.resummon_on, *(h.event for h in ms.reactions))]
+                         + [fev for _, fev, _ in self.main_event_followups])
         self.timers = sorted({float(x) for x in re.findall(r"\btimer:(\d+(?:\.\d+)?)", used)})
         dodge_every = float(assumptions.get("dodge_interval", 10.0))
         spam = assumptions.get("dodge_spam")   # {interval: 3, potentials: [ids]}: dodge faster when the main has one
@@ -1223,10 +1291,11 @@ class _Fight:
         self.hit_every = float(assumptions.get("hit_taken_interval", 20.0))   # `hit_taken:0`: the main is hit (~20 s)
 
     def run(self):
-        # A status name that is a plain name and not also a minion pool is up exactly when its own mod has a live stack.
-        self.named_plain = [(name, md) for name, md in self.named.items()
+        # A status name that is a plain name and not also a minion pool is up exactly when one of its mods has a live
+        # stack. Names that are also pools are timed with the pools (once).
+        self.named_plain = [(name, mds) for name, mds in self.named.items()
                             if not ("+" in name or ">=" in name or name in self.pools)]
-        self.named_other = [name for name in self.named if "+" in name or ">=" in name or name in self.pools]
+        self.named_other = [name for name in self.named if ("+" in name or ">=" in name) and name not in self.pools]
         cast_order = self.members[1:] + [self.main]
         dt = self.dt
         for step in range(int(round(self.T / dt)) + 1):
@@ -1278,9 +1347,8 @@ class _Fight:
                 if int(self.on_field_time[m.idx] + 1e-9) > int(before + 1e-9):
                     self.emit(f"on_field_1s:{m.idx}", t)   # every second on the field
         status_time = self.status_time
-        for name, md in self.named_plain:
-            st = md.stacks
-            if st and (st[-1] > t or max(st) > t):
+        for name, mds in self.named_plain:
+            if any(md.stacks and max(md.stacks) > t for md in mds):
                 status_time[name] += dt
         for name in self.named_other:
             if self.status_stacks(name, t) > 0:
@@ -1299,7 +1367,7 @@ class _Fight:
         if is_main and self.pending:
             self.pending.sort()
             if self.pending[0][0] <= t + 1e-9:
-                _, name, _ = self.pending.pop(0)
+                _, name = self.pending.pop(0)
                 self.cast(m, name, t, from_cd=False)
                 return
         if "ult" in m.actions and m.ult_cost and m.energy >= m.ult_cost and self.ready(m, "ult", t) \
@@ -1342,7 +1410,7 @@ class _Fight:
                     continue   # superseded by a newer firing / schedule
             if action == "summon":
                 self.summon_tick(self.members[mi], cid.split("#")[2], ht)
-            elif action == "minion":
+            elif action == "minion_attack":
                 self.minion_attack(ht, mi, cid)
             else:
                 self.land(ht, mi, h, action, cid)

@@ -45,7 +45,7 @@ main:
   buffs:
     - {effect: 12693001, level: skill, event: "cast:self:skill", duration: 8, target: team}
     - {name: flock, event: "cast:self:skill", duration: 8, requires: [512603]}
-    - {name: clone, event: "cast:self:skill", duration: 8, requires: [512604]}
+    - {name: other_self, event: "cast:self:skill", duration: 8, requires: [512604]}
 
   potentials:
     512601:   # Spiral Dance (pink): 2 hats, every 0.25 s for 5 s
@@ -59,7 +59,7 @@ main:
         - {event: "hit:self:bird", when: "while:status:flock", hit: 126100004, count: 2, offset: 0.1, interval: 0.1, tags: [extra_bird]}
     512604:   # Other Self (pink): a clone at 33%, for 8 s; Auto Attack DMG
       procs:
-        - {event: "hit:self:bird", when: "while:status:clone", hit: 126100004, mult: 0.33, offset: 0.2, tags: [clone_bird]}
+        - {event: "hit:self:bird", when: "while:status:other_self", hit: 126100004, mult: 0.33, offset: 0.2, tags: [clone_bird]}
     512605:   # Movement Artistry
       overrides:
         - {index: 0, hit_tags: [hat]}
