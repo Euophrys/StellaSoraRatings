@@ -9,7 +9,7 @@ This simulates in-game fights to calculate what the best potentials, discs, embl
 
 There are the following things to consider when looking at the results.
 
-- Dodges are coded to happen roughly once every 10 seconds.
+- Dodges are coded to happen roughly once every 10 seconds, and damage taken every 20 seconds, which affects some discs and potentials.
 - The boss never moves. DPS uptime is constant, and things like Leafia's turrets never get out of range.
 - I don't own every character so most of the limiteds are taken from the game data and haven't been verified. Minion behaviour in particular is a mystery.
 - Fights are assumed to be against a single boss. Enemies never die and AOE potentials are weak.
