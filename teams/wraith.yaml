@@ -1,0 +1,52 @@
+name: wraith
+fight_length: 120
+tick: 0.05
+mark_icd: 1
+enemy:
+  preset: generic
+members:
+- trekker: Wraith
+  role: main
+  pinks: []
+  skill_levels:
+    auto: 10
+    skill: 10
+    ult: 10
+  emblems: []
+  talents: 0
+  targets: {}
+- trekker: Ann
+  role: support
+  pinks: []
+  skill_levels:
+    skill: 10
+    ult: 10
+  emblems: []
+  talents: 0
+  targets: {}
+- trekker: Nanoha
+  role: support
+  pinks: []
+  skill_levels:
+    skill: 10
+    ult: 10
+  emblems: []
+  talents: 0
+  targets: {}
+discs:
+  main:
+  - name: One, Two, Three, Jump!
+    copies: 1
+  - name: Lemon & Black Tea
+    copies: 1
+  - name: Emerald Dream
+    copies: 1
+  support:
+  - filler
+  - filler
+  - filler
+budget:
+- 30
+- 15
+- 15
+max_level: 6

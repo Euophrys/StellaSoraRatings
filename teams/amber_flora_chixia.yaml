@@ -13,8 +13,8 @@ members:
 - trekker: Amber
   role: main
   pinks:
+  - Bullet Storm
   - Precise Temperature Control
-  - Echo of Hospitality
   skill_levels:
     auto: 10
     skill: 10
@@ -40,31 +40,51 @@ members:
       tier: blue
     - line: Crit Rate
       tier: blue
+  - slot: 3
+    lines:
+    - line: Grand Finale
+      tier: '+3'
+    - line: Skill DMG
+      tier: blue
+    - line: Auto Attack DMG
+      tier: yellow
+    - line: Mark DMG
+      tier: purple
   targets:
     Confident Mode: 1
     Weakness Mark: 2
-    Grand Finale: 6
+    Grand Finale: 5
     Fiery Rhythm: 1
     Blazing Waltz: 1
     Keen Accent: 6
-    Bursting Spark: 6
+    Bursting Spark: 2
     Overloaded Spark: 1
-    Soul-Hunting Spark: 6
-  talents: 1
+    Soul-Hunting Spark: 1
+  talents: 2
 - trekker: Flora
   role: support
   pinks:
-  - Ashes of the Past
   - Ember of Tomorrow
+  - Ember Rekindled
   skill_levels:
     skill: 10
     ult: 10
-  emblems: []
+  emblems:
+  - slot: 1
+    lines:
+    - line: Auto Attack Crit Rate
+      tier: green
+    - line: DEF%
+      tier: blue
+    - line: Charge Efficiency (Support)
+      tier: purple
+    - line: DEF
+      tier: yellow
   targets:
     Foreshadowing Verification: 6
-    Perfect Acting: 6
-    Visual Impact: 1
-    Reinforced Impression: 4
+    Perfect Acting: 1
+    Visual Impact: 4
+    Reinforced Impression: 1
     Guest Performer: 6
     Lethal Inferno: 6
     Reincarnation of Fire: 1
@@ -76,12 +96,22 @@ members:
   skill_levels:
     skill: 10
     ult: 10
-  emblems: []
+  emblems:
+  - slot: 1
+    lines:
+    - line: Minion DMG
+      tier: yellow
+    - line: Skill Crit Rate
+      tier: blue
+    - line: Ignis PEN
+      tier: blue
+    - line: Minion DMG
+      tier: yellow
   targets:
     'Ink Sigil: Horn Call': 6
     'Ink Sigil: Trail Seeker': 6
     'Ink Sigil: Blood Fed': 6
-    'Ink Sigil: Ambush': 6
+    'Ink Sigil: Ambush': 1
     'Sigil Unleashed: Flame Glow': 6
 discs:
   main:
@@ -104,7 +134,7 @@ assumptions:
   unknown_trigger_uptime: 1
   disc_stats_target: team
 budget:
-- 30
-- 30
-- 30
-budget_total: null
+- 40
+- 25
+- 25
+budget_total: 70

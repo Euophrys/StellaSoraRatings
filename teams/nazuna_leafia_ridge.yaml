@@ -1,38 +1,105 @@
 # Nazuna (main) / Leafia / Ridge, all Terra. Leafia timed 2026-11-13 (specs/trekkers/161.yaml).
 name: nazuna_leafia_ridge
-fight_length: 120
+fight_length: 180
 tick: 0.05
-mark_icd: 1.0
+mark_icd: 1
 enemy:
-  res: 250        # weak-element RES (docs/assumptions.md)
-  defense: 500
-  broken: 1.0
-  resilience: 0   # bar off, as in the other Terra teams
-
+  preset: lithe_beauty
 members:
-  - trekker: Nazuna
-    role: main
-    pinks: [Small Force, Wobble Dance]
-    skill_levels: {auto: 10, skill: 10, ult: 10}
-    emblems: []
-  - trekker: Leafia
-    role: support
-    pinks: [Tactical Co-Draw, Observer Iteration]
-    skill_levels: {skill: 10, ult: 10}
-    emblems: []
-  - trekker: Ridge
-    role: support
-    pinks: [Reblossom, Sense the Stir]
-    skill_levels: {skill: 10, ult: 10}
-    emblems: []
-
-discs:   # filler, so the comparison is about the kits
-  main: [filler, filler, filler]
-  support: [filler, filler, filler]
-
-reference: {steps: 2, main_picks: 2, support_picks: 1, level: 6}
-
+- trekker: Nazuna
+  role: main
+  pinks:
+  - Wobble Dance
+  - Roll the Dice
+  skill_levels:
+    auto: 10
+    skill: 10
+    ult: 10
+  emblems:
+  - slot: 3
+    lines:
+    - line: Wily Wonder
+      tier: '+3'
+  targets:
+    Cutie's Rally: 6
+    Focus Fire: 6
+    Wily Wonder: 6
+    Rocket Cart: 6
+- trekker: Leafia
+  role: support
+  pinks:
+  - Vanguard Calibration
+  - Calibration Detonation
+  skill_levels:
+    skill: 10
+    ult: 10
+  emblems:
+  - slot: 1
+    lines:
+    - line: Terra PEN
+      tier: purple
+    - line: Auto Attack DMG
+      tier: purple
+  - slot: 2
+    lines:
+    - line: Main Skill Level Up
+      tier: '+3'
+    - line: Auto Attack DMG
+      tier: purple
+  - slot: 3
+    lines:
+    - line: Calibration Expansion
+      tier: '+3'
+  targets:
+    Calibration Expansion: 6
+    Mark Etching: 1
+    Mark Suppression: 6
+    Earthen Deposition: 1
+    Leyline Amp: 1
+    Draw Zone Support: 5
+- trekker: Ridge
+  role: support
+  pinks:
+  - Reblossom
+  - Sense the Stir
+  skill_levels:
+    skill: 10
+    ult: 10
+  emblems:
+  - slot: 3
+    lines:
+    - line: Corrosive Vines
+      tier: '+3'
+  targets:
+    Corrosive Vines: 6
+    Root Grasp: 6
+    Small Changes: 4
+discs:
+  main:
+  - name: Claw the Claw
+    copies: 1
+  - name: Emergency Evacuation
+    copies: 6
+  - name: The Lost Pilgrim
+    copies: 1
+  support:
+  - filler
+  - filler
+  - filler
+reference:
+  steps: 2
+  main_picks: 2
+  support_picks: 1
+  level: 6
 assumptions:
-  unknown_trigger_uptime: 1.0
+  unknown_trigger_uptime: 1
   disc_stats_target: team
-  dodge_spam: {interval: 3, potentials: [515611]}   # as nazuna_gerie_ridge: with Swiftstep Nazuna dodges on cooldown
+  dodge_spam:
+    interval: 3
+    potentials:
+    - 515611
+budget:
+- 30
+- 20
+- 20
+budget_total: 60
