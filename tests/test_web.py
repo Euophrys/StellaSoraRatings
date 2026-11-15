@@ -205,6 +205,15 @@ def test_optimize_and_pinks_jobs(client):
     assert all(len(r["pinks"]) == 2 for r in rows)
 
 
+def test_discs_job(client):
+    s = client.wait(client.json("POST", "/api/jobs", {"kind": "discs", "state": state(fight_length=20)})["id"])
+    assert s["state"] == "done", s
+    rows = s["result"]
+    assert rows[0]["name"] == "filler" and len(rows) > 1
+    assert set(rows[1]) == {"id", "name", "element", "main_c1", "main_c6", "support_c1", "support_c6", "notes"}
+    assert {r["element"] for r in rows[1:]} == {"Ignis"}
+
+
 def test_job_runner_busy_and_cancel():
     runner = JobRunner()
     gate = threading.Event()

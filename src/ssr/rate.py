@@ -33,17 +33,20 @@ class DiscRow:
     notes: list[str] = field(default_factory=list)
 
 
-def rate_discs(gd: GameData, team: TeamConfig, disc_ids: list[int] | None = None, build: Build | None = None) -> list[DiscRow]:
+def rate_discs(gd: GameData, team: TeamConfig, disc_ids: list[int] | None = None, build: Build | None = None,
+               emblems: bool = False, on_result=None) -> list[DiscRow]:
+    """Each disc at C1 and C6 alone in one main or support slot (the other five filler), as the gain over six
+    fillers. `on_result` is passed to `simulate_many` (progress and cancel)."""
     build = build or Build()
     if disc_ids is None:
         disc_ids = sorted(int(k) for k, v in gd.table("Disc").items() if v.get("Available") and v.get("Visible"))
     fill = (FILLER, 6)
-    calls = [dict(build=build, emblems=False, discs=ALL_FILLER)]
+    calls = [dict(build=build, emblems=emblems, discs=ALL_FILLER)]
     for d in disc_ids:
         for c in (1, 6):
-            calls.append(dict(build=build, emblems=False, discs=([(d, c), fill, fill], [fill] * 3)))
-            calls.append(dict(build=build, emblems=False, discs=([fill] * 3, [(d, c), fill, fill])))
-    results = simulate_many(gd, team, calls)
+            calls.append(dict(build=build, emblems=emblems, discs=([(d, c), fill, fill], [fill] * 3)))
+            calls.append(dict(build=build, emblems=emblems, discs=([fill] * 3, [(d, c), fill, fill])))
+    results = simulate_many(gd, team, calls, on_result)
     base, rest = results[0], iter(results[1:])
     rows = []
     for d in disc_ids:

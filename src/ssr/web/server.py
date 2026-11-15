@@ -16,7 +16,7 @@ from ..compare import COLOUR_RANK
 from ..data import GameData
 from ..finder import find_teams, team_docs
 from ..sharecode import SharePreset, decode_share, encode_share
-from ..guide import emblem_table, optimize, potential_grid, rank_pinks, without_breaks
+from ..guide import disc_table, emblem_table, optimize, potential_grid, rank_pinks, without_breaks
 from ..sim import simulate
 from ..team import TEAMS, TeamConfig, TeamDocError, save_team, team_build, team_from_doc
 from .catalog import catalog
@@ -78,6 +78,12 @@ def _optimize(gd: GameData, team: TeamConfig, split, max_level, total=None):
         r = optimize(gd, team, split, max_level=max_level, progress=progress, total=total)
         return {"targets": _name_targets(gd, team, r.build), "total": r.total, "base_total": r.base_total,
                 "method": r.method}
+    return run
+
+
+def _discs(gd: GameData, team: TeamConfig):
+    def run(progress):
+        return disc_table(gd, team, team_build(team), progress=progress)
     return run
 
 
@@ -166,6 +172,8 @@ class App:
             if member not in (0, 1, 2):
                 raise ApiError(400, "member must be 0, 1 or 2")
             fn = _pinks(gd, rated(_team(gd, body.get("state"), skip_pinks=member)), member)
+        elif kind == "discs":
+            fn = _discs(gd, rated(_team(gd, body.get("state"))))
         elif kind == "finder":
             fn = _finder_job(gd, body, breaks)
         else:

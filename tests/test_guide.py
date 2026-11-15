@@ -111,3 +111,21 @@ def test_optimize_total_with_caps(gd, short_team):
         per[cid] += lv
     assert sum(per.values()) == 4 and all(v <= 3 for v in per.values())
     assert r.total >= greedy_build(gd, short_team, max_level=2, split=[3, 3, 3], total=4).totals[-1]
+
+
+def test_disc_table_on_element_with_filler_row(gd, short_team):
+    from ssr.guide import disc_table
+    from ssr.rate import rate_discs
+    from ssr.team import team_build
+    rows = disc_table(gd, short_team, team_build(short_team))
+    assert rows[0]["name"] == "filler" and all(rows[0][k] == 0.0 for k in ("main_c1", "main_c6", "support_c1", "support_c6"))
+    discs = rows[1:]
+    elements = {gd.table("Character")[str(m.char_id)]["EET"] for m in short_team.members}
+    want = {int(k) for k, v in gd.table("Disc").items() if v.get("Available") and v.get("Visible") and v.get("EET", 0) in elements}
+    assert {r["id"] for r in discs} == want
+    assert [r["main_c6"] for r in discs] == sorted((r["main_c6"] for r in discs), reverse=True)
+    d = discs[0]
+    ref = rate_discs(gd, short_team, [d["id"]], build=team_build(short_team), emblems=True)[0]
+    assert (d["main_c1"], d["main_c6"], d["support_c1"], d["support_c6"]) == pytest.approx(
+        (ref.main_c1, ref.main_c6, ref.support_c1, ref.support_c6))
+    assert d["main_c6"] >= d["main_c1"]

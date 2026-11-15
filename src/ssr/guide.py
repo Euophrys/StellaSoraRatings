@@ -14,7 +14,8 @@ from .data import GameData
 from .emblems import emblem_options, line_relevant
 from .game import potential_pools
 from .parallel import simulate_many
-from .rate import gain
+from .rate import gain, rate_discs
+from .stats import ELEMENTS
 from .team import Build, TeamConfig
 
 Progress = Callable[[str, int, int], None] | None
@@ -114,6 +115,27 @@ def emblem_table(gd: GameData, team: TeamConfig, build: Build, member: int,
         rows.append(EmblemRow(o.name, o.kind, slots, relevant[o.name], tiers, by_slot))
     rows.sort(key=lambda r: (-r.tiers[-1][2], not r.relevant))
     return rows
+
+
+# ---------------------------------------------------------------- discs
+
+def disc_table(gd: GameData, team: TeamConfig, build: Build, progress: Progress = None) -> list[dict]:
+    """Every available disc of the team's element(s), each alone at C1 and C6 in one main or support slot (the
+    other five slots filler), as the team-damage gain over six fillers, on the current build and owned emblems.
+    Starts with the filler itself (0 by definition), then by best main-slot C6 gain."""
+    elements = {gd.table("Character")[str(m.char_id)].get("EET", 0) for m in team.members}
+    ids = sorted(int(k) for k, v in gd.table("Disc").items()
+                 if v.get("Available") and v.get("Visible") and v.get("EET", 0) in elements)
+    step = _tick(progress, "discs", 1 + 4 * len(ids))
+    rows = rate_discs(gd, team, ids, build=build, emblems=True, on_result=step)
+    rows.sort(key=lambda r: (-r.main_c6, -r.main_c1))
+    disc = gd.table("Disc")
+    out = [dict(id=0, name="filler", element="", main_c1=0.0, main_c6=0.0, support_c1=0.0, support_c6=0.0,
+                notes=["stats only, no effects: the baseline"])]
+    out += [dict(id=r.disc_id, name=r.name, element=ELEMENTS.get(disc[str(r.disc_id)].get("EET", 0), "?"),
+                 main_c1=r.main_c1, main_c6=r.main_c6, support_c1=r.support_c1, support_c6=r.support_c6,
+                 notes=r.notes) for r in rows]
+    return out
 
 
 # ---------------------------------------------------------------- pinks

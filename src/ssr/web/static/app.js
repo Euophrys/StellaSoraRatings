@@ -129,7 +129,7 @@ function renderHeader() {
     select(ui.stem || "", [{ value: "", label: "— team file —" }].concat(ui.teams.map((t) => ({ value: t, label: t }))),
       (v) => { ui.pick = v; }, { id: "teamfile" }),
     h("button", { onclick: () => loadTeam(document.getElementById("teamfile").value) }, "Load"),
-    h("button", { onclick: () => { if (confirmDiscard()) { state = newDoc(); ui.stem = null; results = null; ui.pinkRows = {}; render(); } } }, "New"),
+    h("button", { onclick: () => { if (confirmDiscard()) { state = newDoc(); ui.stem = null; results = null; ui.pinkRows = {}; ui.discRows = null; render(); } } }, "New"),
     h("button", { onclick: () => saveTeam(ui.stem), disabled: !ui.stem }, "Save"),
     h("button", { onclick: () => saveAs() }, "Save as…"),
     h("span", { class: "stem" }, ui.stem ? `teams/${ui.stem}.yaml` : "unsaved"),
@@ -147,7 +147,7 @@ async function loadTeam(stem) {
   if (!confirmDiscard()) return;
   try {
     state = normalise(await api("GET", `/api/teams/${encodeURIComponent(stem)}`));
-    ui.stem = stem; results = null; ui.pinkRows = {}; ui.optimizeNote = null;
+    ui.stem = stem; results = null; ui.pinkRows = {}; ui.discRows = null; ui.optimizeNote = null;
     savedKey = JSON.stringify(state);
     render();
   } catch (e) { message("err", e.message); }
@@ -218,7 +218,7 @@ function changeTrekker(i, name) {
     const m = s.members[i];
     m.trekker = name; m.pinks = []; m.targets = {}; m.emblems = [];
   });
-  results = null; ui.pinkRows = {}; ui.optimizeNote = null;
+  results = null; ui.pinkRows = {}; ui.discRows = null; ui.optimizeNote = null;
   render();
 }
 
@@ -342,10 +342,39 @@ function advanced() {
   return d;
 }
 
+async function runDiscs() {
+  const key = calcKey(state);
+  try {
+    const rows = await runJob("discs");
+    ui.discRows = { rows, forState: key, breaks: ui.breaks };
+    render();
+  } catch (e) { /* shown */ }
+}
+
+function discTable() {
+  const d = ui.discRows;
+  if (!d) return null;
+  const stale = calcKey(state) !== d.forState;
+  const cols = [["main_c1", "Main C1"], ["main_c6", "Main C6"], ["support_c1", "Support C1"], ["support_c6", "Support C6"]];
+  return h("div", { class: "panel", style: "margin-top:8px" },
+    stale ? h("div", { class: "msg warn small" }, "Team changed since these were calculated.") : null,
+    h("div", { class: "scroll" }, h("table", { class: "em numbers discs-opt" },
+      h("tr", {}, h("th", {}, "Disc"), cols.map(([, label]) => h("th", {}, label)), h("th", {}, "Notes")),
+      d.rows.map((r) => h("tr", { class: r.id === 0 ? "irrelevant" : null },
+        h("td", {}, r.name, r.element ? h("span", { class: "small muted" }, ` · ${r.element}`) : null),
+        cols.map(([k]) => h("td", { style: "text-align:right" }, cell(r[k]))),
+        h("td", { class: "small muted" }, (r.notes || []).join("; ")))))),
+    h("div", { class: "small muted" }, `Breaks ${d.breaks ? "on" : "off"}.`));
+}
+
 function teamSection() {
   return h("section", {}, h("h2", {}, "Team"),
     h("div", { class: "cols" }, [0, 1, 2].map(memberPanel)),
     h("h3", {}, "Discs"), h("div", { class: "discs" }, discPanel("main"), discPanel("support")),
+    h("div", { class: "field" },
+      h("button", { onclick: runDiscs, disabled: !!ui.job || !state.members.every((m) => trekker(m.trekker)) }, "Optimize discs"),
+      h("span", { class: "small muted" }, "Every disc of the team's element, alone in one slot with the other five filler: team-damage gain over all filler at C1 and C6, as a main or a support disc. On the current potentials, pinks and emblems. ~1 min.")),
+    discTable(),
     h("div", { class: "field" },
       h("label", {}, "Include breaks", h("input", { type: "checkbox", checked: ui.breaks,
         onchange: (e) => { ui.breaks = e.target.checked; ui.pinkRows = {}; setState(() => {}); } })),
@@ -604,7 +633,7 @@ async function runFinder() {
 function openFinderRow(row) {
   if (!confirmDiscard()) return;
   state = normalise(JSON.parse(JSON.stringify(row.doc)));
-  ui.stem = null; results = null; ui.pinkRows = {}; ui.optimizeNote = null;
+  ui.stem = null; results = null; ui.pinkRows = {}; ui.discRows = null; ui.optimizeNote = null;
   savedKey = JSON.stringify(state);
   render();
   recalc();
@@ -719,7 +748,7 @@ async function importCode() {
     });
     if (!same) s.discs = { main: ["filler", "filler", "filler"], support: ["filler", "filler", "filler"] };
   });
-  if (!same) { results = null; ui.pinkRows = {}; ui.optimizeNote = null; render(); }
+  if (!same) { results = null; ui.pinkRows = {}; ui.discRows = null; ui.optimizeNote = null; render(); }
   message("info", same ? "Imported pinks and target levels (discs and emblems kept)."
     : "Imported trekkers, pinks and target levels. Set discs and emblems for the new team.");
 }
