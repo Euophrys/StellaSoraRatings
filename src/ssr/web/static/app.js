@@ -35,8 +35,10 @@ function select(value, options, onchange, attrs) {
 
 // ---------------------------------------------------------------- API
 async function api(method, path, body) {
-  const r = await fetch(path, { method, headers: { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body) });
+  const r = await fetch(path, {
+    method, headers: { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body)
+  });
   const data = await r.json().catch(() => ({ error: `HTTP ${r.status}` }));
   if (!r.ok) { const e = new Error(data.error || `HTTP ${r.status}`); e.status = r.status; throw e; }
   return data;
@@ -59,7 +61,7 @@ async function runJob(kind, extra) {
   ui.job = { id: job.id, kind, phase: "", done: 0, total: 0, t0: Date.now() };
   renderJobBar();
   try {
-    for (;;) {
+    for (; ;) {
       await sleep(500);
       const s = await api("GET", `/api/jobs/${job.id}`);
       Object.assign(ui.job, { phase: s.phase, done: s.done, total: s.total });
@@ -94,14 +96,18 @@ const discByDoc = (d) => {
 const discDocs = (side) => (state.discs[side] || []).concat(["filler", "filler", "filler"]).slice(0, 3);
 
 function blankMember(i) {
-  return { trekker: "", role: roleOf(i), pinks: [], skill_levels: i === 0 ? { auto: 10, skill: 10, ult: 10 } : { skill: 10, ult: 10 },
-    emblems: [], talents: 0, targets: {} };
+  return {
+    trekker: "", role: roleOf(i), pinks: [], skill_levels: i === 0 ? { auto: 10, skill: 10, ult: 10 } : { skill: 10, ult: 10 },
+    emblems: [], talents: 0, targets: {}
+  };
 }
 
 function newDoc() {
-  return { name: "new_team", fight_length: 120, tick: 0.05, mark_icd: 1.0, enemy: { preset: "generic" },
+  return {
+    name: "new_team", fight_length: 120, tick: 0.05, mark_icd: 1.0, enemy: { preset: "generic" },
     members: [0, 1, 2].map(blankMember), discs: { main: ["filler", "filler", "filler"], support: ["filler", "filler", "filler"] },
-    budget: [30, 15, 15], max_level: 6 };
+    budget: [30, 15, 15], max_level: 6
+  };
 }
 
 function normalise(doc) {
@@ -125,7 +131,7 @@ const discDocsOf = (xs) => (xs || []).concat(["filler", "filler", "filler"]).sli
 function renderHeader() {
   const top = document.getElementById("top");
   top.replaceChildren(h("div", { class: "inner" },
-    h("span", { class: "title" }, "Stella Sora Build Guide"),
+    h("span", { class: "title" }, "Stella Sora Optimizer"),
     select(ui.stem || "", [{ value: "", label: "— team file —" }].concat(ui.teams.map((t) => ({ value: t, label: t }))),
       (v) => { ui.pick = v; }, { id: "teamfile" }),
     h("button", { onclick: () => loadTeam(document.getElementById("teamfile").value) }, "Load"),
@@ -196,7 +202,7 @@ function renderJobBar() {
   bar.replaceChildren(
     h("span", {}, `${j.kind}: ${j.phase || "starting"} ${j.total ? `${j.done}/${j.total}` : ""} · ${secs}s`),
     h("div", { class: "bar" }, h("div", { style: `width:${pct}%` })),
-    h("button", { onclick: () => api("POST", `/api/jobs/${j.id}/cancel`, {}).catch(() => {}) }, "Cancel"));
+    h("button", { onclick: () => api("POST", `/api/jobs/${j.id}/cancel`, {}).catch(() => { }) }, "Cancel"));
 }
 
 async function recalc() {
@@ -271,7 +277,8 @@ function memberPanel(i) {
   const head = h("div", {},
     h("div", { class: "role" }, i === 0 ? "Main" : `Support ${i}`),
     select(m.trekker, [{ value: "", label: "— trekker —" }].concat(catalog.trekkers.map((x) => ({
-      value: x.name, label: `${x.name} (${x.element})`, disabled: taken.includes(x.name) && x.name !== m.trekker })),
+      value: x.name, label: `${x.name} (${x.element})`, disabled: taken.includes(x.name) && x.name !== m.trekker
+    })),
     ), (v) => changeTrekker(i, v)));
   if (!t) {
     const unknown = m.trekker ? h("div", { class: "msg err" }, `${m.trekker} has no kit spec; it can't be simulated.`) : null;
@@ -285,7 +292,7 @@ function memberPanel(i) {
       : kit === "untimed"
         ? h("div", { class: "msg warn small" }, `${t.name}'s ${role} kit isn't timed in game: its animations are conservative guesses and minions are skipped. Expect it to rate low.`)
         : kit === "frames"
-          ? h("div", { class: "msg warn small" }, `${t.name}'s ${role} kit is timed from the game's animation data, not checked in game; some minions may still be skipped.`)
+          ? h("div", { class: "msg warn small" }, `${t.name}'s ${role} kit is timed from the game's animation data, not checked in game; some minions may be skipped.`)
           : null;
   const skills = h("div", { class: "field" }, SKILLS[role].map((sk) => h("label", {}, sk,
     select(String(m.skill_levels[sk] ?? 10), Array.from({ length: 10 }, (_, k) => ({ value: String(k + 1), label: String(k + 1) })),
@@ -301,7 +308,8 @@ function memberPanel(i) {
 function discPanel(side) {
   const docs = discDocs(side);
   const opts = [{ value: "filler", label: "filler (stats only)" }].concat(catalog.discs.map((d) => ({
-    value: d.name, label: `${d.name} · ${d.element}${d.modelled ? "" : " (effect not modelled)"}` })));
+    value: d.name, label: `${d.name} · ${d.element}${d.modelled ? "" : " (effect not modelled)"}`
+  })));
   return h("div", { class: "panel" }, h("div", { class: "role" }, side === "main" ? "Main discs" : "Support discs"),
     docs.map((d, k) => {
       const disc = discByDoc(d);
@@ -318,8 +326,10 @@ function discPanel(side) {
 }
 
 function advanced() {
-  const num = (label, get, set, step) => h("label", {}, label, h("input", { type: "number", step: step || "any", value: get(),
-    onchange: (e) => { const v = Number(e.target.value); if (Number.isFinite(v)) setState((s) => set(s, v)); } }));
+  const num = (label, get, set, step) => h("label", {}, label, h("input", {
+    type: "number", step: step || "any", value: get(),
+    onchange: (e) => { const v = Number(e.target.value); if (Number.isFinite(v)) setState((s) => set(s, v)); }
+  }));
   const enemies = catalog.enemies || [];
   const presetId = state.enemy.preset || "generic";
   const preset = enemies.find((x) => x.id === presetId) || {};
@@ -378,12 +388,14 @@ function teamSection() {
     h("h3", {}, "Discs"), h("div", { class: "discs" }, discPanel("main"), discPanel("support")),
     h("div", { class: "field" },
       h("button", { onclick: runDiscs, disabled: !!ui.job || !state.members.every((m) => trekker(m.trekker)) }, "Optimize discs"),
-      h("span", { class: "small muted" }, "Every disc (the team's element first; the rest under Other discs), alone in one slot with the other five filler: team-damage gain over all filler at C1 and C6, as a main or a support disc. On the current potentials, pinks and emblems. ~1 min.")),
+      h("span", { class: "small muted" }, "Every disc, compared to a filler flat HP/ATK disc with no abilities. On the current potentials, pinks and emblems. ~1 min.")),
     discTable(),
     h("div", { class: "field" },
-      h("label", {}, "Include breaks", h("input", { type: "checkbox", checked: ui.breaks,
-        onchange: (e) => { ui.breaks = e.target.checked; ui.pinkRows = {}; setState(() => {}); } })),
-      h("span", { class: "small muted" }, "For the potential, emblem and pink numbers and the optimizer. Off by default: any damage gain moves the break windows, which can make plain ATK look negative. Break-only effects count for nothing while it's off. The team total always includes breaks.")),
+      h("label", {}, "Include breaks", h("input", {
+        type: "checkbox", checked: ui.breaks,
+        onchange: (e) => { ui.breaks = e.target.checked; ui.pinkRows = {}; setState(() => { }); }
+      })),
+      h("span", { class: "small muted" }, "For the potential, emblem and pink numbers and the optimizer. Off by default: any damage gain moves the break windows, which can make damage ups look negative. Break-only effects count for nothing while it's off. The team total always includes breaks.")),
     advanced());
 }
 
@@ -418,15 +430,18 @@ function pinkPanel(i) {
       const ps = pinks.filter((p) => p.row === row);
       if (!ps.length) return null;
       return h("div", {}, h("div", { class: "small muted" }, ROWS[row]), h("div", { class: "pinks" },
-        ps.map((p) => h("span", { class: `pink-toggle${m.pinks.includes(p.name) ? " on" : ""}`,
-          onclick: () => togglePink(i, p.name) }, p.name))));
+        ps.map((p) => h("span", {
+          class: `pink-toggle${m.pinks.includes(p.name) ? " on" : ""}`,
+          onclick: () => togglePink(i, p.name)
+        }, p.name))));
     }),
     h("div", { class: "field" }, h("button", { onclick: () => calcPinks(i), disabled: !!ui.job }, "Calculate best pinks"),
-      h("span", { class: "small muted" }, "reference build, your discs; a few minutes")),
+      h("span", { class: "small muted" }, "judged with a simple build and your discs")),
     rows ? h("table", { class: "pink-results" }, rows.map((r) => h("tr", {
       class: same(r.pinks, m.pinks) ? "chosen" : null,
-      onclick: () => setState((s) => { s.members[i].pinks = r.pinks.slice(); }) },
-    h("td", {}, r.pinks.join(" + ")), h("td", { style: "text-align:right" }, r.vs_best === 0 ? "best" : pct(r.vs_best))))) : null);
+      onclick: () => setState((s) => { s.members[i].pinks = r.pinks.slice(); })
+    },
+      h("td", {}, r.pinks.join(" + ")), h("td", { style: "text-align:right" }, r.vs_best === 0 ? "best" : pct(r.vs_best))))) : null);
 }
 const ROWS = { 1: "Main Build 1", 2: "Main Build 2", 3: "Generic" };
 
@@ -509,7 +524,8 @@ function potentialCard(i, m, p) {
       class: [n === lv ? "cur" : "", n <= lv ? "have" : ""].join(" ").trim() || null,
       title: n === lv ? "change in team damage from removing this potential"
         : `set target to ${n}${plus ? ` (fights at ${Math.min(9, n + plus)})` : ""}`,
-      onclick: () => setTarget(i, p.name, n) }, h("small", {}, n), cell(vals ? vals[n - 1] : null)))));
+      onclick: () => setTarget(i, p.name, n)
+    }, h("small", {}, n), cell(vals ? vals[n - 1] : null)))));
 }
 
 function pinkCard(m, p) {
@@ -532,7 +548,7 @@ function potentialsBlock(i) {
       const pots = r.potentials.filter((p) => p.row === row);
       if (!pinks.length && !pots.length) return null;
       return [h("div", { class: "rowlabel" }, ROWS[row]),
-        h("div", { class: "cards" }, pinks.map((p) => pinkCard(m, p)), pots.map((p) => potentialCard(i, m, p)))];
+      h("div", { class: "cards" }, pinks.map((p) => pinkCard(m, p)), pots.map((p) => potentialCard(i, m, p)))];
     }));
 }
 
@@ -542,7 +558,7 @@ function potentialsSection() {
     h("button", { class: "primary", onclick: recalc, disabled: !!ui.job || !ready }, results ? "Recalculate" : "Calculate"),
     results ? h("span", { class: "small muted" },
       `Team total ${(results.total / 1e6).toFixed(1)}M${results.breaks != null ? ` · ${results.breaks} break${results.breaks === 1 ? "" : "s"}` : ""} · calculated ${new Date(results.at).toLocaleString()}`)
-      : h("span", { class: "small muted" }, "Each cell: total change in team damage if this potential's target were that level (current level: the change from removing it). ~1 min."));
+      : h("span", { class: "small muted" }, "Each cell: total change in team damage if this potential was that level (current level: the change from removing it). ~1 min."));
   const tb = totalBudget(), nAll = state.members.reduce((a, m) => a + used(m), 0);
   const shared = tb ? h("div", { class: "small" }, "Team total ",
     h("span", { class: `budget${nAll > tb ? " over" : ""}` }, `${nAll} / ${tb}`), " (per-Trekker numbers are caps)") : null;
@@ -564,8 +580,10 @@ async function runOptimize() {
 }
 
 function optimizeSection() {
-  const num = (label, value, set, min, max) => h("label", {}, label, h("input", { type: "number", min, max, step: 1, value,
-    onchange: (e) => { const v = Math.round(Number(e.target.value)); if (Number.isFinite(v) && v >= min && v <= max) setState((s) => set(s, v)); else render(); } }));
+  const num = (label, value, set, min, max) => h("label", {}, label, h("input", {
+    type: "number", min, max, step: 1, value,
+    onchange: (e) => { const v = Math.round(Number(e.target.value)); if (Number.isFinite(v) && v >= min && v <= max) setState((s) => set(s, v)); else render(); }
+  }));
   const names = state.members.map((m, i) => (m.trekker || (i === 0 ? "Main" : `Support ${i}`)));
   const setBudget = (i) => (s, v) => { s.budget = [0, 1, 2].map(budgetOf); s.budget[i] = v; };
   return h("section", {}, h("h2", {}, "Optimize"),
@@ -576,7 +594,7 @@ function optimizeSection() {
         num("Total (0 = none)", totalBudget() || 0, (s, v) => { s.budget_total = v > 0 ? v : null; }, 0, 600),
         num("Max level", state.max_level || MAX_TARGET, (s, v) => { s.max_level = v; }, 1, MAX_TARGET),
         h("button", { class: "primary", onclick: runOptimize, disabled: !!ui.job || !state.members.every((m) => trekker(m.trekker)) }, "Optimize")),
-      h("div", { class: "small muted" }, "Fills target levels with the best found for this split (greedy +1 steps, then swaps between a trekker's potentials), then recalculates. With a total, the per-Trekker numbers are caps on a shared pool and swaps can also move levels between Trekkers. Emblem +N levels are free. Takes minutes."),
+      h("div", { class: "small muted" }, "Each trekker: The max number of levels this trekker can receive. Total: How many total levels to give the team. Simulates and picks the highest damage potential, then repeats until all are filled. Takes minutes."),
       ui.optimizeNote ? h("div", { class: "small" }, ui.optimizeNote) : null));
 }
 
@@ -659,8 +677,8 @@ function finderTable(title, rows, value, finalists) {
       const dmg = r.error
         ? [h("td", { colspan: 2, class: "neg" }, r.error)]
         : [h("td", { class: "pct" }, h("span", {}, `${(100 * v / best).toFixed(2)}%`),
-              h("span", { class: "bar" }, h("span", { style: `width:${(100 * v / best).toFixed(2)}%` }))),
-           h("td", { class: "raw" }, Math.round(v).toLocaleString("en-US"))];
+          h("span", { class: "bar" }, h("span", { style: `width:${(100 * v / best).toFixed(2)}%` }))),
+        h("td", { class: "raw" }, Math.round(v).toLocaleString("en-US"))];
       return h("tr", {}, team, dmg, [0, 1, 2].map((k) => memberCell(r, k)));
     }))));
 }
@@ -688,11 +706,13 @@ function finderSection() {
       h("div", { class: "field" },
         h("label", {}, "Trekker", select(cur, [{ value: "", label: "—" }].concat(names), (v) => { o.trekker = v; render(); })),
         h("label", {}, "as", select(o.role, ["main", "support", "any"].map((r) => ({ value: r, label: r })), (v) => { o.role = v; })),
-        h("label", {}, "Finalists", h("input", { type: "number", min: 1, max: 20, step: 1, value: o.top,
-          onchange: (e) => { const v = Math.round(Number(e.target.value)); if (v >= 1 && v <= 20) o.top = v; else render(); } })),
+        h("label", {}, "Finalists", h("input", {
+          type: "number", min: 1, max: 20, step: 1, value: o.top,
+          onchange: (e) => { const v = Math.round(Number(e.target.value)); if (v >= 1 && v <= 20) o.top = v; else render(); }
+        })),
         h("label", {}, "Emblems", select(o.emblems, FINDER_TIERS.map((t) => ({ value: t, label: t, class: t })), (v) => { o.emblems = v; })),
         h("button", { class: "primary", onclick: runFinder, disabled: !!ui.job || !trekker(cur) }, "Find")),
-      h("div", { class: "small muted" }, "Every same-element team with this Trekker in that role, each at its own best build. Uses this page's discs, enemy, fight length, budget, max level and breaks setting as the template; the team above isn't used. Takes minutes: about 10 s per team, plus 40 s per finalist."),
+      h("div", { class: "small muted" }, "Every same-element team with this Trekker in that role. Uses this page's discs, fight settings, and budget as the template. Screens each team with a quick reasonable build, then fully optimizes the finalists. Takes a long time."),
       tables));
 }
 SECTIONS.push(finderSection);
