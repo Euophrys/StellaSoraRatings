@@ -60,7 +60,7 @@ Three layers of input feed one simulator, and everything else is a loop over `si
 - **Specs** (`specs/`, schema in `specs/README.md`): only what the tables can't say, such as hit counts, timings, tags, triggers and uptimes. `specs/trekkers/<char id>.yaml` is loaded by `kit.py`. `specs/discs/<disc id>.yaml` pins scripted disc parts. `specs/enemies/<id>.yaml` is loaded by `enemies.py`.
 - **Team files** (`teams/*.yaml`, loaded by `team.py`): members, discs, pinks, enemy and fight assumptions. A `Build` is the immutable set of choices being evaluated on top of a team.
 
-**Simulation:** `sim.py` `simulate(gd, team, build, ...)` runs the fight timeline, using an event system (`cast:`, `hit:`, `mark:`, `while:` and so on) to drive buffs, procs and marks, and `formula.py` for damage per hit. `resilience.py` handles the enemy's break bar. It returns a `SimResult` with totals, per-slot damage, cast counts, uptimes and `unknown_modifiers` (assumed uptimes).
+**Simulation:** `sim.py` `simulate(gd, team, build, ...)` runs the fight timeline, using an event system (`cast:`, `hit:`, `mark:`, `while:` and so on) to drive buffs, procs and marks, and `formula.py` for damage per hit. `resilience.py` handles the enemy's break bar. Inside `sim.py`, setup is a chain of small functions (`_setup_member`, `_static_sheets`, `_fold_constants`, with `_ModSink` collecting modifiers), and the timeline is the `_Fight` class: one method per tick phase (`clock_events`, `track_time`, `try_cast`, `autos`, `land_due`) on top of `emit`, `cast`, `land` and `stat_for`. It returns a `SimResult` with totals, per-slot damage, cast counts, uptimes and `unknown_modifiers` (assumed uptimes).
 
 **Consumers**
 
