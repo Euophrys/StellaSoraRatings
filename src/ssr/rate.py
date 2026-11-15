@@ -5,12 +5,12 @@ from dataclasses import dataclass, field
 
 from .data import GameData
 from .effects import disc_modifiers
-from .game import potential_pools
+from .game import available_discs, char_element, potential_pools
 from .kit import resolve_potential
 from .parallel import simulate_many
 from .sim import SimResult, simulate
 from .emblems import line_relevant
-from .stats import ELEM_PEN_BASE
+from .stats import DEF, ELEM_PEN_BASE
 from .team import FILLER, Build, EmblemLine, EmblemSkillLevel, TeamConfig, emblem_lines
 
 ALL_FILLER = ([(FILLER, 6)] * 3, [(FILLER, 6)] * 3)
@@ -39,7 +39,7 @@ def rate_discs(gd: GameData, team: TeamConfig, disc_ids: list[int] | None = None
     fillers. `on_result` is passed to `simulate_many` (progress and cancel)."""
     build = build or Build()
     if disc_ids is None:
-        disc_ids = sorted(int(k) for k, v in gd.table("Disc").items() if v.get("Available") and v.get("Visible"))
+        disc_ids = available_discs(gd)
     fill = (FILLER, 6)
     calls = [dict(build=build, emblems=emblems, discs=ALL_FILLER)]
     for d in disc_ids:
@@ -86,7 +86,7 @@ def rate_emblems(gd: GameData, team: TeamConfig, build: Build, members: list[int
     for i, m in enumerate(team.members):
         if members is not None and i not in members:
             continue
-        element = gd.table("Character")[str(m.char_id)]["EET"]
+        element = char_element(gd, m.char_id)
         todo += [(i, line) for line in lines if line_relevant(line, element, m.role)]
     calls = [dict(build=build, emblems=False)]
     for i, line in todo:
@@ -188,7 +188,7 @@ def rate_potentials(gd: GameData, team: TeamConfig, ref: Build, levels=range(1, 
                 why += f" (does nothing with {', '.join(gd.item_name(x) for x in blockers)})"
             elif not rp.modifiers and not rp.add_hits:
                 why += " (utility/behaviour only, or not modelled)"
-            elif rp.modifiers and all(mm.stat in (2,) for mm in rp.modifiers):
+            elif rp.modifiers and all(mm.stat == DEF for mm in rp.modifiers):
                 why += " (DEF only)"
             else:
                 why += " (depends on something not in this build, or a stat with no effect here)"

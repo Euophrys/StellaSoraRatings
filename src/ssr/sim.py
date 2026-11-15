@@ -13,7 +13,8 @@ from .effects import (MINION_STATS, Modifier, disc_modifiers, effect_modifiers, 
                       note_modifiers)
 from .formula import Enemy, hit_damage, slot_of
 from .game import toughness_adjust, char_base_stats, disc_base_stats, hit, hit_level, skill_cd, talent_nodes, ult_energy
-from .kit import ActionSpec, HitSpec, MinionSpec, ResolvedPotential, kit_buffs, resolve_buffs, resolve_potential
+from .kit import (ActionSpec, HitSpec, MinionSpec, ResolvedPotential, kit_buffs, passes_gates, resolve_buffs,
+                  resolve_potential)
 from .resilience import ExpectedICD, ResilienceBar
 from .stats import ATK_SPD, CHARGE_EFF, DEF, ELEM_TAKEN_BASE, RES_BREAK_EFF, START_ENERGY, StatBlock
 from .emblems import EmblemChargeEfficiency, EmblemPotentialLevel, line_relevant
@@ -245,17 +246,13 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
 
     for i, mc in enumerate(team.members):
         kit = mc.kit
+        lines_i = (list(mc.emblems) if emblems else []) + [x for (j, x) in extra if j == i]
         levels = dict(mc.skill_levels)
-        if emblems:
-            for e in mc.emblems:
-                if isinstance(e, EmblemSkillLevel) and e.applies_to(mc.role):
-                    levels[e.action] = levels.get(e.action, 10) + e.plus
-        for (j, x) in extra:
-            if j == i and isinstance(x, EmblemSkillLevel) and x.applies_to(mc.role):
+        for x in lines_i:
+            if isinstance(x, EmblemSkillLevel) and x.applies_to(mc.role):
                 levels[x.action] = levels.get(x.action, 10) + x.plus
         pot_levels = {p: 1 for p in mc.pinks}
         pot_levels.update(build.levels_for(mc.char_id))
-        lines_i = (list(mc.emblems) if emblems else []) + [x for (j, x) in extra if j == i]
         for x in lines_i:   # Lv90 "+N": fights at target + N (cap 9); not taken still fights at N
             if isinstance(x, EmblemPotentialLevel) and line_relevant(x, 0, mc.role):
                 pot_levels[x.potential_id] = min(9, pot_levels.get(x.potential_id, 0) + x.plus)
@@ -269,8 +266,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
         resolved = [rp for rp in resolved if not owned & set(rp.excludes)]
 
         def keep(h: HitSpec) -> bool:
-            return ((not h.requires or any(r in owned for r in h.requires)) and not any(e in owned for e in h.excludes)
-                    and all(r in owned for r in h.requires_all))
+            return passes_gates(h, owned)
 
         actions: dict[str, ActionSpec] = {}
         for name, a in kit.actions.items():
@@ -428,11 +424,8 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             dynamic.append(md)
     for m in members:   # "at the start of battle, ... restore N Energy" (always-on, folded into the sheet)
         m.energy = m.static.get(START_ENERGY)
-    for md in dynamic:
-        if md.mod.needs_scope and not md.mod.hit_tags:
-            unknown.add(f"{md.mod.source}: {md.mod.label()} applied to all hits (scope unknown)")
     for md in mods:
-        if md.event == "" and md.mod.needs_scope and not md.mod.hit_tags:
+        if md.mod.needs_scope and not md.mod.hit_tags:
             unknown.add(f"{md.mod.source}: {md.mod.label()} applied to all hits (scope unknown)")
 
     by_event: list[_Mod] = [md for md in dynamic if md.event and not md.event.startswith("while:")]
@@ -839,18 +832,15 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             if (h.from_cast and c < h.from_cast) or (h.upto_cast and c > h.upto_cast):
                 continue
             schedule(m, h, name, t, cid, cut_at)
+        reduce = sum(cr["seconds"] * cr["times"] for cr in m.cd_reduce if cr["action"] == name)
         if from_cd and name in m.max_charges:
             refill(m, name, t)
             m.charges[name] -= 1
             m.last_use[name] = t
             q = m.recharge[name]
-            cd = cooldown(m, name, t) - sum(cr["seconds"] * cr["times"] for cr in m.cd_reduce if cr["action"] == name)
-            q.append(max(t, q[-1] if q else t) + cd)   # one recharge timer, progress kept across casts (user)
+            q.append(max(t, q[-1] if q else t) + cooldown(m, name, t) - reduce)   # one recharge timer, progress kept across casts (user)
         elif from_cd:
-            m.cd_ready[name] = t + a.cd_start + cooldown(m, name, t + a.cd_start)
-            for cr in m.cd_reduce:
-                if cr["action"] == name:
-                    m.cd_ready[name] -= cr["seconds"] * cr["times"]
+            m.cd_ready[name] = t + a.cd_start + cooldown(m, name, t + a.cd_start) - reduce
         if a.starts_cd and a.starts_cd in m.cd:
             start = t + min(lock, cut_at)   # user: a dodge starts it at once
             m.cd_ready[a.starts_cd] = start + cooldown(m, a.starts_cd, start)
@@ -945,6 +935,14 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
     has_charge_mods = any(md.mod.stat == CHARGE_EFF for md in mods)
     has_atk_spd = any(md.mod.stat == ATK_SPD and 0 in md.receivers for md in mods)
 
+    def apply_mark(mi: int, t: float):
+        """Member `mi` inflicts their element's Mark on the enemy."""
+        el = elements[mi]
+        was_up = mark_up[el]
+        mark_up[el] = True
+        emit(f"mark_applied:{mi}", t)
+        emit(f"mark_refresh:{mi}" if was_up else f"mark_new:{mi}", t)
+
     def land(t: float, mi: int, h: HitSpec, action: str, cid: str):
         m = members[mi]
         for pool in h.summon:   # e.g. a proc that spends Resource Markers to put out a turret
@@ -954,11 +952,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
             for tag in h.tags:
                 emit(f"marker:{mi}:{tag}", t)
             if h.applies_mark:   # e.g. Ann's wind wall "constantly inflicts" Breeze without dealing DMG
-                el = elements[mi]
-                was_up = mark_up[el]
-                mark_up[el] = True
-                emit(f"mark_applied:{mi}", t)
-                emit(f"mark_refresh:{mi}" if was_up else f"mark_new:{mi}", t)
+                apply_mark(mi, t)
             return
         hd = get_hit(h.hit_id)
         tags_key = h.tags if type(h.tags) is tuple else tuple(h.tags)
@@ -1004,10 +998,7 @@ def simulate(gd: GameData, team: TeamConfig, build: Build, emblems: bool = True,
                 mm.energy += gain * (1.0 if mm.idx == 0 else mm.kit.energy_conv) * eff
         el = elements[mi]   # Marks are per element: a Trekker applies and triggers Marks of their own element
         if h.applies_mark:
-            was_up = mark_up[el]
-            mark_up[el] = True
-            emit(f"mark_applied:{mi}", t)
-            emit(f"mark_refresh:{mi}" if was_up else f"mark_new:{mi}", t)
+            apply_mark(mi, t)
         triggers = h.triggers_mark or bool(tags & m.mark_tags)
         # Any member whose kit has a mark hit can trigger (consume) the Mark: supports like Shia compete with the main.
         if triggers and mark_up[el] and t >= next_mark[el] and m.kit.mark_hit:

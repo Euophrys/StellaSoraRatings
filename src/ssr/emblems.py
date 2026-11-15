@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .data import GameData
+from .game import char_element
 from .stats import ELEM_DMG_BASE, ELEM_IGNORE_RES_BASE, ELEM_PEN_BASE, ELEM_RES_BASE, ELEM_TAKEN_BASE, stat_name
 
 RARITY_COLOUR: dict[int, str] = {4: "green", 3: "blue", 2: "yellow", 1: "purple"}
@@ -101,9 +102,19 @@ def _rows(gd: GameData) -> dict[tuple, list[dict]]:
     return {k: [v[lv] for lv in sorted(v)] for k, v in out.items()}
 
 
+def _tiers(rows: list[dict], make, label=None) -> tuple[EmblemTier, ...]:
+    """One tier per row: `make(row)` builds the line; the label is the colour unless `label(row)` says otherwise."""
+    return tuple(EmblemTier(label(r) if label else RARITY_COLOUR[r["Rarity"]], RARITY_COLOUR[r["Rarity"]], make(r))
+                 for r in rows)
+
+
+def _plus(r: dict) -> int:
+    return int(float(r["Value"]))
+
+
 def emblem_options(gd: GameData, char_id: int) -> list[EmblemOption]:
     """Every line this trekker can roll: per-element lines only for its own element."""
-    element = gd.table("Character")[str(char_id)]["EET"]
+    element = char_element(gd, char_id)
     opts: list[EmblemOption] = []
     for (atype, sub1, sub2, tag), rows in sorted(_rows(gd).items(), key=lambda kv: tuple(x or 0 for x in kv[0])):
         if atype == 12:
@@ -111,28 +122,24 @@ def emblem_options(gd: GameData, char_id: int) -> list[EmblemOption]:
             if el is not None and el != element:
                 continue
             name, is_pct = _stat_line_name(sub1, sub2)
-            tiers = tuple(EmblemTier(RARITY_COLOUR[r["Rarity"]], RARITY_COLOUR[r["Rarity"]],
-                                     EmblemLine(name, sub1, float(r["Value"]), is_pct)) for r in rows)
+            tiers = _tiers(rows, lambda r: EmblemLine(name, sub1, float(r["Value"]), is_pct))
             opts.append(EmblemOption(name, "stat", frozenset({1, 2, 3}), tiers))
         elif atype == 37:
             name = _desc(gd, atype, sub1, sub2)
             role = "main" if sub1 == 1 else "support"
-            tiers = tuple(EmblemTier(RARITY_COLOUR[r["Rarity"]], RARITY_COLOUR[r["Rarity"]],
-                                     EmblemChargeEfficiency(name, role, float(r["Value"]))) for r in rows)
+            tiers = _tiers(rows, lambda r: EmblemChargeEfficiency(name, role, float(r["Value"])))
             opts.append(EmblemOption(name, "stat", frozenset({1, 2, 3}), tiers))
         elif atype == 7 and sub1 in _SKILL_SLOTS:
             name = _desc(gd, atype, sub1, sub2)
             slot = _SKILL_SLOTS[sub1][0]
-            tiers = tuple(EmblemTier(f"+{int(float(r['Value']))}", RARITY_COLOUR[r["Rarity"]],
-                                     EmblemSkillLevel(name, slot, int(float(r["Value"])))) for r in rows)
+            tiers = _tiers(rows, lambda r: EmblemSkillLevel(name, slot, _plus(r)), lambda r: f"+{_plus(r)}")
             opts.append(EmblemOption(name, "skill", frozenset({2}), tiers))
         elif atype == 99:
             pid = 500000 + char_id * 100 + sub1
             if str(pid) not in gd.table("Potential"):
                 continue
             name = gd.item_name(pid)
-            tiers = tuple(EmblemTier(f"+{int(float(r['Value']))}", RARITY_COLOUR[r["Rarity"]],
-                                     EmblemPotentialLevel(name, pid, int(float(r["Value"])))) for r in rows)
+            tiers = _tiers(rows, lambda r: EmblemPotentialLevel(name, pid, _plus(r)), lambda r: f"+{_plus(r)}")
             opts.append(EmblemOption(name, "potential", frozenset({3}), tiers))
     seen: set[str] = set()
     unique = []
@@ -203,6 +210,6 @@ def emblem_lines(gd: GameData) -> list[EmblemLine | EmblemSkillLevel]:
             out.append(EmblemLine(name, sub1, float(r["Value"]), is_pct))
         elif sub1 in _SKILL_SLOTS:
             slot, label = _SKILL_SLOTS[sub1]
-            plus = int(float(r["Value"]))
+            plus = _plus(r)
             out.append(EmblemSkillLevel(f"{label} +{plus}", slot, plus))
     return out

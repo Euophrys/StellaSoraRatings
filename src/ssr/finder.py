@@ -21,22 +21,17 @@ from pathlib import Path
 
 import yaml
 
-from .data import GameData
-from .game import potential_pools
 from .builds import search_pinks
 from .compare import COLOUR_RANK, greedy_emblems
-from .data import DEFAULT_DATA_ROOT, REPO_ROOT
+from .data import DEFAULT_DATA_ROOT, REPO_ROOT, GameData
 from .finder_page import render_html
+from .game import char_element, levelled_potentials
 from .guide import _pool, optimize, without_breaks
 from .kit import SPECS, role_status
 from .parallel import simulate_many
 from .team import Build, TeamConfig, team_from_doc
 
 ROLES = ("main", "support", "any")
-
-
-def element_of(gd: GameData, char_id: int) -> int:
-    return gd.table("Character")[str(char_id)]["EET"]
 
 
 def _has_kit(cid: int, role: str) -> bool:
@@ -46,7 +41,7 @@ def _has_kit(cid: int, role: str) -> bool:
 def _candidates(gd: GameData, element: int) -> list[int]:
     from .web.catalog import trekker_ids
     chars = gd.table("Character")
-    return [c for c in trekker_ids() if str(c) in chars and element_of(gd, c) == element]
+    return [c for c in trekker_ids() if str(c) in chars and char_element(gd, c) == element]
 
 
 def _member(gd: GameData, cid: int, role: str) -> dict:
@@ -62,8 +57,7 @@ def _doc(gd: GameData, template: dict, main: int, supports: tuple[int, int]) -> 
     if isinstance(ref, dict) and ref.get("include"):
         have = set()
         for cid, role in [(main, "main")] + [(s, "support") for s in supports]:
-            pools = potential_pools(gd, cid, role)
-            have |= {gd.item_name(p) for p in pools["normal"] + pools["common"]}
+            have |= {gd.item_name(p) for p in levelled_potentials(gd, cid, role)}
         ref["include"] = [n for n in ref["include"] if n in have]
     return doc
 
@@ -88,7 +82,7 @@ def team_docs(gd: GameData, template: dict, trekker: str, role: str = "main", ex
     if not any(_has_kit(cid, r) for r in roles):
         raise ValueError(f"{gd.char_name(cid)} has no {role} kit")
     skip = {find_trekker(gd, n) for n in exclude}
-    others = [c for c in _candidates(gd, element_of(gd, cid)) if c != cid and c not in skip]
+    others = [c for c in _candidates(gd, char_element(gd, cid)) if c != cid and c not in skip]
     teams: list[tuple[int, tuple[int, int]]] = []
     if "main" in roles and _has_kit(cid, "main"):
         sup = [c for c in others if _has_kit(c, "support")]

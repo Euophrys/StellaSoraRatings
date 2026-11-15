@@ -7,16 +7,19 @@ from pathlib import Path
 import yaml
 
 from .data import GameData, REPO_ROOT
-from .formula import Enemy  # noqa: F401 (re-export)
-from .enemies import enemy_from_doc, _res_by_element, _ELEMENT_IDS  # noqa: F401 (re-export)
+from .enemies import enemy_from_doc
+from .formula import Enemy
 from .kit import Kit, SPECS, load_kit, pink_ids
-from .emblems import (EmblemChargeEfficiency, EmblemLine, EmblemPotentialLevel, EmblemSkillLevel,  # noqa: F401 (re-export)
-                      _SKILL_SLOTS, emblem_lines, find_emblem_option, find_emblem_tier)
-from .game import potential_pools
+from .emblems import (EmblemLine, EmblemSkillLevel,  # noqa: F401 (EmblemLine, EmblemSkillLevel: re-exported)
+                      SLOT_LEVEL, emblem_lines, find_emblem_option, find_emblem_tier)
+from .game import levelled_potentials
 
 TEAMS = REPO_ROOT / "teams"
 FILLER = 0   # stats-only filler disc (Eternal Brilliance stats, Lv90 C6, no effects)
 FILLER_SOURCE_DISC = 214067
+REFERENCE_DEFAULTS = dict(steps=2, main_picks=2, support_picks=1, level=6)
+ASSUMPTION_DEFAULTS = dict(unknown_trigger_uptime=1.0, disc_stats_target="team")
+BUDGET_DEFAULT = (30, 15, 15)
 
 
 @dataclass
@@ -45,9 +48,9 @@ class TeamConfig:
     hold: list = field(default_factory=list)   # [{member, action, until, max_wait}]: rotation timing (see specs/README.md)
     discs_main: list[tuple[int, int]] = field(default_factory=list)
     discs_support: list[tuple[int, int]] = field(default_factory=list)
-    reference: dict = field(default_factory=lambda: dict(steps=2, main_picks=2, support_picks=1, level=6))
-    assumptions: dict = field(default_factory=lambda: dict(unknown_trigger_uptime=1.0, disc_stats_target="team"))
-    budget: list[int] = field(default_factory=lambda: [30, 15, 15])   # level budget per member (build guide page)
+    reference: dict = field(default_factory=lambda: dict(REFERENCE_DEFAULTS))
+    assumptions: dict = field(default_factory=lambda: dict(ASSUMPTION_DEFAULTS))
+    budget: list[int] = field(default_factory=lambda: list(BUDGET_DEFAULT))   # level budget per member (build guide page)
     max_level: int = 6
     budget_total: int | None = None   # shared level budget; `budget` then holds per-member caps
     disc_level: int = 90   # level of every disc (base stats), filler included
@@ -78,7 +81,6 @@ class TeamDocError(ValueError):
     """A team document names something that doesn't exist or has a bad value."""
 
 
-_SLOT_KINDS = {1: {"stat"}, 2: {"stat", "skill"}, 3: {"stat", "potential"}}
 _MAX_TARGET = 6
 
 
@@ -103,17 +105,15 @@ def _member_emblems(gd: GameData, cid: int, raw: list, lines_by_name: dict) -> t
         for ln in written:
             name, tier = ln.get("line"), str(ln.get("tier"))
             opt = find_emblem_option(gd, cid, name)
-            if opt.kind not in _SLOT_KINDS[slot]:
-                raise KeyError(f"emblem line {name!r} ({opt.kind}) can't roll in slot {slot} "
-                               f"(Lv{70 + 10 * (slot - 1)})")
+            if slot not in opt.slots:
+                raise KeyError(f"emblem line {name!r} ({opt.kind}) can't roll in slot {slot} (Lv{SLOT_LEVEL[slot]})")
             lines.append(find_emblem_tier(gd, cid, name, tier).line)
             slots[slot - 1].append((name, tier))
     return lines, slots
 
 
 def _member_targets(gd: GameData, cid: int, role: str, raw: dict) -> dict[int, int]:
-    pools = potential_pools(gd, cid, role)
-    by_name = {gd.item_name(p): p for p in pools["normal"] + pools["common"]}
+    by_name = {gd.item_name(p): p for p in levelled_potentials(gd, cid, role)}
     out = {}
     for name, lv in (raw or {}).items():
         if name not in by_name:
@@ -147,9 +147,7 @@ def team_from_doc(gd: GameData, doc: dict, name: str = "team", specs: Path = SPE
                              for b in m.get("bonus_stats") or []],
             ))
         except (KeyError, ValueError, TypeError, FileNotFoundError) as e:
-            msg = e.args[0] if isinstance(e, KeyError) and e.args else str(e)
-            if isinstance(e, FileNotFoundError):
-                msg = "no kit spec for this trekker (can't be simulated)"
+            msg = "no kit spec for this trekker (can't be simulated)" if isinstance(e, FileNotFoundError) else _message(e)
             raise TeamDocError(f"{who}: {msg}") from e
     try:
         enemy = enemy_from_doc(gd, doc.get("enemy") or {})
@@ -162,16 +160,20 @@ def team_from_doc(gd: GameData, doc: dict, name: str = "team", specs: Path = SPE
             hold=[dict(h) for h in doc.get("hold") or []],
             discs_main=[_disc(gd, d) for d in discs["main"]],
             discs_support=[_disc(gd, d) for d in discs["support"]],
-            reference={**dict(steps=2, main_picks=2, support_picks=1, level=6), **(doc.get("reference") or {})},
-            assumptions={**dict(unknown_trigger_uptime=1.0, disc_stats_target="team"), **(doc.get("assumptions") or {})},
-            budget=[int(x) for x in doc.get("budget", [30, 15, 15])],
+            reference={**REFERENCE_DEFAULTS, **(doc.get("reference") or {})},
+            assumptions={**ASSUMPTION_DEFAULTS, **(doc.get("assumptions") or {})},
+            budget=[int(x) for x in doc.get("budget", BUDGET_DEFAULT)],
             max_level=int(doc.get("max_level", 6)),
             budget_total=int(doc["budget_total"]) if doc.get("budget_total") is not None else None,
             disc_level=int(doc.get("disc_level", 90)),
         )
     except (KeyError, ValueError, TypeError) as e:
-        msg = e.args[0] if isinstance(e, KeyError) and e.args else str(e)
-        raise TeamDocError(f"team: {msg}") from e
+        raise TeamDocError(f"team: {_message(e)}") from e
+
+
+def _message(e: Exception) -> str:
+    """The error's text; a KeyError's own message, not its repr."""
+    return e.args[0] if isinstance(e, KeyError) and e.args else str(e)
 
 
 def load_team(gd: GameData, path: Path, specs: Path = SPECS) -> TeamConfig:

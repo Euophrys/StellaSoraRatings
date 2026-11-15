@@ -36,6 +36,11 @@ class ApiError(Exception):
         self.status = status
 
 
+def _whole(x, least: int = 0) -> bool:
+    """A JSON whole number (not a bool) of at least `least`."""
+    return isinstance(x, int) and not isinstance(x, bool) and x >= least
+
+
 def _team(gd: GameData, doc, need_pinks: bool = True, skip_pinks: int | None = None) -> TeamConfig:
     if not isinstance(doc, dict):
         raise ApiError(400, "state must be a team document")
@@ -121,7 +126,7 @@ def _finder_job(gd: GameData, body: dict, breaks: bool):
     except (ValueError, KeyError) as e:
         raise ApiError(400, e.args[0] if e.args else str(e)) from e
     top = body.get("top", 5)
-    if not isinstance(top, int) or isinstance(top, bool) or top < 1:
+    if not _whole(top, 1):
         raise ApiError(400, "top must be a whole number of at least 1")
     emblems = body.get("emblems", "purple")
     emblems = emblems.strip().lower() if isinstance(emblems, str) else emblems
@@ -158,13 +163,13 @@ class App:
             team = _team(gd, body.get("state"))
             split = body.get("split") or team.budget
             if (not isinstance(split, list) or len(split) != 3
-                    or not all(isinstance(x, int) and not isinstance(x, bool) and x >= 0 for x in split)):
+                    or not all(_whole(x) for x in split)):
                 raise ApiError(400, "split must be 3 non-negative whole numbers")
             max_level = body.get("max_level", team.max_level)
-            if not isinstance(max_level, int) or not 1 <= max_level <= 6:
+            if not _whole(max_level, 1) or max_level > 6:
                 raise ApiError(400, "max_level must be 1-6")
             total = body.get("total", team.budget_total)
-            if total is not None and (not isinstance(total, int) or isinstance(total, bool) or total < 0):
+            if total is not None and not _whole(total):
                 raise ApiError(400, "total must be a non-negative whole number or null")
             fn = _optimize(gd, rated(team), split, max_level, total)
         elif kind == "pinks":

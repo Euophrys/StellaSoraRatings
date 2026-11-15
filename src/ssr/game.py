@@ -47,6 +47,16 @@ def toughness_adjust(gd: GameData, char_id: int) -> float:
     return max(vals) / 10000 if vals else 1.0
 
 
+def char_element(gd: GameData, char_id: int) -> int:
+    """The Trekker's element (Character.EET, 1-6)."""
+    return gd.table("Character")[str(char_id)].get("EET", 0)
+
+
+def available_discs(gd: GameData) -> list[int]:
+    """Every disc in the game (Available and Visible), by id."""
+    return sorted(int(k) for k, v in gd.table("Disc").items() if v.get("Available") and v.get("Visible"))
+
+
 def skill_ids(gd: GameData, char_id: int, role: str) -> dict[str, int]:
     c = gd.table("Character")[str(char_id)]
     return {k: c[f] for k, f in _ROLE_SKILL_FIELDS[role].items()}
@@ -116,12 +126,10 @@ def hit_pct(h: Hit, skill_level: int) -> float:
 
 def disc_base_stats(gd: GameData, disc_id: int, level: int = 90, copies: int = 1) -> StatBlock:
     d = gd.table("Disc")[str(disc_id)]
-    rows = [r for r in gd.table("Attribute").values()
-            if r.get("GroupId") == d["AttrBaseGroupId"] and r.get("lvl") == level]
+    rows = [r for r in _attr_rows(gd, d["AttrBaseGroupId"]) if r.get("lvl") == level]
     r = max(rows, key=lambda r: r.get("Break", 0))
     s = StatBlock()
-    for stat, key in ((ATK, "Atk"), (DEF, "Def"), (HP, "Hp")):
-        s.flat[stat] += r.get(key, 0)
+    _add_flat(s, r)
     for key, stat in DISC_PCT_FIELDS.items():
         if key in r:
             s.add_stat(stat, r[key] / 10000)
@@ -129,9 +137,13 @@ def disc_base_stats(gd: GameData, disc_id: int, level: int = 90, copies: int = 1
         extra = [x for x in gd.table("DiscExtraAttribute").values()
                  if x.get("GroupId") == d.get("AttrExtraGroupId") and x.get("Break") == copies - 1]
         for x in extra:
-            for stat, key in ((ATK, "Atk"), (DEF, "Def"), (HP, "Hp")):
-                s.flat[stat] += x.get(key, 0)
+            _add_flat(s, x)
     return s
+
+
+def _add_flat(s: StatBlock, row: dict) -> None:
+    for stat, key in ((ATK, "Atk"), (DEF, "Def"), (HP, "Hp")):
+        s.flat[stat] += row.get(key, 0)
 
 
 # Attribute columns that discs use as a percentage substat (value / 10000).
@@ -150,6 +162,12 @@ def potential_pools(gd: GameData, char_id: int, role: str) -> dict[str, list[int
         "normal": list(c.get(f"{pre}NormalPotentialIds", [])),
         "common": list(c.get("CommonPotentialIds", [])),
     }
+
+
+def levelled_potentials(gd: GameData, char_id: int, role: str) -> list[int]:
+    """The potentials a build levels (normal then common): every pool but the pinks."""
+    pools = potential_pools(gd, char_id, role)
+    return pools["normal"] + pools["common"]
 
 
 def talent_groups(gd: GameData, char_id: int) -> list[dict]:

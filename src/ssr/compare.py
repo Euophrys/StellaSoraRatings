@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 
 from .data import GameData
 from .emblems import SLOT_LEVEL, emblem_options, line_relevant
-from .game import potential_pools
+from .game import char_element, levelled_potentials
 from .parallel import simulate_many
 from .sim import simulate
 from .team import Build, TeamConfig, load_team
@@ -48,8 +48,7 @@ def greedy_build(gd: GameData, team: TeamConfig, budget: int = 60, max_level: in
     cands = []
     owner = {}
     for i, m in enumerate(team.members):
-        pools = potential_pools(gd, m.char_id, m.role)
-        for p in pools["normal"] + pools["common"]:
+        for p in levelled_potentials(gd, m.char_id, m.role):
             cands.append((m.char_id, p))
             owner[(m.char_id, p)] = i
     if split:
@@ -141,12 +140,17 @@ def greedy_emblems(gd: GameData, team: TeamConfig, build: Build, tier: str = "pu
     opts = {}
     for i in members:
         m = team.members[i]
-        element = gd.table("Character")[str(m.char_id)]["EET"]
+        element = char_element(gd, m.char_id)
         for o in emblem_options(gd, m.char_id):
             tiers = [t for t in o.tiers if COLOUR_RANK.get(t.colour, 0) <= want]
             if tiers and line_relevant(tiers[-1].line, element, m.role):
                 opts[(i, o.name)] = (o, tiers[-1])
     slots = {i: {1: [], 2: [], 3: []} for i in members}
+
+    def free_slots(i: int, o) -> list[int]:
+        """Slots this line can roll in that have room and don't hold it yet, lowest first (stat lines fill Lv70
+        first, keeping Lv80 / 90 room for skill / potential lines)."""
+        return [s for s in sorted(o.slots) if len(slots[i][s]) < per_slot and o.name not in slots[i][s]]
     extra: list = []
     cur = simulate(gd, team, build, emblems=False).total
     res = EmblemResult(team.name, cur)
@@ -156,7 +160,7 @@ def greedy_emblems(gd: GameData, team: TeamConfig, build: Build, tier: str = "pu
             raise KeyError(f"emblem pin {name!r}: not a line {gd.char_name(team.members[i].char_id)} can use")
         o, t = opts[(i, name)]
         for _ in range(count):
-            free = [s for s in sorted(o.slots) if len(slots[i][s]) < per_slot and name not in slots[i][s]]
+            free = free_slots(i, o)
             if not free:
                 raise ValueError(f"emblem pin {name!r} x{count}: no free emblem left for it")
             extra.append((i, t.line))
@@ -167,9 +171,7 @@ def greedy_emblems(gd: GameData, team: TeamConfig, build: Build, tier: str = "pu
     for step in range(len(extra), total_lines):
         todo = []
         for (i, name), (o, t) in opts.items():
-            # the lowest slot it can roll in that has room and doesn't have it yet (stat lines fill Lv70 first,
-            # keeping Lv80 / 90 room for skill / potential lines)
-            free = [s for s in sorted(o.slots) if len(slots[i][s]) < per_slot and name not in slots[i][s]]
+            free = free_slots(i, o)
             if free:
                 todo.append((i, name, free[0], t))
         if not todo:
@@ -226,11 +228,14 @@ def main(argv=None):
     ap.add_argument("--quiet", action="store_true")
     a = ap.parse_args(argv)
     gd = GameData()
+    progress = None if a.quiet else (lambda s: print(s, flush=True))
     out = []
     emb: list[EmblemResult] = []
+    teams = []
     for path in a.teams:
         t0 = time.time()
         team = load_team(gd, path)
+        teams.append(team)
         split = [int(x) for x in a.split.split(",")] if a.split else None
         pins = {}
         for who, name, lv in map(_parse_pin, a.pin):
@@ -239,8 +244,7 @@ def main(argv=None):
                 print(f"{team.name}: no {who}, pin {name!r} skipped", flush=True)
                 continue
             m = team.members[i]
-            pools = potential_pools(gd, m.char_id, m.role)
-            by_name = {gd.item_name(p): p for p in pools["normal"] + pools["common"]}
+            by_name = {gd.item_name(p): p for p in levelled_potentials(gd, m.char_id, m.role)}
             if name not in by_name:
                 raise SystemExit(f"--pin {name!r}: not a {m.role} potential of {who}; have {sorted(by_name)}")
             pins[(m.char_id, by_name[name])] = lv
@@ -251,12 +255,10 @@ def main(argv=None):
                 print(f"{team.name}: no {who}, emblem pin {name!r} skipped", flush=True)
                 continue
             epins.append((i, name, n))
-        r = greedy_build(gd, team, a.budget, a.max_level, None if a.quiet else (lambda s: print(s, flush=True)), split,
-                         a.total, pins=pins)
+        r = greedy_build(gd, team, a.budget, a.max_level, progress, split, a.total, pins=pins)
         out.append(r)
         if a.emblems:
-            emb.append(greedy_emblems(gd, team, r.build, a.emblems,
-                                      progress=None if a.quiet else (lambda s: print(s, flush=True)), pins=epins))
+            emb.append(greedy_emblems(gd, team, r.build, a.emblems, progress=progress, pins=epins))
         print(f"{team.name}: done in {time.time() - t0:.0f}s", flush=True)
     ref = out[0]
     total = sum(int(x) for x in a.split.split(",")) if a.split else a.budget
@@ -288,8 +290,7 @@ def main(argv=None):
             ref_final = emb[0].totals[-1] if emb[0].totals else emb[0].base_total
             print(f"  {e.team.ljust(34)} {e.base_total / 1e6:8.1f}M -> {final / 1e6:8.1f}M  "
                   f"(x{final / e.base_total:.2f}, {final / ref_final:4.0%})")
-        for e, path in zip(emb, a.teams):
-            team = load_team(gd, path)
+        for e, team in zip(emb, teams):
             print(f"\n{e.team} emblems:")
             for i, sl in e.slots.items():
                 for s_, lines in sl.items():

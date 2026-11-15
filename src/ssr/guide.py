@@ -12,7 +12,7 @@ from .builds import PinkBuildRow, pink_pairs, score_pinks
 from .compare import greedy_build
 from .data import GameData
 from .emblems import emblem_options, line_relevant
-from .game import potential_pools
+from .game import available_discs, char_element, levelled_potentials
 from .parallel import simulate_many
 from .rate import gain, rate_discs
 from .stats import ELEMENTS
@@ -44,8 +44,7 @@ def _set_level(build: Build, cid: int, pid: int, lv: int) -> Build:
 
 def _pool(gd: GameData, team: TeamConfig, i: int) -> list[int]:
     m = team.members[i]
-    pools = potential_pools(gd, m.char_id, m.role)
-    return pools["normal"] + pools["common"]
+    return levelled_potentials(gd, m.char_id, m.role)
 
 
 # ---------------------------------------------------------------- potential grid
@@ -89,7 +88,7 @@ def emblem_table(gd: GameData, team: TeamConfig, build: Build, member: int,
     A line that rolls in several slots (stat lines: Lv70, Lv80, Lv90) is valued as the n-th copy in slot n:
     slot 2 is the gain of a second line on top of the same line (same tier) on emblem 1, slot 3 the third."""
     m = team.members[member]
-    element = gd.table("Character")[str(m.char_id)]["EET"]
+    element = char_element(gd, m.char_id)
     opts = emblem_options(gd, m.char_id)
     relevant = {o.name: line_relevant(o.tiers[0].line, element, m.role) for o in opts}
     step = _tick(progress, "emblems", 1 + sum(len(o.tiers) * len(o.slots) for o in opts if relevant[o.name]))
@@ -123,8 +122,8 @@ def disc_table(gd: GameData, team: TeamConfig, build: Build, progress: Progress 
     """Every available disc, each alone at C1 and C6 in one main or support slot (the other five slots filler), as
     the team-damage gain over six fillers, on the current build and owned emblems. `on_element` marks discs of a
     team member's element. Starts with the filler itself (0 by definition), then by best main-slot C6 gain."""
-    elements = {gd.table("Character")[str(m.char_id)].get("EET", 0) for m in team.members}
-    ids = sorted(int(k) for k, v in gd.table("Disc").items() if v.get("Available") and v.get("Visible"))
+    elements = {char_element(gd, m.char_id) for m in team.members}
+    ids = available_discs(gd)
     step = _tick(progress, "discs", 1 + 4 * len(ids))
     rows = rate_discs(gd, team, ids, build=build, emblems=True, on_result=step)
     rows.sort(key=lambda r: (-r.main_c6, -r.main_c1))

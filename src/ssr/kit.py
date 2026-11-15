@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 from .data import GameData, REPO_ROOT
-from .effects import Modifier, Trigger, potential_modifiers, _interpret
+from .effects import Modifier, Trigger, _assumed, _interpret, _oaa_row_modifiers, potential_modifiers, with_minion_scope
 from .game import potential_pools, skill_ids
 from .refs import level_row, resolve
 
@@ -198,18 +198,29 @@ class ResolvedPotential:
     excludes: tuple[int, ...] = ()   # does nothing if any of these potentials is in the build
 
 
+def _ids(d: dict, key: str) -> tuple[int, ...]:
+    """A list of potential ids (or other whole numbers) from a spec entry, () when absent."""
+    return tuple(int(x) for x in d.get(key, ()))
+
+
+def _dodge(d: dict) -> tuple[float | None, float]:
+    """(at, duration) of an entry's `dodge_cancel`, (None, 0.0) without one."""
+    dc = d.get("dodge_cancel")
+    return (float(dc["at"]), float(dc["duration"])) if dc else (None, 0.0)
+
+
 def _hitspec(d: dict) -> HitSpec:
     return HitSpec(
         hit_id=int(d["hit"]), count=int(d.get("count", 1)), offset=float(d.get("offset", 0.0)),
         interval=float(d.get("interval", 0.1)), tags=tuple(d.get("tags", ())),
         triggers_mark=bool(d.get("triggers_mark", False)), applies_mark=bool(d.get("applies_mark", False)),
-        requires=tuple(int(x) for x in d.get("requires", ())), excludes=tuple(int(x) for x in d.get("excludes", ())),
-        requires_all=tuple(int(x) for x in d.get("requires_all", ())), mult=float(d.get("mult", 1.0)),
-        cycle=tuple(int(x) for x in d.get("cycle", ())), from_cast=int(d.get("from_cast", 0)),
+        requires=_ids(d, "requires"), excludes=_ids(d, "excludes"), requires_all=_ids(d, "requires_all"),
+        mult=float(d.get("mult", 1.0)), cycle=_ids(d, "cycle"), from_cast=int(d.get("from_cast", 0)),
         upto_cast=int(d.get("upto_cast", 0)),
         event=str(d.get("event", "")), icd=d.get("icd", 0.0), every=d.get("every", 1), when=str(d.get("when", "")),
-        restart=bool(d.get("restart", False)), chance=d["chance"] if isinstance(d.get("chance"), dict) else float(d.get("chance", 1.0)), resilience=d.get("resilience", 0.0),
-        energy=d.get("energy", 0.0),
+        restart=bool(d.get("restart", False)),
+        chance=d["chance"] if isinstance(d.get("chance"), dict) else float(d.get("chance", 1.0)),
+        resilience=d.get("resilience", 0.0), energy=d.get("energy", 0.0),
         gain=tuple((str(k), v) for k, v in (d.get("gain") or {}).items()),
         cost=tuple((str(k), v) for k, v in (d.get("cost") or {}).items()),
         summon=tuple([d["summon"]] if isinstance(d.get("summon"), str) else d.get("summon", ())),
@@ -218,18 +229,17 @@ def _hitspec(d: dict) -> HitSpec:
 
 def _action(name: str, d: dict, skill_id: int | None) -> ActionSpec:
     fu = d.get("followup")
+    dodge_at, dodge_duration = _dodge(d)
     return ActionSpec(
         name=name, hits=[_hitspec(h) for h in d.get("hits", [])],
         lock=float(d.get("lock", DEFAULT_LOCKS.get(name, 0.0))), duration=float(d.get("duration", 0.0)),
         skill_id=d.get("skill_id", skill_id),
-        followup=Followup(fu.get("after", ""), fu.get("every", 1), fu.get("event", ""), float(fu.get("delay", 0.0)), bool(fu.get("autos", False)),
-                          float(fu["dodge_cancel"]["at"]) if fu.get("dodge_cancel") else None,
-                          float(fu["dodge_cancel"]["duration"]) if fu.get("dodge_cancel") else 0.0) if fu else None,
+        followup=Followup(fu.get("after", ""), fu.get("every", 1), fu.get("event", ""), float(fu.get("delay", 0.0)),
+                          bool(fu.get("autos", False)), *_dodge(fu)) if fu else None,
         starts_cd=str(d.get("starts_cd", "")), cd_start=float(d.get("cd_start", 0.0)),
         charges=int(d.get("charges", 0)),
         use_interval=float(d["use_interval"]) if "use_interval" in d else None,
-        dodge_at=float(d["dodge_cancel"]["at"]) if d.get("dodge_cancel") else None,
-        dodge_duration=float(d["dodge_cancel"]["duration"]) if d.get("dodge_cancel") else 0.0,
+        dodge_at=dodge_at, dodge_duration=dodge_duration,
     )
 
 
@@ -252,7 +262,7 @@ def _potential(d: dict) -> PotentialSpec:
         cd_when=[dict(c) for c in d.get("cd_when", [])],
         minion_rules={k: dict(v) for k, v in (d.get("minion_rules") or {}).items()},
         ult_cost_scale=float(d.get("ult_cost_scale", 1.0)),
-        excludes=tuple(int(x) for x in d.get("excludes", ())),
+        excludes=_ids(d, "excludes"),
         note=d.get("note", ""),
     )
 
@@ -277,9 +287,7 @@ def _buff(b: dict) -> BuffSpec:
                     max_stacks=b.get("max_stacks", 1), attribute=b.get("attribute"), as_stat=b.get("as_stat"),
                     hit_tags=tuple(b.get("hit_tags", ())), per_stack=bool(b.get("per_stack", False)),
                     name=b.get("name", ""), add=b.get("add", 1),
-                    requires=tuple(int(x) for x in b.get("requires", ())),
-                    excludes=tuple(int(x) for x in b.get("excludes", ())),
-                    requires_all=tuple(int(x) for x in b.get("requires_all", ())),
+                    requires=_ids(b, "requires"), excludes=_ids(b, "excludes"), requires_all=_ids(b, "requires_all"),
                     minions=bool(b.get("minions", False)), every=b.get("every", 1), icd=b.get("icd", 0.0),
                     reset_on=tuple(b.get("reset_on", ())))
 
@@ -332,7 +340,7 @@ def load_kit(gd: GameData, path: Path, role: str) -> Kit:
         minions={k: _minion(k, v) for k, v in (sec.get("minions") or {}).items()},
         procs=[_hitspec(p) for p in sec.get("procs", [])],
         wait_on_field=bool(sec.get("wait_on_field", False)),
-        ult_only_with=tuple(int(x) for x in sec.get("ult_only_with", ())),
+        ult_only_with=_ids(sec, "ult_only_with"),
         resources={k: float((v or {}).get("max", math.inf)) for k, v in (sec.get("resources") or {}).items()},
     )
 
@@ -404,7 +412,7 @@ def _apply_override(gd, m: Modifier, s: dict, level: int, pot: dict) -> Modifier
         if trig.event == "always":
             trig = None
         kw["trigger"] = trig
-        kw["assumed"] = trig is not None and trig.event == "unknown" and trig.uptime is None
+        kw["assumed"] = _assumed(trig)
     if "stacks" in s and "max_stacks" not in s and kw.get("trigger", m.trigger) is not None:
         t = kw.get("trigger", m.trigger)
         kw["trigger"] = replace(t, max_stacks=1)
@@ -416,7 +424,6 @@ def resolve_potential(gd: GameData, kit: Kit, potential_id: int, level: int) -> 
     spec = kit.potentials.get(potential_id, PotentialSpec())
     pot = gd.table("Potential")[str(potential_id)]
     out: list[Modifier] = []
-    from .effects import with_minion_scope
     mods = with_minion_scope(mods, gd.text(f"Potential.{potential_id}.2") or "")
     for i, m in enumerate(mods):
         cur = [m]
@@ -456,6 +463,12 @@ def resolve_potential(gd: GameData, kit: Kit, potential_id: int, level: int) -> 
     )
 
 
+def passes_gates(spec, owned) -> bool:
+    """A hit, proc or buff's potential gates: any of `requires`, none of `excludes`, all of `requires_all`."""
+    return ((not spec.requires or any(r in owned for r in spec.requires))
+            and not any(e in owned for e in spec.excludes) and all(r in owned for r in spec.requires_all))
+
+
 def kit_buffs(kit: Kit, talent_ids: list[int]) -> list[BuffSpec]:
     """The kit's base buffs plus what the unlocked key talents add or change."""
     buffs = list(kit.buffs)
@@ -472,12 +485,10 @@ def kit_buffs(kit: Kit, talent_ids: list[int]) -> list[BuffSpec]:
 def resolve_buffs(gd: GameData, kit: Kit, skill_levels: dict[str, int], owned: set | None = None,
                   buffs: list[BuffSpec] | None = None) -> list[Modifier]:
     """Modifiers granted by base skills (e.g. Noya's Starender, Glimmer), leveled by skill level."""
-    from .effects import _oaa_row_modifiers
     out = []
     owned = owned or set()
     for b in (kit.buffs if buffs is None else buffs):
-        if ((b.requires and not any(r in owned for r in b.requires)) or any(e in owned for e in b.excludes)
-                or not all(r in owned for r in b.requires_all)):
+        if not passes_gates(b, owned):
             continue
         lv = skill_levels.get(b.level, 10)
         dur = math.inf if b.duration == "inf" else value(gd, b.duration, lv)

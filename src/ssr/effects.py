@@ -9,15 +9,15 @@ from __future__ import annotations
 import json
 import math
 import re
-from pathlib import Path
 from dataclasses import dataclass, field, replace
 from functools import lru_cache
 
 import yaml
 
-from .data import GameData
+from .data import REPO_ROOT, GameData
 from .refs import level_row
-from .stats import (BASE_STATS, ELEM_TAKEN_BASE, DMG_TAKEN, DMG_TAKEN2, SLOT_TAKEN, stat_name)
+from .stats import (BASE_STATS, CHARGE_EFF, ELEM_TAKEN_BASE, ELEMENTS, DMG_TAKEN, DMG_TAKEN2, SLOT_TAKEN, START_ENERGY,
+                    stat_name)
 
 STAT_EFFECT_TYPES = (12, 52, 45)   # 45: stat add under a condition (e.g. Good Night)
 CONDITIONAL_STAT = 45
@@ -70,7 +70,7 @@ def text_reaches_minions(text: str, stat: int) -> bool:
     "friendly/all units" do (user, 2026-11-01). Looks at the sentence naming the stat, else the whole text."""
     if not text:
         return False
-    clean = re.sub(r"<[^>]+>|##|#\d+#", "", text)
+    clean = _strip_markup(text)
     sentences = [x for x in re.split(r"(?<=[.!?])\s*", clean) if x]
     word = re.sub(r"%| \(flat\)$", "", stat_name(stat)).strip().lower()
     # what a sentence increases: the part after "increase(s)" (the condition before it doesn't scope the buff)
@@ -83,7 +83,12 @@ def with_minion_scope(mods: list["Modifier"], text: str) -> list["Modifier"]:
     return [m if m.minions is not None else m.with_(minions=text_reaches_minions(text, m.stat)) for m in mods]
 
 
-_ELEMENTS = {"Aqua": 1, "Ignis": 2, "Terra": 3, "Ventus": 4, "Lux": 5, "Umbra": 6}
+def _strip_markup(text: str) -> str:
+    """Skill text without its colour tags and #N# placeholders."""
+    return re.sub(r"<[^>]+>|##|#\d+#", "", text)
+
+
+_ELEMENTS = {name: el for el, name in ELEMENTS.items()}
 _MAIN_ELEMENT = re.compile(r"\bmain (Aqua|Ignis|Terra|Ventus|Lux|Umbra) Trekker|\b(Aqua|Ignis|Terra|Ventus|Lux|Umbra) main Trekker",
                            re.I)
 
@@ -91,7 +96,7 @@ _MAIN_ELEMENT = re.compile(r"\bmain (Aqua|Ignis|Terra|Ventus|Lux|Umbra) Trekker|
 def with_main_element(mods: list["Modifier"], text: str) -> list["Modifier"]:
     """A disc text naming "the main <Element> Trekker": its effects tied to the main (a main-triggered event or
     a main target) only work when the main has that element (e.g. Meowing Cat God in an Umbra-main team)."""
-    found = _MAIN_ELEMENT.search(re.sub(r"<[^>]+>|##|#\d+#", "", text or ""))
+    found = _MAIN_ELEMENT.search(_strip_markup(text or ""))
     if not found:
         return mods
     el = _ELEMENTS[(found.group(1) or found.group(2)).capitalize()]
@@ -125,6 +130,18 @@ def _buff_index(gd: GameData) -> dict[int, dict]:
     return idx
 
 
+def _assumed(trigger: Trigger | None) -> bool:
+    """A trigger the data doesn't say: it runs at the `unknown_trigger_uptime` assumption."""
+    return trigger is not None and trigger.uptime is None and trigger.event == "unknown"
+
+
+def _param1(value_row: dict) -> float | None:
+    try:
+        return float(value_row.get("EffectTypeParam1", 0))
+    except (TypeError, ValueError):
+        return None
+
+
 def _buff_trigger(buff: dict, event: str = "unknown") -> Trigger:
     t = buff.get("Time", 0)
     duration = math.inf if t < 0 else t / 10000   # Time -1 = permanent
@@ -136,17 +153,14 @@ def _interpret(gd: GameData, effect_row: dict | None, value_row: dict, source: s
     et = value_row.get("EffectType")
     if et in STAT_EFFECT_TYPES:
         stat = value_row.get("EffectTypeFirstSubtype")
-        try:
-            v = float(value_row.get("EffectTypeParam1", 0))
-        except (TypeError, ValueError):
+        v = _param1(value_row)
+        if v is None:
             notes.append(f"{source}: effect {value_row['Id']} has non-numeric value")
             return []
         if et == CONDITIONAL_STAT and trigger is None:
             trigger = Trigger(event="unknown", duration=0.0)
         m = Modifier(stat=stat, value=v, is_pct=_is_pct(stat, value_row.get("EffectTypeSecondSubtype")),
-                     target=_target_for(stat, target1, v), trigger=trigger,
-                     assumed=trigger is not None and trigger.uptime is None and trigger.event == "unknown",
-                     source=source)
+                     target=_target_for(stat, target1, v), trigger=trigger, assumed=_assumed(trigger), source=source)
         return [m]
     if et == APPLY_BUFF and depth < 3:
         try:
@@ -170,21 +184,10 @@ def _interpret(gd: GameData, effect_row: dict | None, value_row: dict, source: s
             notes.append(f"{source}: buff {bid} has no damage effect")
         return out
     if et == 37:   # Energy Charge Efficiency (same attribute as the emblem lines, AttrType 37)
-        from .stats import CHARGE_EFF
-        try:
-            v = float(value_row.get("EffectTypeParam1", 0))
-        except (TypeError, ValueError):
-            v = 0.0
-        return [Modifier(stat=CHARGE_EFF, value=v, target="self", trigger=trigger,
-                         assumed=trigger is not None and trigger.uptime is None and trigger.event == "unknown",
-                         source=source)]
+        return [Modifier(stat=CHARGE_EFF, value=_param1(value_row) or 0.0, target="self", trigger=trigger,
+                         assumed=_assumed(trigger), source=source)]
     if et == 34:   # restore Energy (Miraculous Anthem & co: "at the start of battle ... restore 15 Energy")
-        from .stats import START_ENERGY
-        try:
-            v = float(value_row.get("EffectTypeParam1", 0))
-        except (TypeError, ValueError):
-            v = 0.0
-        return [Modifier(stat=START_ENERGY, value=v, target="self", source=source)]
+        return [Modifier(stat=START_ENERGY, value=_param1(value_row) or 0.0, target="self", source=source)]
     if et == 42:   # a shield: no damage. Discs whose other parts depend on it track it as a status in their spec.
         notes.append(f"{source}: shield (effect {value_row.get('Id')}, no damage)")
         return []
@@ -283,7 +286,7 @@ def potential_modifiers(gd: GameData, potential_id: int, level: int) -> tuple[li
     return mods, notes
 
 
-DISC_SPECS = Path(__file__).resolve().parents[2] / "specs" / "discs"
+DISC_SPECS = REPO_ROOT / "specs" / "discs"
 
 
 def _param_value(raw) -> float:
@@ -360,7 +363,7 @@ def _override_part(mods: list[Modifier], overrides: list[dict], row: dict) -> li
                                every=int(_spec_value(o.get("every", b.every), row)),
                                per_stack=bool(o.get("per_stack", b.per_stack)))
                 kw["trigger"] = None if trig.event == "always" else trig
-                kw["assumed"] = trig.event == "unknown" and trig.uptime is None
+                kw["assumed"] = _assumed(trig)
             m = m.with_(**kw)
         if m is not None:
             out.append(m)
@@ -389,17 +392,16 @@ def disc_modifiers(gd: GameData, disc_id: int, copies: int) -> tuple[list[Modifi
                       if r.get("GroupId") == gid and r.get("Level") == 1]
     for key, row in parts:
         label = f"{src} {key}"
+        desc = gd.text(row.get("Desc", "")) or ""
         if row.get("EffectId"):
             part = []
             for eid in row["EffectId"]:
                 part += effect_modifiers(gd, eid, label, notes)
-            part = with_minion_scope(part, gd.text(row.get("Desc", "")) or "")
+            part = with_minion_scope(part, desc)
             part = _override_part(part, [o for o in spec.get("overrides", []) if o.get("part") == key], row)
-            mods += with_main_element(part, gd.text(row.get("Desc", "")) or "")
+            mods += with_main_element(part, desc)
         if key in spec:
-            mods += with_main_element(with_minion_scope(_spec_modifiers(spec[key], row, label),
-                                                        gd.text(row.get("Desc", "")) or ""),
-                                      gd.text(row.get("Desc", "")) or "")
+            mods += with_main_element(with_minion_scope(_spec_modifiers(spec[key], row, label), desc), desc)
         elif not row.get("EffectId"):
             notes.append(f"{label}: scripted effect, no spec in specs/discs/ (not modelled)")
     return mods, notes
