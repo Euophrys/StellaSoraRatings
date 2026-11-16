@@ -133,9 +133,8 @@ main:
 
     516203:   # Stardust Descent (pink): extra Starfalls (AoE Lux Auto DMG, hit from Param2)
       add_hits:
-        # "Storm Flash: Radiance attacks additionally generate 2 Starfalls" (text): read as 2 per attack, [Dawn] (the longsword
-        # swings) and [Daybreak] (the greatsword slam). GUESS, fits the user's sword gauge (~80% at the skill's end). Timing GUESS.
-        skill: [{hit: 162310008, count: 4, offset: 1.5, interval: 0.2, tags: [starfall]}]
+        # "+2 Starfalls" per skill (text). The user sees 2 Starfalls per skill in game (with the skill's own 1, 2 may overlap).
+        skill: [{hit: 162310008, count: 2, offset: 1.9, interval: 0.2, tags: [starfall]}]   # timing GUESS
         # "Auto Attack sprints become greatsword attacks ... and generate 1 Starfall" (text): the sprint after the backflip,
         # once per string (user), at the longsword sprint's +4.1. One hit (text); Starfall timing GUESS.
         auto:
