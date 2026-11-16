@@ -40,6 +40,7 @@ python -m ssr.compare teams/a.yaml teams/b.yaml --split 30,15,15      # compare 
 python -m ssr.compare ... --split 30,15,15 --emblems purple           # + greedy emblems on top (~30 s per team)
 python -m ssr.compare ... --pin "Nazuna:Touch of Nature=6" --pin-emblem "Gerie:Mark DMG=3"  # start from pinned choices
 python -m ssr.finder nazuna --template teams/<t>.yaml --role main   # best teams for one Trekker -> out/finder_<trekker>_<role>.html, opened in the browser (~3 min for 10 teams, top 2; names ignore case)
+python -m ssr.themes teams/<team>.yaml   # control vs forced emblem themes (Mark/Auto/Skill/Ult/Crit), each fully optimized -> out/themes_<team>.html (~6 min)
 python -m ssr.inspect trekker|hits|disc|scripted-discs|word|frames ... # dump game data for writing specs
 python -m ssr.frames extract [<char id> ...]                          # animation frame data from the installed game -> data_src/frames/ (pip install -e .[frames])
 python scripts/frames_propose.py <char id>                            # a kit spec's timings next to its frame data

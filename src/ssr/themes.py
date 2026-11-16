@@ -117,3 +117,58 @@ def run_themes(gd: GameData, team: TeamConfig, doc: dict, tier: str = "purple", 
         except Exception as e:   # noqa: BLE001 - one failed theme is listed, not fatal
             row.error = _err(e)
     return rows
+
+
+def format_rows(rows: list[ThemeRow]) -> list[str]:
+    """Terminal summary: each theme's total vs the control."""
+    control = next((r.total for r in rows if r.theme == "Control" and r.total), None)
+    lines = ["Themes (vs Control):"]
+    for r in rows:
+        if r.skipped:
+            lines.append(f"  {r.theme:<9} skipped (no member deals this damage type)")
+        elif r.error is not None:
+            lines.append(f"  {r.theme:<9} failed: {r.error}")
+        else:
+            pct = f"{100 * (r.total / control - 1):+.2f}%" if control else "n/a"
+            forced = ", ".join(r.names[i] for i in r.members)
+            lines.append(f"  {r.theme:<9} {pct:>9}  {r.total:,.0f}" + (f"  (forced on {forced})" if forced else ""))
+    return lines
+
+
+def main(argv=None):
+    from .themes_page import render_html
+    ap = argparse.ArgumentParser(description="One team at a control build vs builds with forced emblem themes")
+    ap.add_argument("team", help="team file (members, discs, enemy, fight, budget)")
+    ap.add_argument("--emblems", type=str.lower, choices=sorted(COLOUR_RANK, key=COLOUR_RANK.get), default="purple")
+    ap.add_argument("--breaks", action="store_true", help="rate with enemy breaks (off by default, as in the finder)")
+    ap.add_argument("--keep-pinks", action="store_true", help="keep the team file's pinks instead of searching per theme")
+    ap.add_argument("-o", "--out", help="write each theme's build as a team document here (a YAML list)")
+    ap.add_argument("--html", help="results page (default out/themes_<team>.html)")
+    ap.add_argument("--no-open", action="store_true", help="don't open the page in a browser")
+    a = ap.parse_args(argv)
+    gd = GameData(DEFAULT_DATA_ROOT)
+    path = Path(a.team)
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    team = team_from_doc(gd, doc, path.stem)
+
+    def progress(theme, step):
+        print(f"{theme}: {step}", file=sys.stderr, flush=True)
+    rows = run_themes(gd, team, doc, a.emblems, breaks=a.breaks, keep_pinks=a.keep_pinks, progress=progress)
+    print("\n".join(format_rows(rows)))
+    page = Path(a.html or REPO_ROOT / "out" / f"themes_{path.stem}.html")
+    page.parent.mkdir(parents=True, exist_ok=True)
+    settings = [f"Team {a.team}; emblems {a.emblems}; pinks {'from the file' if a.keep_pinks else 'searched per theme'}; "
+                f"breaks {'on' if a.breaks else 'off'}"]
+    page.write_text(render_html(rows, f"Emblem themes: {path.stem}", settings), encoding="utf-8")
+    print(f"Wrote {page}")
+    if not a.no_open:
+        import webbrowser
+        webbrowser.open(page.resolve().as_uri())
+    if a.out:
+        Path(a.out).write_text(yaml.safe_dump([dict(r.doc, name=f"{doc.get('name', path.stem)}_{r.theme.lower()}")
+                                               for r in rows if r.doc and r.error is None],
+                                              sort_keys=False, allow_unicode=True), encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()

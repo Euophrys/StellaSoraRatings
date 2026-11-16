@@ -109,3 +109,23 @@ def test_theme_error_is_listed(gd, nlg, stubs, monkeypatch):
     rows = {r.theme: r for r in run_themes(gd, nlg, _doc())}
     assert "ValueError" in rows["Mark"].error
     assert all(r.total == 2.0 and r.error is None for k, r in rows.items() if k != "Mark")
+
+
+def _rows():
+    names = ["Nazuna", "Leafia", "Gerie"]
+    return [ThemeRow("Control", [], names, total=100.0), ThemeRow("Mark", [2], names, total=120.0),
+            ThemeRow("Auto", [], names, skipped=True), ThemeRow("Skill", [0, 2], names, error="ValueError: x")]
+
+
+def test_page_lists_every_theme():
+    from ssr.themes_page import render_html
+    html = render_html(_rows(), "Emblem themes: test", ["settings"])
+    for k in ("Control", "Mark", "Auto", "Skill"):
+        assert k in html
+    assert "120.00%" in html and "skipped" in html and "ValueError: x" in html
+
+
+def test_format_rows():
+    lines = themes.format_rows(_rows())
+    mark = next(l for l in lines if "Mark" in l)
+    assert "+20.00%" in mark

@@ -50,6 +50,7 @@ What the model still guesses, assumes or can't model. Anything the user has sinc
 
 - **Emblem "+N" on a potential not taken in the run** is assumed to give that potential at level N (real behaviour unknown). With a target it fights at target + N, capped at 9.
 - **Emblem stat lines are offered in every slot**; `CharGemAttrValue` has three TypeId groups that look like per-slot pools (the third lacks element PEN and Charge Efficiency), but which group is which slot isn't confirmed.
+- **Emblem themes (`ssr.themes`): who gets forced lines.** A member gets a theme's line (Mark / Auto / Skill / Ultimate DMG) only if they deal that damage bucket in one sim with all 4 pinks and every potential at Lv1 (everything the team could do); Crit Rate + Crit DMG goes to anyone with damage. A bucket that only appears at higher potential levels would be missed.
 
 ## Discs
 
