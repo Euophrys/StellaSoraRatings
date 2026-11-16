@@ -139,6 +139,7 @@ main:
       procs:
         - {event: "hit:self:starfall", every: {ref: "BuffValue,NoLevel,16204011,LaminatedNum,Fixed"}, hit: 162100007, count: 2,
            offset: 0.5, interval: 0.3, icd: 0.0, tags: [greatsword, judgment, auto], triggers_mark: true}  # x2 (text); added on top of the auto string (GUESS: no auto hit lost)
+      mark_tags: [greatsword]            # "They can also trigger Lux Mark" (text): the greatsword attacks
       overrides:
         - {index: 0, hit_tags: [auto]}   # "during Auto Attacks"
       note: "Judgment Starfall added on top of the auto string; every Starfall assumed absorbed."
