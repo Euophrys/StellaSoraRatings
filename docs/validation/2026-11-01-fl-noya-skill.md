@@ -2,6 +2,13 @@
 
 Run: `python -m ssr teams/fl_noya_skill.yaml -o out/` → `out/fl_noya_skill.xlsx` (~35 s). Compared with the left half of `example.jpeg`. Enemy RES 145 (calibrated, see `docs/assumptions.md`), DEF 0, skill levels 10, discs at C1 unless stated.
 
+> **Update 2026-11-15: the fight opens with a sprint attack** (user: Noya walks to the boss; `specs/trekkers/162.yaml` main `procs`). This team's opener is the longsword sprint + Dawnflare's 3 Glows. Use these for regressions:
+>
+> - **Pinks-only total:** 223.3M (was 216.4M, +3.2%): the extra energy moves the rotation, and Noya's skill damage rises 8%.
+> - **Potentials at Lv1 (main):** Prism Warp 5.81% (was 10.29%), Argent Mirage 9.93% (was 11.91%), Astral Brilliance 12.13% (was 12.65%), Guiding Star 2.97% (was 1.82%).
+> - `bb_noya_shia_tilia_ingame`: 1,777.5M, +9.7% against the in-game 1,620M (was 1,819.1M, +12.3%).
+> - Same day, auto build only (no move here): Stardust Descent turns the string's sprint into the greatsword sprint + 1 Starfall, and Sinbreaker's greatsword attacks trigger Lux Marks. The user's auto run shows ~4.4 Judgment Starfalls/min (sword gauge caps at 9.2, 25.0, 36.2, 49.2, 64.2 s); the sim gives 3.7/min, first at 13.6 s.
+
 > **Update 2026-11-07: enemy RES is now the raw 250, not 145.** The 105 was FL Noya's Astral Brilliance Lv6, not an enemy property (`docs/assumptions.md`). The tables below are the original 2026-11-01 run at RES 145. For regressions, use these numbers (`fl_noya_skill`, 120 s, current code):
 >
 > - **Pinks-only total:** 203.1M (250.3M at RES 145 on the same code).

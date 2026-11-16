@@ -63,6 +63,14 @@ main:
         - {hit: 162400003, count: 7, offset: 0.4, interval: 0.1, tags: [longsword, ult_ls], triggers_mark: true, requires: [516206]}
         - {hit: 162400004, count: 7, offset: 1.5, interval: 0.3, tags: [ult_ls], triggers_mark: true, requires: [516206]}
 
+  procs:
+    # The fight opens with a sprint attack: she has to close the distance to the boss (user). Same hits as the string's
+    # sprint after the backflip; timing GUESS (at the start, before the first skill).
+    - {event: "timer:1000&once", hit: 162100005, count: 3, interval: 0.183, tags: [longsword, sprint, auto], excludes: [516203]}
+    - {event: "timer:1000&once", hit: 162310009, count: 3, interval: 0.333, tags: [glow, auto], requires: [516202]}   # Dawnflare
+    - {event: "timer:1000&once", hit: 162100006, tags: [greatsword, sprint, auto], requires: [516203]}   # Stardust Descent
+    - {event: "timer:1000&once", hit: 162310008, offset: 0.3, tags: [starfall], requires: [516203]}
+
   buffs:
     - effect: 3012                 # Glimmer (Word 4029): Lux DMG Taken per stack, applied by every Lucent (Mark trigger)
       name: glimmer
