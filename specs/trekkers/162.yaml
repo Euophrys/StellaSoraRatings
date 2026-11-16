@@ -133,24 +133,41 @@ main:
 
     516203:   # Stardust Descent (pink): extra Starfalls (AoE Lux Auto DMG, hit from Param2)
       add_hits:
-        skill: [{hit: 162310008, count: 2, offset: 1.9, interval: 0.2, tags: [starfall]}]   # "+2 Starfalls" per skill (text); timing GUESS
+        # "Storm Flash: Radiance attacks additionally generate 2 Starfalls" (text): read as 2 per attack, [Dawn] (the longsword
+        # swings) and [Daybreak] (the greatsword slam). GUESS, fits the user's sword gauge (~80% at the skill's end). Timing GUESS.
+        skill: [{hit: 162310008, count: 4, offset: 1.5, interval: 0.2, tags: [starfall]}]
         # "Auto Attack sprints become greatsword attacks ... and generate 1 Starfall" (text): the sprint after the backflip,
         # once per string (user), at the longsword sprint's +4.1. One hit (text); Starfall timing GUESS.
         auto:
           - {hit: 162100006, count: 1, offset: 4.1, tags: [greatsword, sprint, auto]}
           - {hit: 162310008, count: 1, offset: 4.4, tags: [starfall]}
+      # The skill's ending moves her away and she sprints back in (user: skill 1,24 -> ends 5,28 -> sprint lands 6,08; the
+      # skill build dodge-cancels it instead). With Stardust Descent the sprint is worth a Starfall, so it isn't cancelled:
+      # the skill's 2.1 s lock + 2.03 s tail, then the greatsword sprint +0.33.
+      add_actions:
+        sprint_back:
+          followup: {after: skill, delay: 2.03}
+          lock: 0.5                                                      # GUESS: back to autos after the sprint
+          hits:
+            - {hit: 162100006, count: 1, offset: 0.33, tags: [greatsword, sprint, auto]}
+            - {hit: 162310008, count: 1, offset: 0.6, tags: [starfall]}  # timing GUESS
       procs:
         - {event: "mark:self", hit: 162310008, icd: 1.0, offset: 0.3, tags: [starfall]}     # 1 Starfall per Mark trigger, 1 s ICD (text)
       note: "The sprint after the backflip (once per string) is the greatsword sprint + 1 Starfall."
 
     516204:   # Sinbreaker (pink): every N Starfalls absorbed -> next auto is Judgment Starfall
-      procs:
-        - {event: "hit:self:starfall", every: {ref: "BuffValue,NoLevel,16204011,LaminatedNum,Fixed"}, hit: 162100007, count: 2,
-           offset: 0.5, interval: 0.3, icd: 0.0, tags: [greatsword, judgment, auto], triggers_mark: true}  # x2 (text); added on top of the auto string (GUESS: no auto hit lost)
+      # Judgment Starfall replaces her next auto and takes time (user, 2026-11-15, auto build: readied 16,09, hits 18,08,
+      # first auto 18,25): cast once the current action's lock ends, hit +1.97, next auto +2.53 (first auto hit is +0.2).
+      add_actions:
+        judgment:
+          followup: {event: "hit:self:starfall", every: {ref: "BuffValue,NoLevel,16204011,LaminatedNum,Fixed"}}
+          lock: 2.33
+          hits:
+            - {hit: 162100007, count: 2, offset: 1.87, interval: 0.1, tags: [greatsword, judgment, auto], triggers_mark: true}  # x2 (text); spacing GUESS
       mark_tags: [greatsword]            # "They can also trigger Lux Mark" (text): the greatsword attacks
       overrides:
         - {index: 0, hit_tags: [auto]}   # "during Auto Attacks"
-      note: "Judgment Starfall added on top of the auto string; every Starfall assumed absorbed."
+      note: "Judgment Starfall is its own 2.3 s action; every Starfall assumed absorbed."
 
     516208:   # Eclipse Phantom: field on Judgment Starfall (Sinbreaker)
       procs:
