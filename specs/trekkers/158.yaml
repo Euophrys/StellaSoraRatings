@@ -186,14 +186,14 @@ support:
 
     515822:   # Special Ammo (pink): shell Skill DMG; all-Ignis squad -> Skill DMG Taken stacks per shell hit
       overrides:
-        - {index: 0, event: "hit:self:shell"}
+        - {index: 0, event: "hit:self:shell&while:squad:2:3"}   # all-Ignis squad only
         - {index: 1, hit_tags: [shell]}
       note: "Range increase ignored (single target)."
 
     515823:   # Promotion Time (pink): 4 Walnuts merge into General Curly; all-Ignis -> Curly Minion DMG every second
       # Curly hits are in the skill's generated schedule: merge when the 4th Walnut spawns (+7.0 s), Curly attacks 1/s (GUESS)
       overrides:
-        - {index: 0, event: "hit:self:curly", hit_tags: [curly], duration: 10.0}
+        - {index: 0, event: "hit:self:curly&while:squad:2:3", hit_tags: [curly], duration: 10.0}   # all-Ignis squad only
       note: "Merge when the 4th Walnut spawns; stacks counted per Curly attack."
 
     515824:   # Investiture Ceremony (pink): Walnut/Curly skills on a 4 s cooldown; Curly skill -> Minion Crit Rate
@@ -346,4 +346,4 @@ support:
 
     515833:   # Fairy Tale Rule: all-Ignis squad -> shells raise Ignis DMG Taken
       overrides:
-        - {index: 0, event: "hit:self:shell"}
+        - {index: 0, event: "hit:self:shell&while:squad:2:3"}

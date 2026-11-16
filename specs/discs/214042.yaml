@@ -3,7 +3,7 @@ melody:
   - {stat: 58, value: Param2, target: team, event: "hit:class2/element3:skill_dmg", duration: Param3,
      note: "a Versatile Terra Trekker's Skill DMG -> +Ult DMG, 4 s"}
 harmony1:
-  - {stat: 1, pct: true, value: Param1, target: "class:2", note: "Terra Versatile Trekkers' ATK"}
+  - {stat: 1, pct: true, value: Param1, target: "class:2/element:3", note: "Terra Versatile Trekkers' ATK"}
 harmony2:
   - {stat: 1, pct: true, value: Param2, target: main, event: "hit:main:any", every: Param1, duration: Param3,
      note: "after every 10 main hits"}

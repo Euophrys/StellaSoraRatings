@@ -10,8 +10,8 @@ melody:
   - {stat: 60, value: Param4, target: enemy, event: "hit:main:any&while:status:starlit_hope>=10", duration: Param5,
      note: "Ventus Auto DMG Taken (as Auto DMG Taken)"}
 harmony1:
-  - {stat: 56, value: Param1, target: "class:2"}
-  - {stat: 57, value: Param1, target: "class:2"}
+  - {stat: 56, value: Param1, target: "class:2/element:4"}   # Ventus Versatile Trekkers
+  - {stat: 57, value: Param1, target: "class:2/element:4"}
   - {stat: 78, value: Param2, target: main, event: "while:status:starlit_hope", per_stack: true}
 harmony2:
   - {stat: 56, value: Param1, target: team, event: "hit:main:cyclone&while:status:starlit_hope", duration: Param2,

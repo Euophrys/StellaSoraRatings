@@ -195,10 +195,10 @@ main:
     516143:   # Draw Zone Support (common): Terra Vanguard / Versatile Trekkers' Auto DMG
       overrides:
         # "while the ult is on cooldown or its energy isn't full": all but the instant it's cast
-        - {index: 1, event: always, copies: [{target: "class:1"}, {target: "class:2"}]}
+        - {index: 1, event: always, copies: [{target: "class:1/element:3"}, {target: "class:2/element:3"}]}
         # "while the main is in the ult's range": the 20 s field (from the cast, GUESS)
-        - {index: 0, event: "cast:self:ult", copies: [{target: "class:1"}, {target: "class:2"}]}
-      note: "Terra Vanguard / Versatile only; all teams so far are all-Terra."
+        - {index: 0, event: "cast:self:ult", copies: [{target: "class:1/element:3"}, {target: "class:2/element:3"}]}
+      note: "Terra Vanguard / Versatile only."
 
 support:
   on_field: {skill: 2.633, ult: 4.967}
@@ -313,6 +313,6 @@ support:
         - {index: 0, hit_tags: []}
     516143:   # Draw Zone Support (common)
       overrides:
-        - {index: 1, event: always, copies: [{target: "class:1"}, {target: "class:2"}]}
-        - {index: 0, event: "cast:self:ult", copies: [{target: "class:1"}, {target: "class:2"}]}
-      note: "Terra Vanguard / Versatile only; all teams so far are all-Terra."
+        - {index: 1, event: always, copies: [{target: "class:1/element:3"}, {target: "class:2/element:3"}]}
+        - {index: 0, event: "cast:self:ult", copies: [{target: "class:1/element:3"}, {target: "class:2/element:3"}]}
+      note: "Terra Vanguard / Versatile only."

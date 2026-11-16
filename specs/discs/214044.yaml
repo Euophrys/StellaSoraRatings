@@ -3,7 +3,7 @@ melody:
   - {stat: 61, value: Param2, name: spring_blossom, target: enemy, event: "hit:class2/element3:skill_dmg", duration: Param3,
      note: "Spring Blossom: Terra Skill DMG Taken (as Skill DMG Taken)"}
 harmony1:
-  - {stat: 78, value: Param1, target: "class:2", note: "Terra Versatile Trekkers' Skill Crit DMG"}
+  - {stat: 78, value: Param1, target: "class:2/element:3", note: "Terra Versatile Trekkers' Skill Crit DMG"}
   - {stat: 57, value: Param2, target: main, event: "while:status:spring_blossom"}
 harmony2:
   - {stat: 57, value: Param2, target: team, event: "hit:main:any&while:status:spring_blossom", every: Param1, duration: Param3,

@@ -106,8 +106,8 @@ support:
 
     511633:   # Small Changes: squad ATK per Terra Trekker
       overrides:
-        - {index: 0, event: always, stacks: 3, target: team}
-      note: "Mono-Terra squad: 3 stacks."
+        - {index: 0, max_stacks: 1, target: team, copies: [{event: "while:squad:3:1"}, {event: "while:squad:3:2"}, {event: "while:squad:3:3"}]}
+      note: "One stack per Terra Trekker in the squad."
 
     511641:   # Seed to Harvest: Ult DMG; final strike Resilience Break Efficiency
       overrides:

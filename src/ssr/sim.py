@@ -343,6 +343,8 @@ def _setup_member(gd: GameData, team: TeamConfig, build: Build, i: int, emblems:
     resolved = [rp for rp in resolved if not owned & set(rp.excludes)]
 
     def keep(h: HitSpec) -> bool:
+        if h.squad and sum(e == h.squad[0] for e in sink.elements) < h.squad[1]:
+            return False
         return passes_gates(h, owned)
 
     actions = _member_actions(kit, resolved, keep)
@@ -631,6 +633,9 @@ class _Fight:
 
     def condition(self, ev: str, t: float) -> int:
         """Multiplier for a "while:" modifier at time t (0 = inactive)."""
+        if "&" in ev:   # while:A&while:B: the first condition's stacks, while all the others hold
+            first, *rest = ev.split("&")
+            return self.condition(first, t) if all(self.condition(c, t) for c in rest) else 0
         parts = ev.split(":")   # while:on_field:<who> | while:status:<name>
         kind = parts[1]
         members = self.members

@@ -4,7 +4,7 @@ melody:
   - {stat: 0, value: 0, name: blossom_glow, event: "hit:class2/element6:skill_dmg", duration: Param2, max_stacks: Param3}
   - {stat: 57, value: Param4, target: team, event: "while:status:blossom_glow>=20"}
 harmony1:
-  - {stat: 58, value: Param1, target: "class:2", note: "Umbra Versatile Trekkers' Ultimate DMG"}
+  - {stat: 58, value: Param1, target: "class:2/element:6", note: "Umbra Versatile Trekkers' Ultimate DMG"}
   - {stat: 57, value: Param2, target: main, event: "while:status:blossom_glow", per_stack: true}
   - {stat: 58, value: Param2, target: main, event: "while:status:blossom_glow", per_stack: true}
 harmony2: []   # needs max Blossom Glow

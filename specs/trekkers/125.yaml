@@ -217,7 +217,7 @@ support:
 
     512531:   # Guardian's Heart: squad Crit Rate with an all-Aqua squad
       overrides:
-        - {index: 0, event: always, target: team}
+        - {index: 0, event: "while:squad:1:3", target: team}
 
     512532:   # Silent Prayer: ult Ultimate DMG; ult inflicts Aqua Mark: Torrent (ult hits above)
       overrides:

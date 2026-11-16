@@ -139,12 +139,12 @@ support:
     511521:   # Radiance Blade: Twin Shadow (pink, all-Lux squad): more Flying Blades, faster; stacking blade buffs
       add_hits:   # user: 6 volleys of ~19 hits each (with Radiance Blade: Firefly's bursts) -> ~10 blade hits per volley GUESS
         skill:
-          - {hit: 115120005, count: 10, offset: 2.97, interval: 0.19, tags: [flying_blade], applies_mark: true}
-          - {hit: 115120005, count: 10, offset: 5.7, interval: 0.19, tags: [flying_blade], applies_mark: true}
-          - {hit: 115120005, count: 10, offset: 8.47, interval: 0.19, tags: [flying_blade], applies_mark: true}
-          - {hit: 115120005, count: 10, offset: 11.2, interval: 0.19, tags: [flying_blade], applies_mark: true}
-          - {hit: 115120005, count: 10, offset: 13.97, interval: 0.19, tags: [flying_blade], applies_mark: true}
-          - {hit: 115120005, count: 10, offset: 16.7, interval: 0.19, tags: [flying_blade], applies_mark: true}
+          - {hit: 115120005, count: 10, offset: 2.97, interval: 0.19, tags: [flying_blade], applies_mark: true, squad: "5:3"}
+          - {hit: 115120005, count: 10, offset: 5.7, interval: 0.19, tags: [flying_blade], applies_mark: true, squad: "5:3"}
+          - {hit: 115120005, count: 10, offset: 8.47, interval: 0.19, tags: [flying_blade], applies_mark: true, squad: "5:3"}
+          - {hit: 115120005, count: 10, offset: 11.2, interval: 0.19, tags: [flying_blade], applies_mark: true, squad: "5:3"}
+          - {hit: 115120005, count: 10, offset: 13.97, interval: 0.19, tags: [flying_blade], applies_mark: true, squad: "5:3"}
+          - {hit: 115120005, count: 10, offset: 16.7, interval: 0.19, tags: [flying_blade], applies_mark: true, squad: "5:3"}
       overrides:   # stacks per blade hit while this Sword Form is active (cleared by the next cast)
         - {index: 0, hit_tags: [flying_blade], event: "hit:self:flying_blade", duration: inf,
            max_stacks: {ref: "BuffValue,NoLevel,11521011,LaminatedNum,Fixed"}, reset_on: ["cast:self:skill"]}
@@ -215,7 +215,7 @@ support:
 
     511533:   # Domain of Purity: squad Lux DMG in all-Lux squad (+ more while Firefly is on field)
       overrides:
-        - {index: 0, event: always, target: team}
+        - {index: 0, event: "while:squad:5:3", target: team}   # all-Lux squad only
         - {index: 1, event: "while:on_field:self", target: team}   # only while Firefly is on the battlefield
       note: "On-field bonus only during Firefly's casts (on_field seconds per cast)."
 

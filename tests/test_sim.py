@@ -164,3 +164,33 @@ def test_lucent_tide_buffs_lux_versatile_only(gd):
     tide = Build({(162, 516207): 6})
     assert _gain(gd, _fl_noya_squad(gd, "Firefly", "Tilia"), tide, 1) > 0        # Lux Versatile
     assert _gain(gd, _fl_noya_squad(gd, "Kasimira", "Tilia"), tide, 1) == pytest.approx(0)   # Ignis Versatile
+
+
+def test_while_condition_takes_while_suffixes(gd, team):   # the team is all Lux: 3 Lux Trekkers
+    from ssr.effects import Trigger
+
+    def total(event):
+        return simulate(gd, team, Build(), discs=FILLERS, extra=[(0, Modifier(
+            stat=SKILL_DMG, value=0.5, trigger=Trigger(event, 0.0), source="t"))]).total
+    plain = total("while:status:glimmer")
+    assert total("while:status:glimmer&while:squad:5:3") == pytest.approx(plain)
+    assert total("while:status:glimmer&while:squad:5:4") == pytest.approx(simulate(gd, team, Build(), discs=FILLERS).total)
+
+
+def test_hits_gated_on_the_squad(gd):
+    from ssr.team import team_from_doc
+    from ssr import sim as S
+
+    def blades(*names):
+        members = [{"trekker": n, "role": "main" if i == 0 else "support"} for i, n in enumerate(names)]
+        t = team_from_doc(gd, {"members": members, "discs": {"main": ["filler"] * 3, "support": ["filler"] * 3},
+                               "enemy": {"res": 250, "defense": 500}})
+        seen, orig = [], S.hit_damage
+        S.hit_damage = lambda hd, *a, **k: (seen.append(hd.id) or orig(hd, *a, **k))
+        try:
+            simulate(gd, t, Build({(115, 511521): 1}), discs=FILLERS)
+        finally:
+            S.hit_damage = orig
+        return seen.count(115120005)
+    # Twin Shadow's extra Flying Blades are all-Lux only
+    assert blades("Firstlight Noya", "Firefly", "Tilia") > blades("Kasimira", "Firefly", "Tilia")

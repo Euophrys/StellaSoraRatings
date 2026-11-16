@@ -1,6 +1,6 @@
-# Stellar Destination — melody and harmony 2 are scripted. "Lux Versatile Trekkers" = class 2 (Firefly here).
+# Stellar Destination — melody and harmony 2 are scripted. "Lux Versatile Trekkers" = class 2 and Lux (Firefly here).
 melody:
-  - {stat: 21, value: {value: Param1, times: Param3}, target: "class:2", uptime: 0.3, note: "Sync Rate max stacks only while the Versatile support is on the field GUESS"}
+  - {stat: 21, value: {value: Param1, times: Param3}, target: "class:2/element:5", uptime: 0.3, note: "Sync Rate max stacks only while the Versatile support is on the field GUESS"}
   - {stat: 60, value: Param4, target: enemy, uptime: 0.3, note: "Hostile Reaction needs max Sync Rate GUESS uptime"}
 harmony2:
   - {stat: 78, value: Param3, target: main, uptime: 0.3, note: "Lucent on a Hostile Reaction target GUESS uptime"}

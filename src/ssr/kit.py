@@ -30,6 +30,7 @@ class HitSpec:
     requires: tuple[int, ...] = ()
     excludes: tuple[int, ...] = ()
     requires_all: tuple[int, ...] = ()   # lands only if all of these potentials are in the build
+    squad: tuple[int, ...] = ()   # (element, n): lands only with at least n Trekkers of that EET in the squad
     mult: float = 1.0      # damage multiplier on the hit (e.g. a Mirror Image with 50% of the DMG Multiplier)
     cycle: tuple[int, ...] = ()   # (n, i): lands only on the i-th of every n casts of its action (1-based)
     from_cast: int = 0     # lands only from the Nth cast of its action on
@@ -215,6 +216,7 @@ def _hitspec(d: dict) -> HitSpec:
         interval=float(d.get("interval", 0.1)), tags=tuple(d.get("tags", ())),
         triggers_mark=bool(d.get("triggers_mark", False)), applies_mark=bool(d.get("applies_mark", False)),
         requires=_ids(d, "requires"), excludes=_ids(d, "excludes"), requires_all=_ids(d, "requires_all"),
+        squad=tuple(int(x) for x in str(d["squad"]).split(":")) if "squad" in d else (),
         mult=float(d.get("mult", 1.0)), cycle=_ids(d, "cycle"), from_cast=int(d.get("from_cast", 0)),
         upto_cast=int(d.get("upto_cast", 0)),
         event=str(d.get("event", "")), icd=d.get("icd", 0.0), every=d.get("every", 1), when=str(d.get("when", "")),

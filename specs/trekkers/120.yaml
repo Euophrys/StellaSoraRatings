@@ -177,8 +177,8 @@ support:
 
     512033:   # Finale Deduction: Canace's ATK per Ventus Trekker
       overrides:
-        - {index: 0, event: always, stacks: 3}
-      note: "Assumes 3 Ventus Trekkers."
+        - {index: 0, max_stacks: 1, copies: [{event: "while:squad:4:1"}, {event: "while:squad:4:2"}, {event: "while:squad:4:3"}]}
+      note: "One stack per Ventus Trekker in the squad."
 
     512041:   # Storm Suppression: ult 17x2 hits instead of 9x2
       add_hits:

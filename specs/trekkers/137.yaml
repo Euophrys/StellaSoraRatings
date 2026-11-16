@@ -146,7 +146,7 @@ support:
     513726:   # Power Boost: Crit DMG to Ventus Vanguard mains
       overrides:
         - {index: 0, event: "hit:self:slam"}
-        - {index: 1, event: "hit:self:slam", target: "class:1"}
+        - {index: 1, event: "hit:self:slam", target: "main/class:1/element:4"}
     513727:   # Shattering Blow
       overrides:
         - {index: 0, hit_tags: [slam]}

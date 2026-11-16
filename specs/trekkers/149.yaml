@@ -127,8 +127,7 @@ main:
 
     514913:   # Shared Sensation: ATK per Terra Trekker
       overrides:
-        - {index: 0, event: always, stacks: 3}
-      note: "Mono-Terra squad: 3 stacks."
+        - {index: 0, max_stacks: 1, copies: [{event: "while:squad:3:1"}, {event: "while:squad:3:2"}, {event: "while:squad:3:3"}]}
 
     514910:   # Piercing Sorrow: cage Terra DMG, cage duration +50% (4 more ticks)
       add_hits:
@@ -239,7 +238,7 @@ support:
 
     514933:   # Anima Resonance: ATK per Terra Trekker
       overrides:
-        - {index: 0, event: always, stacks: 3}
+        - {index: 0, max_stacks: 1, copies: [{event: "while:squad:3:1"}, {event: "while:squad:3:2"}, {event: "while:squad:3:3"}]}
 
     514941:   # Emberwing's Proclamation
       add_hits:
