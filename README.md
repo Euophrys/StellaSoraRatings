@@ -14,7 +14,7 @@ There are the following things to consider when looking at the results.
 - I don't own every character so most of the limiteds are taken from the game data and haven't been verified. Minion behaviour in particular is a mystery.
 - Fights are assumed to be against a single boss. Enemies never die and AOE potentials are weak.
 - The rotation is simple. They use their ultimates when they have enough energy and use their skills whenever the cooldown ends. There is capability to have skills held for certain things but it's complicated to verify that it's correct to do so.
-- Some things are hard for the optimizer to find. It can't find Gerie's mark build on its own. Without Mark DMG emblems, it doesn't pick Nazuna's Touch of Nature potential, and without Touch of Nature, it doesn't pick Mark DMG emblems.
+- Some things are hard for the optimizer to find. It can't find Gerie's mark build on its own. Without Mark DMG emblems, it doesn't pick Nazuna's Touch of Nature potential, and without Touch of Nature, it doesn't pick Mark DMG emblems. You can use the `themes` mode to check for some of these, which does find Gerie's mark build, though it's quite slow.
 - Some trekkers are given special behaviour. For example, Chitose assumes you dodge cancel every auto attack when you have Tremble and Fall selected.
 - See docs/assumptions.md for the full list.
 
@@ -89,6 +89,7 @@ python -m ssr teams/<team>.yaml -o out/                             # full ratin
 python -m ssr teams/<team>.yaml --pinks <main> <support1> <support2> # best pink potential pairs
 python -m ssr.compare teams/a.yaml teams/b.yaml --split 30,15,15    # compare team totals
 python -m ssr.finder <trekker> --template teams/<t>.yaml --role main  # best teams for one Trekker
+python -m ssr.themes teams/<team>.yaml                               # control vs forced emblem themes (Mark/Auto/Skill/Ult/Crit), ~7 min
 ```
 
 `SSR_WORKERS=<n>` limits how many CPU cores a run uses (in PowerShell: `$env:SSR_WORKERS=4`).
