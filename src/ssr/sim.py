@@ -136,6 +136,9 @@ def _expand_who(ev: str, n: int, classes: list[int], elements: list[int] | None 
 
 def _targets(target: str, owner: int, n: int, classes: list[int] | None = None,
              elements: list[int] | None = None) -> list[int | str]:
+    if "/" in target:   # intersection of groups, e.g. "class:2/element:5" = Lux Versatile Trekkers
+        sets = [set(_targets(t, owner, n, classes, elements)) for t in target.split("/")]
+        return sorted(set.intersection(*sets), key=str)
     if target == "support":
         return list(range(1, n))
     if target.startswith("class:"):

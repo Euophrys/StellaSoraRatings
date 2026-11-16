@@ -128,8 +128,8 @@ main:
       mark_tags: [glow]
       overrides:
         - {index: 0, event: cast:self:skill}
-        - {index: 1, event: cast:self:skill, target: "class:2"}   # "Lux Versatile Trekkers" = class 2
-      note: "Second buff goes to Lux Versatile (class 2) Trekkers. Range-increase chance ignored."
+        - {index: 1, event: cast:self:skill, target: "class:2/element:5"}   # "Lux Versatile Trekkers": class 2 and Lux (EET 5)
+      note: "Second buff goes to Lux Versatile Trekkers (class 2, Lux). Range-increase chance ignored."
 
     516203:   # Stardust Descent (pink): extra Starfalls (AoE Lux Auto DMG, hit from Param2)
       add_hits:
@@ -190,8 +190,9 @@ main:
 
     516212:   # Astral Brilliance: Lux PEN per Lux Trekker in squad
       overrides:
-        - {index: 0, event: always, stacks: 3}   # all-Lux team: 3 stacks
-      note: "Assumes 3 Lux Trekkers (true for the FL Noya team)."
+        # one stack per Lux Trekker in the squad (herself included)
+        - {index: 0, max_stacks: 1, copies: [{event: "while:squad:5:1"}, {event: "while:squad:5:2"}, {event: "while:squad:5:3"}]}
+      note: "One stack per Lux Trekker in the squad."
 
     516241:   # Argent Mirage: 7 Glows on longsword-form ult; Skill DMG always on
       add_hits:

@@ -132,3 +132,35 @@ def test_stacks_from_status(gd, team):
     per = simulate(gd, team, Build(), extra=[(0, Modifier(stat=elem_stat(ELEM_TAKEN_BASE, 5), value=0.02, target="enemy",
                                                           trigger=Trigger("mark:0", 10.0, max_stacks=20, stacks_from="glimmer"), source="t"))])
     assert base.total < one.total < per.total
+
+
+def test_target_intersection():
+    from ssr.sim import _targets
+    # classes / elements of a squad: Lux Versatile, Ignis Versatile, Lux Support
+    assert _targets("class:2/element:5", 0, 3, [2, 2, 3], [5, 1, 5]) == [0]
+    assert _targets("class:3/element:1", 0, 3, [2, 2, 3], [5, 1, 5]) == []
+
+
+def _fl_noya_squad(gd, *supports):
+    from ssr.team import team_from_doc
+    members = [{"trekker": "Firstlight Noya", "role": "main"}] + [{"trekker": n, "role": "support"} for n in supports]
+    return team_from_doc(gd, {"members": members, "discs": {"main": ["filler"] * 3, "support": ["filler"] * 3},
+                              "enemy": {"res": 250, "defense": 500}})
+
+
+def _gain(gd, team, build, who):
+    base = simulate(gd, team, Build(), discs=FILLERS)
+    return simulate(gd, team, build, discs=FILLERS).by_member[who] / base.by_member[who] - 1
+
+
+def test_astral_brilliance_counts_lux_trekkers_in_the_squad(gd):
+    astral = Build({(162, 516212): 6})
+    all_lux = _gain(gd, _fl_noya_squad(gd, "Firefly", "Tilia"), astral, 0)
+    alone = _gain(gd, _fl_noya_squad(gd, "Kasimira", "Iris"), astral, 0)   # Ignis and Aqua: only Noya is Lux
+    assert alone > 0 and all_lux > 2 * alone
+
+
+def test_lucent_tide_buffs_lux_versatile_only(gd):
+    tide = Build({(162, 516207): 6})
+    assert _gain(gd, _fl_noya_squad(gd, "Firefly", "Tilia"), tide, 1) > 0        # Lux Versatile
+    assert _gain(gd, _fl_noya_squad(gd, "Kasimira", "Tilia"), tide, 1) == pytest.approx(0)   # Ignis Versatile
