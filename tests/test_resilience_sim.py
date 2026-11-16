@@ -8,7 +8,7 @@ from pathlib import Path
 
 TEAMS = Path(__file__).parent / "fixtures"   # frozen copies of team files: never load teams/, the build page saves over it
 
-PRE_RESILIENCE_TOTAL = 222416708.8703382   # fl_noya_skill, Build(), bar off. Was 223,698,051.888 before Ripples of Nostalgia harmony 1 and Shock (A Moment in the Afternoon) got real triggers (2026-11-04). Was 239,320,242.148 before passive energy was removed (2026-11-03, user: no passive energy)
+PRE_RESILIENCE_TOTAL = 223470544.61613402   # fl_noya_skill, Build(), bar off. Was 222,416,708.870 before FL Noya opened the fight with a sprint attack (2026-11-15, user). Was 223,698,051.888 before Ripples of Nostalgia harmony 1 and Shock (A Moment in the Afternoon) got real triggers (2026-11-04). Was 239,320,242.148 before passive energy was removed (2026-11-03, user: no passive energy)
 
 
 def _with_enemy(team, **kw):

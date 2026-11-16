@@ -132,7 +132,11 @@ support:
       target: team
 
   potentials:
-    510721:   # Holy Inscription (pink, not in build): spheres raise Lux DMG Taken
+    510721:   # Holy Inscription (pink): Aegis hits summon spheres (8 s, up to 4) that raise Lux DMG Taken and inflict Lux Mark
+      # "inflicts Lux Mark: Radiance on them" (text): the user sees Lux Marks back about once a second with this pink in
+      # (FL Noya auto run, 2026-11-15). GUESS: a sphere re-inflicts it every 1 s for 8 s from the cast, like her ult's sphere.
+      add_hits:
+        skill: [{hit: 0, count: 8, offset: 1.0, interval: 1.0, tags: [inscription], applies_mark: true}]
       overrides:
         - {index: 0, event: cast:self:skill}
 

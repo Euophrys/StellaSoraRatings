@@ -7,7 +7,7 @@ Run: `python -m ssr teams/fl_noya_skill.yaml -o out/` → `out/fl_noya_skill.xls
 > - **Pinks-only total:** 223.3M (was 216.4M, +3.2%): the extra energy moves the rotation, and Noya's skill damage rises 8%.
 > - **Potentials at Lv1 (main):** Prism Warp 5.81% (was 10.29%), Argent Mirage 9.93% (was 11.91%), Astral Brilliance 12.13% (was 12.65%), Guiding Star 2.97% (was 1.82%).
 > - `bb_noya_shia_tilia_ingame`: 1,777.5M, +9.7% against the in-game 1,620M (was 1,819.1M, +12.3%).
-> - Same day, auto build only (no move here): Stardust Descent turns the string's sprint into the greatsword sprint + 1 Starfall, and Sinbreaker's greatsword attacks trigger Lux Marks. The user's auto run shows ~4.4 Judgment Starfalls/min (sword gauge caps at 9.2, 25.0, 36.2, 49.2, 64.2 s); the sim gives 3.7/min, first at 13.6 s.
+> - Same day, auto build only (no move here): Stardust Descent turns the string's sprint into the greatsword sprint + 1 Starfall, and Sinbreaker's greatsword attacks trigger Lux Marks. Later the same day: Judgment Starfall is its own ~2.3 s action, the skill plays out into a sprint back with Stardust Descent, and Tilia's Holy Inscription spheres inflict Lux Marks every second (the missing Mark source). Judgments ready, user's run: 16.3, 29.3, 41.4, 56.2 s (first hit at 2.8 s); sim shifted by 2.8 s: 15.1, 30.8, 41.4, 55.9 s.
 
 > **Update 2026-11-07: enemy RES is now the raw 250, not 145.** The 105 was FL Noya's Astral Brilliance Lv6, not an enemy property (`docs/assumptions.md`). The tables below are the original 2026-11-01 run at RES 145. For regressions, use these numbers (`fl_noya_skill`, 120 s, current code):
 >
