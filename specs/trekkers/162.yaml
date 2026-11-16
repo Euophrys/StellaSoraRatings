@@ -43,7 +43,7 @@ main:
         - {hit: 162100003, count: 2, offset: 2.333, interval: 0.167, tags: [greatsword, auto]} # Strike 3 x2
         - {hit: 162100004, count: 2, offset: 3.3, interval: 0.1, tags: [glow, auto]}          # Strike 4: 2 Glows
         # The backflip puts her out of range, so the string ends in a longsword sprint attack (x3, text; 1.5 s ICD)
-        - {hit: 162100005, count: 3, offset: 4.1, interval: 0.183, tags: [longsword, sprint, auto]}
+        - {hit: 162100005, count: 3, offset: 4.1, interval: 0.183, tags: [longsword, sprint, auto], excludes: [516203]}  # Stardust Descent swaps it (below)
         # Dawnflare: the sprint also fires 3 Glows (user saw 5 hits total for the dash; 3 sprint + Glows overlapping, GUESS)
         - {hit: 162310009, count: 3, offset: 4.1, interval: 0.333, tags: [glow, auto], requires: [516202]}
 
@@ -126,9 +126,14 @@ main:
     516203:   # Stardust Descent (pink): extra Starfalls (AoE Lux Auto DMG, hit from Param2)
       add_hits:
         skill: [{hit: 162310008, count: 2, offset: 1.9, interval: 0.2, tags: [starfall]}]   # "+2 Starfalls" per skill (text); timing GUESS
+        # "Auto Attack sprints become greatsword attacks ... and generate 1 Starfall" (text): the sprint after the backflip,
+        # once per string (user), at the longsword sprint's +4.1. One hit (text); Starfall timing GUESS.
+        auto:
+          - {hit: 162100006, count: 1, offset: 4.1, tags: [greatsword, sprint, auto]}
+          - {hit: 162310008, count: 1, offset: 4.4, tags: [starfall]}
       procs:
         - {event: "mark:self", hit: 162310008, icd: 1.0, offset: 0.3, tags: [starfall]}     # 1 Starfall per Mark trigger, 1 s ICD (text)
-      note: "Sprint-attack Starfalls not modelled (melee range assumed)."
+      note: "The sprint after the backflip (once per string) is the greatsword sprint + 1 Starfall."
 
     516204:   # Sinbreaker (pink): every N Starfalls absorbed -> next auto is Judgment Starfall
       procs:
