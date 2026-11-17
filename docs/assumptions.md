@@ -118,8 +118,8 @@ User-timed 2026-11-17 (main).
 
 User-timed 2026-11-17 (main autos and skill; support skill and ult). The main's ult lock and the pinks' extra hits are still frame data or GUESSes.
 
-- **Two Base Hit is pressed the moment it's ready** (0.933 s after Syou) and held. The user's hold gave 6 strikes ~0.29 s apart and the smash, not the text's 3 s (10 strikes). The 6 are modelled.
-- **The skill's CD starts at the cast** (user: one reading matches to a frame, the other is 0.37 s later).
-- **The ult hits 13 times** from +0.9 to +4.367 (user-timed span; the count is a GUESS from the text's 0.3 s). The main's ult is assumed to hit like the support's.
+- **Two Base Hit is pressed the moment it's ready** (0.933 s after Syou) and held. A full hold gives 6 strikes ~0.29 s apart and the smash (user, checked twice), not the text's 3 s (10 strikes).
+- **The skill's CD starts 0.317 s after the cast** (user: two held casts read 0.267 and 0.367 s late; a tapped Two Base Hit read on time).
+- **The ult hits 14 times** from +0.9 to +4.367 (user). The main's ult is assumed to hit like the support's.
 - **Astral Hex** lands 1.633 s after the support skill and explodes at +4.033 and then every 3.067 s (user), one stack each. Optimal Hit Zone's status runs from the landing to the last explosion.
-- **Star Core Crumbled:** the main picks up the Meteor 3 s after each hex explosion (user: 2.9–3.3 s), which starts the ATK buff. The Astral Hex stack the main gains isn't modelled.
+- **Star Core Crumbled:** the main picks up the Meteor 3 s after each hex explosion (user: 2.9–3.3 s), which starts the ATK buff. The Astral Hex stack the main gains explodes when it expires (user), modelled as an Astral Hex hit 3 s after the pickup (GUESS) that inflicts Lux Mark: Radiance (GUESS) and summons no Meteor (user). It doesn't count for Fervent Applause (GUESS).
