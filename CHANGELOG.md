@@ -1,3 +1,6 @@
+Nov 17, 2026
+- Validated Wraith's timings
+
 Nov 16, 2026
 - Added the "prompts" folder so people can see the history, including all my own confusions from being new to 
 the game.
