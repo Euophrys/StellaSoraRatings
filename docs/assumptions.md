@@ -113,3 +113,13 @@ User-timed 2026-11-17 (main).
 - **Her auto shots are "Wraith's shots"** for Storm-Piercing / Wind-Splitting / Scorching Gale (GUESS: the text doesn't limit it to the skill).
 - **Tracewind Blink** fires with the gun string's 1st and 4th shots (user), never with the sword string (user).
 - **Last Gasp of Gale:** one Whirlwind per cast, on the first sword hit within 4 s; its first tick is as it appears (GUESS).
+
+## Minova
+
+User-timed 2026-11-17 (main autos and skill; support skill and ult). The main's ult lock and the pinks' extra hits are still frame data or GUESSes.
+
+- **Two Base Hit is pressed the moment it's ready** (0.933 s after Syou) and held. The user's hold gave 6 strikes ~0.29 s apart and the smash, not the text's 3 s (10 strikes). The 6 are modelled.
+- **The skill's CD starts at the cast** (user: one reading matches to a frame, the other is 0.37 s later).
+- **The ult hits 13 times** from +0.9 to +4.367 (user-timed span; the count is a GUESS from the text's 0.3 s). The main's ult is assumed to hit like the support's.
+- **Astral Hex** lands 1.633 s after the support skill and explodes at +4.033 and then every 3.067 s (user), one stack each. Optimal Hit Zone's status runs from the landing to the last explosion.
+- **Star Core Crumbled:** the main picks up the Meteor 3 s after each hex explosion (user: 2.9–3.3 s), which starts the ATK buff. The Astral Hex stack the main gains isn't modelled.

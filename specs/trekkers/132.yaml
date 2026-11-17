@@ -1,5 +1,5 @@
 # Minova (132) — Lux Versatile. Hits scale with ATK (data).
-# Timings from animation frame data, see docs/assumptions.md "Frame data". The Ashwind Clan members deal Ultimate DMG, not
+# User-timed 2026-11-17: main autos and skill, support skill and ult (the main's ult lock is still frame data). The Ashwind Clan members deal Ultimate DMG, not
 # Minion DMG: modelled as ult hits.
 char_id: 132
 
@@ -21,43 +21,50 @@ talents:
       - {attribute: 13296511, event: always}
 
 main:
-  timing: frames   # animation frame data (python -m ssr.inspect frames 132), not checked in game
   mark: {hit: 132000001}
 
   actions:
-    auto:
-      duration: 3.176              # frames: strikes chained at each combo-window end
+    auto:                          # user: next string's first hit 3.733 s after this one's
+      duration: 3.733
       hits:
-        - {hit: 132100001, offset: 0.226}
-        - {hit: 132100002, offset: 0.523}
-        - {hit: 132100003, offset: 1.041}
-        - {hit: 132100004, offset: 1.61}
-        - {hit: 132100005, count: 6, offset: 1.61, interval: 0.2}   # x6 (text); frames: an area hitting every 0.2 s
-        - {hit: 132100006, offset: 2.491, tags: [s5]}
+        - {hit: 132100001, offset: 0.233}   # user: 0.233 s after the skill ends
+        - {hit: 132100002, offset: 0.7}
+        - {hit: 132100003, offset: 1.4}
+        - {hit: 132100004, offset: 2.133}   # she throws the spinning thing
+        - {hit: 132100005, count: 6, offset: 2.133, interval: 0.227}   # x6 (text); user: the spinner, every ~7 frames to +3.267
+        - {hit: 132100006, offset: 3.033, tags: [s5]}
 
     skill:                         # Syou: Pulsar Streak, then Two Base Hit: every 0.3 s for 3 s and a smash (text)
-      lock: 5.2                    # frames: thump 0.983, then quick strike: start 0.267 + 3 s loop + end's combo-window end 0.952
-      cd_start: 5.2                # GUESS: the CD starts when the cast ends
+      # User: part 2 is ready 0.933 s after the cast (modelled as pressed then, and held); from the press, strikes at
+      # +0.4 .. +1.833 (6, ~0.29 s apart), the smash +2.433, out of the skill +2.933. The CD starts at the cast (user).
+      lock: 3.867
       hits:
-        - {hit: 132310001, offset: 0.133, tags: [syou], triggers_mark: true}           # frames
-        - {hit: 132310004, count: 10, offset: 1.35, interval: 0.3, tags: [two_base], triggers_mark: true}   # frames: first strike +0.367 into the 2nd part
-        - {hit: 132310005, offset: 4.71, tags: [two_base], triggers_mark: true}        # frames: in the end clip
-        - {hit: 0, offset: 5.2, tags: [skill_done]}
+        - {hit: 132310001, offset: 0.133, tags: [syou], triggers_mark: true}           # user
+        - {hit: 132310004, offset: 1.333, tags: [two_base], triggers_mark: true}       # user
+        - {hit: 132310004, offset: 1.633, tags: [two_base], triggers_mark: true}
+        - {hit: 132310004, offset: 1.867, tags: [two_base], triggers_mark: true}
+        - {hit: 132310004, offset: 2.2, tags: [two_base], triggers_mark: true}
+        - {hit: 132310004, offset: 2.467, tags: [two_base], triggers_mark: true}
+        - {hit: 132310004, offset: 2.767, tags: [two_base], triggers_mark: true}
+        - {hit: 132310005, offset: 3.367, tags: [two_base], triggers_mark: true}       # user: the smash
+        - {hit: 0, offset: 3.867, tags: [skill_done]}
 
     ult:                           # Ketsu: every 0.3 s for 5 s (text; the area's data says every 0.25 s)
       lock: 1.0                    # frames: the cutscene clip's combo-window end; the clan attacks, she carries on
       hits:
-        - {hit: 132400001, count: 17, offset: 1.647, interval: 0.3, tags: [ketsu]}   # frames: area +0.147, first hit +1.5
+        # user (as a support): first hit +0.9, last +4.367. GUESS: 13 hits, the text's 0.3 s (the skill's strikes
+        # measured ~0.29 s apart too); the main's ult assumed to hit like the support's
+        - {hit: 132400001, count: 13, offset: 0.9, interval: 0.289, tags: [ketsu]}
 
   potentials:
     513201:   # Ultimatum (pink): Three Base Hit x2 and a big hit
       add_hits:
         skill:
-          - {hit: 132310101, count: 2, offset: 5.2, interval: 0.1, tags: [three], triggers_mark: true}   # GUESS: after the smash (frames: 0.1 apart)
-          - {hit: 132310102, offset: 6.1, tags: [three], triggers_mark: true}
+          - {hit: 132310101, count: 2, offset: 3.867, interval: 0.1, tags: [three], triggers_mark: true}   # GUESS: after the smash (frames: 0.1 apart); lock not extended
+          - {hit: 132310102, offset: 4.767, tags: [three], triggers_mark: true}
     513202:   # Clan Clash Artistry (pink): the Two Base Hit part isn't modelled (needs a Mark first)
       add_hits:
-        skill: [{hit: 132310204, offset: 6.2, tags: [three], requires: [513201]}]
+        skill: [{hit: 132310204, offset: 4.867, tags: [three], requires: [513201]}]
       overrides:
         - {index: 0, hit_tags: [three]}
     513203:   # Board Tricks (pink)
@@ -66,7 +73,7 @@ main:
         - {index: 1, hit_tags: [syou]}
     513204:   # No Respite (pink): 3 extra hits, one per combo hit
       add_hits:
-        skill: [{hit: 132310401, count: 3, offset: 1.0, interval: 0.3, tags: [two_base]}]
+        skill: [{hit: 132310401, count: 3, offset: 1.333, interval: 0.3, tags: [two_base]}]   # GUESS: with the first 3 strikes
       overrides:
         - {index: 0, hit_tags: [two_base]}
     513205:   # Ashwind Rhythm
@@ -105,7 +112,7 @@ main:
         - {index: 0, hit_tags: []}
     513242:   # Flash of Starlight: interval -30%
       add_hits:
-        ult: [{hit: 132400001, count: 7, offset: 1.15, interval: 0.7, tags: [ketsu]}]
+        ult: [{hit: 132400001, count: 5, offset: 1.2, interval: 0.7, tags: [ketsu]}]   # 13 hits at 0.7x the interval: 5 more
       overrides:
         - {index: 0, hit_tags: [ketsu]}
     513243:   # Weakness Strike
@@ -115,27 +122,28 @@ main:
           - {hit: 132400003, offset: 3.0, tags: [ketsu]}
 
 support:
-  timing: frames   # animation frame data, not checked in game
-  on_field: {skill: 4.35, ult: 5.4}   # frames: clip + the usual exit
+  # User-timed 2026-11-17 (skill with Four-Star Wanted Level + Star Core Crumbled, and the ult)
+  on_field: {skill: 4.367, ult: 5.0}   # user
   actions:
     skill:                         # Gi: Supernova Burst: 2 Astral Hex, one every 3 s (GUESS: each one explodes and goes)
       hits:
-        - {hit: 132320001, offset: 1.0, tags: [gi]}   # frames
-        - {hit: 132320002, count: 2, offset: 4.0, interval: 3.0, tags: [hex], applies_mark: true}
-    ult:
+        - {hit: 132320001, offset: 1.0, tags: [gi]}   # user
+        - {hit: 0, offset: 1.633, tags: [hex_on]}     # user: the hex lights land
+        - {hit: 132320002, count: 2, offset: 4.033, interval: 3.067, tags: [hex], applies_mark: true}   # user: +4.033, +7.1
+    ult:                           # user: first hit +0.9, last +4.367; GUESS: 13 hits (see the main's ult)
       hits:
-        - {hit: 132400001, count: 17, offset: 1.647, interval: 0.3, tags: [ketsu], excludes: [513231]}
-        - {hit: 132400001, count: 17, offset: 1.647, interval: 0.3, tags: [ketsu], applies_mark: true, requires: [513231]}
-        - {hit: 0, offset: 6.5, tags: [ult_done]}
+        - {hit: 132400001, count: 13, offset: 0.9, interval: 0.289, tags: [ketsu], excludes: [513231]}
+        - {hit: 132400001, count: 13, offset: 0.9, interval: 0.289, tags: [ketsu], applies_mark: true, requires: [513231]}
+        - {hit: 0, offset: 4.4, tags: [ult_done]}
 
-  buffs:
-    - {name: astral_hex, event: "cast:self:skill", duration: 6.8, excludes: [513221]}
-    - {name: astral_hex, event: "cast:self:skill", duration: 12.8, requires: [513221]}
+  buffs:   # the target has Astral Hex from the lights landing to the last explosion
+    - {name: astral_hex, event: "marker:self:hex_on", duration: 5.467, excludes: [513221]}
+    - {name: astral_hex, event: "marker:self:hex_on", duration: 11.6, requires: [513221]}
 
   potentials:
     513221:   # Four-Star Wanted Level (pink): 4 stacks
       add_hits:
-        skill: [{hit: 132320002, count: 2, offset: 9.8, interval: 3.0, tags: [hex], applies_mark: true}]
+        skill: [{hit: 132320002, count: 2, offset: 10.167, interval: 3.067, tags: [hex], applies_mark: true}]
       overrides:
         - {index: 0, hit_tags: [gi, hex]}
     513222:   # Radiant Burst (pink)
@@ -143,9 +151,12 @@ support:
         - {index: 0, hit_tags: [hex]}
     513223:   # Oath Satellite (pink): a shield
       note: "A shield: no damage value."
-    513224:   # Star Core Crumbled (pink): the main picks up the Meteor; the extra stack isn't modelled
+    513224:   # Star Core Crumbled (pink): the main picks up the Meteor 3 s after the hex hits (user: 2.9-3.3 s); the
+      # Astral Hex stack the main gains isn't modelled
+      procs:
+        - {event: "hit:self:hex", hit: 0, offset: 3.0, tags: [meteor]}
       overrides:
-        - {index: 0, event: "hit:self:hex", target: main}
+        - {index: 0, event: "marker:self:meteor", target: main}
     513225:   # Optimal Hit Zone: one stack counted
       overrides:
         - {index: 0, hit_tags: [], event: "while:status:astral_hex"}
@@ -177,7 +188,7 @@ support:
         - {index: 0, hit_tags: []}
     513242:
       add_hits:
-        ult: [{hit: 132400001, count: 7, offset: 1.15, interval: 0.7, tags: [ketsu]}]
+        ult: [{hit: 132400001, count: 5, offset: 1.2, interval: 0.7, tags: [ketsu]}]
       overrides:
         - {index: 0, hit_tags: [ketsu]}
     513243:
