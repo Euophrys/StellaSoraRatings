@@ -103,3 +103,13 @@ The roles are timed from the game's animation data (read from the plain Unity bu
 - **Draw Zone Support:** the +50% Auto DMG is always on; the +10% "in the ult's range" lasts 20 s from the cast.
 - **Support Calibration Marks:** each stack deals one Calibration hit 1 s later on average. Calibration Expansion's extra stacks from a Vanguard main aren't modelled, and Vanguard Calibration's "expire after 10 s" isn't forced on Co-Draw's longer turrets.
 - **Leafia's tiers reach later turrets only**, modelled as tiers gained when a turret expires (GUESS).
+
+## Wraith
+
+User-timed 2026-11-17 (main).
+
+- **Melee or ranged play is set by her pinks.** Storm-Piercing Surge or Wind-Splitting Bullet means ranged play: the gun string, and the skill's slashes miss. Otherwise she's played in melee with the sword string. A mixed pair counts as ranged, so Last Gasp of Gale does nothing in it.
+- **Wind-Splitting Bullet is always held for all 3 uses** (user: that's how she's played): 4 + 8 + 12 shots, then a 9 s recharge. Rounds 2 and 3 are their own casts (`hold_2`, `hold_3`), so energy caps, Overheat Shot and Scorching Gale count each round. Discs and supports that react to "main casts skill" see one cast per hold, so they undercount in ranged play.
+- **Her auto shots are "Wraith's shots"** for Storm-Piercing / Wind-Splitting / Scorching Gale (GUESS: the text doesn't limit it to the skill).
+- **Tracewind Blink** fires with the gun string's 1st and 4th shots (user), never with the sword string (user).
+- **Last Gasp of Gale:** one Whirlwind per cast, on the first sword hit within 4 s; its first tick is as it appears (GUESS).
